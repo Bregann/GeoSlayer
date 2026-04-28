@@ -1,0 +1,3 @@
+﻿﻿Add migrations with:
+
+Add-Migration <xxx> -o Database/Migrations

@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 18
+VisualStudioVersion = 18.4.11626.88 stable
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeoSlayer", "GeoSlayer\GeoSlayer.csproj", "{45A627B8-EAFB-D068-975A-0A987FA525FF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeoSlayer.Domain", "GeoSlayer.Domain\GeoSlayer.Domain.csproj", "{6F072BE3-BC4F-B506-AEBD-F19D541A5BE8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{45A627B8-EAFB-D068-975A-0A987FA525FF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{45A627B8-EAFB-D068-975A-0A987FA525FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{45A627B8-EAFB-D068-975A-0A987FA525FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{45A627B8-EAFB-D068-975A-0A987FA525FF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6F072BE3-BC4F-B506-AEBD-F19D541A5BE8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6F072BE3-BC4F-B506-AEBD-F19D541A5BE8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6F072BE3-BC4F-B506-AEBD-F19D541A5BE8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6F072BE3-BC4F-B506-AEBD-F19D541A5BE8}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {BD7AE796-C17E-4547-BBAE-B84D55C722C9}
+	EndGlobalSection
+EndGlobal
