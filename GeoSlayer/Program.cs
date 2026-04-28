@@ -110,9 +110,11 @@ builder.Services.AddHangfire(configuration => configuration
         );
 
 #else
+var connectionString = Environment.GetEnvironmentVariable("GeoSlayerLive");
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseLazyLoadingProxies()
-        .UseNpgsql(connectionString, o => o.UseNetTopologySuite());
+        .UseNpgsql(connectionString, o => o.UseNetTopologySuite()));
 GlobalConfiguration.Configuration.UsePostgreSqlStorage(c => c.UseNpgsqlConnection(Environment.GetEnvironmentVariable("GeoSlayerLive")));
 
 builder.Services.AddHangfire(configuration => configuration
@@ -193,7 +195,7 @@ app.MapHangfireDashboard("/hangfire", new DashboardOptions
 }, JobStorage.Current);
 
 #if !DEBUG
-HangfireJobSetup.SetupRecurringJobs();
+HangfireJobSetup.RegisterJobs();
 #endif
 
 app.Run();
