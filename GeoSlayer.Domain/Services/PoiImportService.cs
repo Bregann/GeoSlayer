@@ -1,8 +1,8 @@
 using GeoSlayer.Domain.Database.Context;
 using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.Enums;
+using GeoSlayer.Domain.Interfaces.Api;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using NetTopologySuite.Geometries;
 using Newtonsoft.Json.Linq;
 using Serilog;
@@ -14,13 +14,18 @@ namespace GeoSlayer.Domain.Services;
 /// and maps them to game skills.  Uses the same grid-cell system as
 /// <see cref="StreetImportService"/>.
 /// </summary>
-public class PoiImportService(IServiceScopeFactory scopeFactory)
+public class PoiImportService(AppDbContext db) : IPoiImportService
 {
     private const string OverpassUrl = "https://overpass-api.de/api/interpreter";
 
     private static readonly HttpClient Http = new()
     {
-        Timeout = TimeSpan.FromMinutes(5)
+        Timeout = TimeSpan.FromMinutes(5),
+        DefaultRequestHeaders =
+        {
+            { "User-Agent", "GeoSlayer/1.0" },
+            { "Accept", "application/json" },
+        }
     };
 
     // ────────────────────────────────────────────────────────────────
@@ -148,17 +153,15 @@ public class PoiImportService(IServiceScopeFactory scopeFactory)
     //  Public API
     // ────────────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Imports POIs for a single grid cell.
-    /// Called alongside <see cref="StreetImportService.EnsureCellLoadedAsync"/>
-    /// so POIs are ready when the player arrives.
-    /// </summary>
-    public async Task ImportCellPoisAsync(double cellLat, double cellLng)
+    /// <summary>POI import grid cell size in degrees (~5 km).</summary>
+    public const double CellSize = 0.05;
+
+    public async Task ImportCellPois(double cellLat, double cellLng)
     {
         var south = cellLat;
         var west = cellLng;
-        var north = cellLat + StreetImportService.CellSize;
-        var east = cellLng + StreetImportService.CellSize;
+        var north = cellLat + CellSize;
+        var east = cellLng + CellSize;
 
         Log.Information("PoiImport: loading cell ({CellLat},{CellLng})", cellLat, cellLng);
 
@@ -188,9 +191,6 @@ public class PoiImportService(IServiceScopeFactory scopeFactory)
 
         for (int i = 0; i < pois.Count; i += batchSize)
         {
-            using var scope = scopeFactory.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
             var batch = pois.Skip(i).Take(batchSize).ToList();
 
             // Build lookup keys for existing check
@@ -358,13 +358,22 @@ public class PoiImportService(IServiceScopeFactory scopeFactory)
 
     private static async Task<JObject> FetchOverpassData(string query)
     {
+        var trimmed = query.Trim();
+        Log.Information("Overpass request body: {Query}", trimmed);
+
         var content = new FormUrlEncodedContent(new[]
         {
-            new KeyValuePair<string, string>("data", query)
+            new KeyValuePair<string, string>("data", trimmed)
         });
 
         var response = await Http.PostAsync(OverpassUrl, content);
-        response.EnsureSuccessStatusCode();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorBody = await response.Content.ReadAsStringAsync();
+            Log.Error("Overpass API returned {StatusCode}: {Body}", (int)response.StatusCode, errorBody);
+            response.EnsureSuccessStatusCode();
+        }
 
         var body = await response.Content.ReadAsStringAsync();
         return JObject.Parse(body);

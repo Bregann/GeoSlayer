@@ -33,6 +33,8 @@ interface AuthContextValue {
   /** Set after a successful login/register */
   login: (tokens: AuthTokens, player: PlayerInfo) => Promise<void>;
   logout: () => Promise<void>;
+  /** Update player info (e.g. after XP/level change) */
+  updatePlayer: (player: PlayerInfo) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue>({
@@ -40,6 +42,7 @@ const AuthContext = createContext<AuthContextValue>({
   player: null,
   login: async () => {},
   logout: async () => {},
+  updatePlayer: async () => {},
 });
 
 /* ------------------------------------------------------------------ */
@@ -94,14 +97,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoggedIn(false);
   }, []);
 
+  const updatePlayer = useCallback(async (updated: PlayerInfo) => {
+    await AsyncStorage.setItem(PLAYER_KEY, JSON.stringify(updated));
+    setPlayer(updated);
+  }, []);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       isLoggedIn,
       player,
       login,
       logout,
+      updatePlayer,
     }),
-    [isLoggedIn, player, login, logout],
+    [isLoggedIn, player, login, logout, updatePlayer],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

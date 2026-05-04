@@ -2,12 +2,12 @@
 using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.DTOs.Auth.Requests;
 using GeoSlayer.Domain.DTOs.Auth.Responses;
+using GeoSlayer.Domain.Exceptions;
 using GeoSlayer.Domain.Interfaces.Api;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
-using System.Data;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -29,7 +29,7 @@ namespace GeoSlayer.Domain.Services
             if (_context.Users.Any(x => x.Username == request.Username || x.Email == request.Email))
             {
                 Log.Information($"User already exists {request.Username}");
-                throw new DuplicateNameException("User already exists");
+                throw new ConflictException("User already exists");
             }
 
             var newUser = new User
@@ -43,11 +43,10 @@ namespace GeoSlayer.Domain.Services
             _context.Users.Add(newUser);
             await _context.SaveChangesAsync();
 
-            // Create the player record for this user with a default location
+            // Create the player record for this user
             var player = new Player
             {
                 UserId = newUser.Id,
-                Location = new NetTopologySuite.Geometries.Point(0, 0) { SRID = 4326 }
             };
             _context.Players.Add(player);
             await _context.SaveChangesAsync();
@@ -64,13 +63,13 @@ namespace GeoSlayer.Domain.Services
             if (user == null)
             {
                 Log.Information($"User not found {request.Username}");
-                throw new KeyNotFoundException("User not found");
+                throw new UnauthorizedException("Invalid username or password");
             }
 
             if (_passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password) == PasswordVerificationResult.Failed)
             {
                 Log.Information($"Invalid password for user {request.Username}");
-                throw new UnauthorizedAccessException("Invalid password");
+                throw new UnauthorizedException("Invalid username or password");
             }
 
             var token = GenerateJwtToken(user);
@@ -101,13 +100,13 @@ namespace GeoSlayer.Domain.Services
             if (refreshToken == null)
             {
                 Log.Information($"Token not found for refresh token {userRefreshToken}");
-                throw new KeyNotFoundException("Token not found");
+                throw new UnauthorizedException("Invalid refresh token");
             }
 
             if (refreshToken.ExpiresAt < DateTime.UtcNow)
             {
                 Log.Information($"Token expired for user {refreshToken.UserId}");
-                throw new UnauthorizedAccessException("Refresh token expired");
+                throw new UnauthorizedException("Refresh token expired");
             }
 
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == refreshToken.UserId);
@@ -115,7 +114,7 @@ namespace GeoSlayer.Domain.Services
             if (user == null)
             {
                 Log.Information($"User not found for token {refreshToken.UserId}");
-                throw new KeyNotFoundException("User not found");
+                throw new UnauthorizedException("Invalid refresh token");
             }
 
             var token = GenerateJwtToken(user);

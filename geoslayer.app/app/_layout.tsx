@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Stack } from 'expo-router';
+import { Redirect, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, View } from 'react-native';
 import 'react-native-reanimated';
@@ -20,21 +20,15 @@ function RootNavigator() {
     );
   }
 
-  // Not logged in → show login (register is reachable from login)
-  if (!isLoggedIn) {
-    return (
+  return (
+    <>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="login" />
         <Stack.Screen name="register" />
+        <Stack.Screen name="(tabs)" />
       </Stack>
-    );
-  }
-
-  // Logged in → show the game
-  return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="(tabs)" />
-    </Stack>
+      {!isLoggedIn && <Redirect href="/login" />}
+    </>
   );
 }
 

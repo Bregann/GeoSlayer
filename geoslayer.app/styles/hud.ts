@@ -71,40 +71,6 @@ export const hudStyles = StyleSheet.create({
     backgroundColor: '#bb66ff',
   },
 
-  /* ── Street progress (inside top bar) ────────────────── */
-  streetRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 2,
-  },
-  streetName: {
-    color: ACCENT,
-    fontSize: 10,
-    fontWeight: 'bold',
-    fontFamily: 'monospace',
-    maxWidth: 90,
-  },
-  streetTrack: {
-    flex: 1,
-    height: 10,
-    backgroundColor: '#1a1a2e',
-    borderWidth: 1,
-    borderColor: '#555',
-    overflow: 'hidden',
-  },
-  streetFill: {
-    height: '100%',
-    backgroundColor: ACCENT,
-  },
-  streetPercent: {
-    color: '#ccc',
-    fontSize: 10,
-    fontFamily: 'monospace',
-    width: 32,
-    textAlign: 'right',
-  },
-
   /* ── BOTTOM PANEL ────────────────────────────────────── */
   bottomContainer: {
     position: 'absolute',

@@ -51,6 +51,9 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IPoiImportService, PoiImportService>();
+builder.Services.AddScoped<IFogService, FogService>();
+builder.Services.AddScoped<IJourneyService, JourneyService>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

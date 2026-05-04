@@ -34,6 +34,29 @@ export const authStyles = StyleSheet.create({
     paddingVertical: 12,
     marginBottom: 14,
   },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1a1a2e',
+    borderWidth: 2,
+    borderColor: '#39ff14',
+    marginBottom: 14,
+  },
+  passwordInput: {
+    flex: 1,
+    color: '#fff',
+    fontFamily: 'monospace',
+    fontSize: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  eyeButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  eyeText: {
+    fontSize: 18,
+  },
   button: {
     backgroundColor: '#39ff14',
     paddingVertical: 14,

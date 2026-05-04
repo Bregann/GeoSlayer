@@ -1,12 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using NetTopologySuite.Geometries;
 
 namespace GeoSlayer.Domain.Database.Models;
 
-/// <summary>
-/// Represents a player in the game world with a current geographic location.
-/// </summary>
 public class Player
 {
     [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -15,12 +11,16 @@ public class Player
     [Required]
     public string UserId { get; set; } = null!;
 
-    /// <summary>
-    /// The player's current GPS position (SRID 4326 = WGS 84).
-    /// </summary>
-    [Required]
-    [Column(TypeName = "geometry (point, 4326)")]
-    public Point Location { get; set; } = null!;
+    /// <summary>Coarse grid cell for the POI preloader (~5 km).</summary>
+    public double? LastCellLat { get; set; }
+    public double? LastCellLng { get; set; }
+
+    /// <summary>Last position reported by the client (anti-cheat).</summary>
+    public double LastLatitude { get; set; }
+    public double LastLongitude { get; set; }
+
+    /// <summary>UTC timestamp of the last sync (anti-cheat cooldown & speed validation).</summary>
+    public DateTime? LastSyncAtUtc { get; set; }
 
     public int Xp { get; set; }
 

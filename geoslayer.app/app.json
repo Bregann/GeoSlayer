@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "geoslayer.app",
-    "slug": "geoslayer.app",
+    "slug": "geoslayer",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -10,7 +10,12 @@
     "ios": {
       "supportsTablet": false,
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "GeoSlayer needs your location to track your adventure on the map."
+        "NSLocationWhenInUseUsageDescription": "GeoSlayer needs your location to track your adventure on the map.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "GeoSlayer tracks your walk in the background so your trail and street progress continue when the app is minimized.",
+        "NSLocationAlwaysUsageDescription": "GeoSlayer tracks your walk in the background so your trail and street progress continue when the app is minimized.",
+        "UIBackgroundModes": [
+          "location"
+        ]
       }
     },
     "android": {
@@ -23,9 +28,18 @@
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION"
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_LOCATION"
       ],
-      "package": "com.bregan.geoslayer.app"
+      "package": "com.bregan.geoslayer.app",
+      "versionCode": 12
     },
     "web": {
       "output": "static",
@@ -33,6 +47,14 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "GeoSlayer tracks your walk in the background so your trail and street progress continue when the app is minimized.",
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
+        }
+      ],
       [
         "expo-splash-screen",
         {
@@ -52,6 +74,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "be5da00d-d233-4552-9218-e71b5cde8717"
+      }
     }
   }
 }
