@@ -2,16 +2,19 @@ using GeoSlayer.Domain.DTOs.Journey.Requests;
 using GeoSlayer.Domain.DTOs.Journey.Responses;
 using GeoSlayer.Domain.Interfaces.Api;
 using GeoSlayer.Domain.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GeoSlayer.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
 public class JourneyController(IJourneyService journeyService) : ControllerBase
 {
     /// <summary>
-    /// Sync the player's position: reveal fog cells, return nearby POIs.
+    /// Sync the caller's position: reveal fog cells, return nearby POIs.
+    /// The player is resolved from the JWT — never from the request body.
     /// </summary>
     [HttpPost("sync")]
     public async Task<ActionResult<SyncResponse>> Sync(
@@ -23,14 +26,12 @@ public class JourneyController(IJourneyService journeyService) : ControllerBase
     }
 
     /// <summary>
-    /// Returns all revealed cells for a player (used on app startup).
+    /// Returns all revealed cells for the caller (used on app startup).
     /// </summary>
-    [HttpGet("revealed/{playerId:int}")]
-    public async Task<ActionResult<List<CellDto>>> GetRevealed(
-        int playerId,
-        CancellationToken ct)
+    [HttpGet("revealed")]
+    public async Task<ActionResult<List<CellDto>>> GetRevealed(CancellationToken ct)
     {
-        var cells = await journeyService.GetRevealedCells(playerId, ct);
+        var cells = await journeyService.GetRevealedCells(ct);
         return Ok(cells);
     }
 }

@@ -24,7 +24,7 @@ Log.Logger = new LoggerConfiguration()
     .WriteTo.Async(x => x.File("/app/Logs/log.log", retainedFileCountLimit: 7, rollingInterval: RollingInterval.Day))
     .WriteTo.Console()
     .Enrich.WithProperty("Application", "Gs-Api" + (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development" ? "-Test" : ""))
-    .WriteTo.Seq("http://192.168.1.20:5341")
+    .WriteTo.Seq(Environment.GetEnvironmentVariable("SEQ_URL") ?? "http://localhost:5341")
     .CreateLogger();
 
 Log.Information("Logger Setup");
@@ -151,7 +151,7 @@ using (var scope = app.Services.CreateScope())
     var dbConnectionString = dbContext.Database.GetConnectionString();
     if (!string.IsNullOrEmpty(dbConnectionString) &&
         (dbConnectionString.Contains("127.0.0.1") ||
-        dbConnectionString.Contains("financemanagercontainer")))
+        dbConnectionString.Contains("geoslayercontainer")))
     {
         dbContext.Database.EnsureDeleted();
         dbContext.Database.EnsureCreated();

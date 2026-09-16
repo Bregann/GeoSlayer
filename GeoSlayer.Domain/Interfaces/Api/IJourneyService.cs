@@ -7,5 +7,5 @@ namespace GeoSlayer.Domain.Interfaces.Api;
 public interface IJourneyService
 {
     Task<SyncResponse> Sync(SyncRequest request, CancellationToken ct);
-    Task<List<CellDto>> GetRevealedCells(int playerId, CancellationToken ct);
+    Task<List<CellDto>> GetRevealedCells(CancellationToken ct);
 }

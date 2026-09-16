@@ -367,3 +367,6 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 /BreganTwitchbot.Infrastructure/Database/DbSettings.cs
+
+# Claude Code agent worktrees (scratch copies of this repo)
+.claude/worktrees/

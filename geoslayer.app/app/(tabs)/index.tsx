@@ -86,9 +86,7 @@ export default function MapScreen() {
 
     (async () => {
       try {
-        const res = await authApiClient.get(
-          `/api/journey/revealed/${player.playerId}`,
-        );
+        const res = await authApiClient.get('/api/journey/revealed');
         if (res.status < 400 && Array.isArray(res.data)) {
           setRevealedCells(res.data);
         }
@@ -104,10 +102,14 @@ export default function MapScreen() {
       if (!player) return;
       try {
         const res = await authApiClient.post('/api/journey/sync', {
-          latitude: loc.latitude,
-          longitude: loc.longitude,
-          playerId: player.playerId,
-          timestampMs: loc.timestamp,
+          positions: [
+            {
+              latitude: loc.latitude,
+              longitude: loc.longitude,
+              timestampMs: loc.timestamp,
+              accuracy: loc.accuracy ?? null,
+            },
+          ],
         });
         if (res.status < 400) {
           const data: SyncData = res.data;
@@ -175,6 +177,7 @@ export default function MapScreen() {
         latitude: initial.coords.latitude,
         longitude: initial.coords.longitude,
         timestamp: initial.timestamp,
+        accuracy: initial.coords.accuracy ?? null,
       };
       setLocation(start);
       locationRef.current = start;
@@ -199,6 +202,7 @@ export default function MapScreen() {
             latitude: loc.coords.latitude,
             longitude: loc.coords.longitude,
             timestamp: loc.timestamp,
+            accuracy: loc.coords.accuracy ?? null,
           };
           setLocation(next);
           locationRef.current = next;

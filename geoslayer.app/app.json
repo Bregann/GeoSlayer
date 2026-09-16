@@ -11,8 +11,8 @@
       "supportsTablet": false,
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "GeoSlayer needs your location to track your adventure on the map.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "GeoSlayer tracks your walk in the background so your trail and street progress continue when the app is minimized.",
-        "NSLocationAlwaysUsageDescription": "GeoSlayer tracks your walk in the background so your trail and street progress continue when the app is minimized.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "GeoSlayer tracks your walk in the background so the map keeps revealing while the app is minimized.",
+        "NSLocationAlwaysUsageDescription": "GeoSlayer tracks your walk in the background so the map keeps revealing while the app is minimized.",
         "UIBackgroundModes": [
           "location"
         ]
@@ -50,7 +50,7 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "GeoSlayer tracks your walk in the background so your trail and street progress continue when the app is minimized.",
+          "locationAlwaysAndWhenInUsePermission": "GeoSlayer tracks your walk in the background so the map keeps revealing while the app is minimized.",
           "isAndroidBackgroundLocationEnabled": true,
           "isAndroidForegroundServiceEnabled": true
         }

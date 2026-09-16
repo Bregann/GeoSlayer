@@ -11,8 +11,8 @@ namespace GeoSlayer.Domain.Services;
 
 /// <summary>
 /// Imports Points of Interest from OpenStreetMap via the Overpass API
-/// and maps them to game skills.  Uses the same grid-cell system as
-/// <see cref="StreetImportService"/>.
+/// and maps them to game skills.  Uses the same coarse grid-cell system as
+/// the journey sync preloader.
 /// </summary>
 public class PoiImportService(AppDbContext db) : IPoiImportService
 {

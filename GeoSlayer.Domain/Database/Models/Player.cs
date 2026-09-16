@@ -22,7 +22,9 @@ public class Player
     /// <summary>UTC timestamp of the last sync (anti-cheat cooldown & speed validation).</summary>
     public DateTime? LastSyncAtUtc { get; set; }
 
-    public int Xp { get; set; }
+    /// <summary>Cumulative lifetime XP. <c>long</c> because the curve is uncapped —
+    /// an <c>int</c> would cap progression at roughly level 126.</summary>
+    public long Xp { get; set; }
 
     public int Level { get; set; } = 1;
 

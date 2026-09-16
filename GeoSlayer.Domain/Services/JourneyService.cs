@@ -4,6 +4,7 @@ using GeoSlayer.Domain.DTOs.Journey.Requests;
 using GeoSlayer.Domain.DTOs.Journey.Responses;
 using GeoSlayer.Domain.Exceptions;
 using GeoSlayer.Domain.Interfaces.Api;
+using GeoSlayer.Domain.Interfaces.Helpers;
 using GeoSlayer.Domain.Services;
 using Microsoft.EntityFrameworkCore;
 using NetTopologySuite.Geometries;
@@ -13,7 +14,8 @@ namespace GeoSlayer.Domain.Services;
 public class JourneyService(
     AppDbContext db,
     IFogService fogService,
-    IPoiImportService poiImportService) : IJourneyService
+    IPoiImportService poiImportService,
+    IUserContextHelper userContextHelper) : IJourneyService
 {
     private const double PoiCellSize = 0.05;
     private const double PoiScanRadius = 200;
@@ -23,26 +25,31 @@ public class JourneyService(
 
     public async Task<SyncResponse> Sync(SyncRequest request, CancellationToken ct)
     {
-        var player = await db.Players.FirstOrDefaultAsync(p => p.Id == request.PlayerId, ct)
-            ?? throw new NotFoundException("Player not found");
+        var player = await CurrentPlayer(ct);
 
-        // Ensure POIs are imported for this area
-        await EnsurePoisImported(request.Latitude, request.Longitude, ct);
+        var path = request.Path();
+
+        if (path.Count == 0)
+            throw new BadRequestException("Sync requires at least one position");
+
+        var last = path[^1];
+
+        // Ensure POIs are imported for this area — around where the player ended up
+        await EnsurePoisImported(last.Latitude, last.Longitude, ct);
 
         // Update coarse grid cell for preloading
-        var cellLat = SnapToPoiGrid(request.Latitude);
-        var cellLng = SnapToPoiGrid(request.Longitude);
+        var cellLat = SnapToPoiGrid(last.Latitude);
+        var cellLng = SnapToPoiGrid(last.Longitude);
         player.LastCellLat = cellLat;
         player.LastCellLng = cellLng;
 
         // Reveal fog-of-war cells (includes anti-cheat validation)
-        var fogResult = await fogService.Reveal(
-            request.PlayerId, request.Latitude, request.Longitude, request.TimestampMs, ct);
+        var fogResult = await fogService.Reveal(player.Id, path, ct);
 
         await db.SaveChangesAsync(ct);
 
         // Load nearby POIs
-        var playerLocation = new Point(request.Longitude, request.Latitude) { SRID = 4326 };
+        var playerLocation = new Point(last.Longitude, last.Latitude) { SRID = 4326 };
         var nearbyPois = await GetNearbyPois(playerLocation, ct);
 
         // Reload player after potential XP changes
@@ -59,16 +66,25 @@ public class JourneyService(
 
     // ── Revealed cells ─────────────────────────────────────────────
 
-    public async Task<List<CellDto>> GetRevealedCells(int playerId, CancellationToken ct)
+    public async Task<List<CellDto>> GetRevealedCells(CancellationToken ct)
     {
-        var exists = await db.Players.AnyAsync(p => p.Id == playerId, ct);
-        if (!exists)
-            throw new NotFoundException("Player not found");
-
-        return await fogService.GetAllRevealed(playerId, ct);
+        var player = await CurrentPlayer(ct);
+        return await fogService.GetAllRevealed(player.Id, ct);
     }
 
     // ── Helpers ────────────────────────────────────────────────────
+
+    /// <summary>
+    /// The player belonging to the authenticated caller.  The client never supplies a
+    /// player id — it is derived from the JWT so one account cannot touch another's map.
+    /// </summary>
+    private async Task<Player> CurrentPlayer(CancellationToken ct)
+    {
+        var userId = userContextHelper.GetUserId();
+
+        return await db.Players.FirstOrDefaultAsync(p => p.UserId == userId, ct)
+            ?? throw new NotFoundException("Player not found");
+    }
 
     private async Task EnsurePoisImported(double latitude, double longitude, CancellationToken ct)
     {

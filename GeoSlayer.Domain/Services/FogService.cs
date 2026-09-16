@@ -1,6 +1,9 @@
 using GeoSlayer.Domain.Database.Context;
 using GeoSlayer.Domain.Database.Models;
+using GeoSlayer.Domain.DTOs.Journey.Requests;
 using GeoSlayer.Domain.Interfaces.Api;
+using GeoSlayer.Domain.Services.Fog;
+using GeoSlayer.Domain.Services.Progression;
 using Microsoft.EntityFrameworkCore;
 
 namespace GeoSlayer.Domain.Services;
@@ -12,8 +15,8 @@ public class FogService(AppDbContext db) : IFogService
     /// </summary>
     public const double CellSize = 0.0009;
 
-    /// <summary>How many cells around the player to reveal (0 = just the current cell).</summary>
-    private const int RevealRadius = 0;
+    /// <summary>How many cells around each swept cell to reveal (1 = a 3×3 block).</summary>
+    private const int RevealRadius = 1;
 
     /// <summary>XP awarded for each newly revealed cell.</summary>
     private const int XpPerCell = 2;
@@ -26,8 +29,12 @@ public class FogService(AppDbContext db) : IFogService
     /// <summary>Minimum interval between syncs from the same player.</summary>
     private const double MinSyncIntervalSeconds = 2.0;
 
-    /// <summary>Max cells that can be revealed in a single sync call.</summary>
-    private const int MaxNewCellsPerSync = 9;
+    /// <summary>
+    /// Max cells revealable in a single sync.  A swept path legitimately covers hundreds
+    /// of cells over a long background batch, so this is a sanity backstop against a
+    /// forged multi-kilometre path, not a per-walk budget.
+    /// </summary>
+    private const int MaxNewCellsPerSync = 2_000;
 
     /// <summary>Max allowable clock skew for the client timestamp (seconds).</summary>
     private const double MaxClientClockSkewSeconds = 300;
@@ -43,38 +50,34 @@ public class FogService(AppDbContext db) : IFogService
         return (south, west, south + CellSize, west + CellSize);
     }
 
-    // ── Haversine ───────────────────────────────────────────────────
-
-    private static double HaversineMetres(double lat1, double lon1, double lat2, double lon2)
-    {
-        const double R = 6_371_000;
-        var dLat = (lat2 - lat1) * Math.PI / 180.0;
-        var dLon = (lon2 - lon1) * Math.PI / 180.0;
-        var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
-                Math.Cos(lat1 * Math.PI / 180.0) * Math.Cos(lat2 * Math.PI / 180.0) *
-                Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
-        return R * 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
-    }
-
     // ── Reveal ──────────────────────────────────────────────────────
 
     /// <summary>
-    /// Reveal fog cells around the player's position.
+    /// Reveal every fog cell swept by the player's path, oldest position first.
     /// Includes anti-cheat checks: speed cap, sync cooldown, client-clock sanity.
-    /// Returns empty result when the sync is rejected.
+    /// Returns an empty result when the sync is rejected.
     /// </summary>
     public async Task<FogRevealResult> Reveal(
-        int playerId, double latitude, double longitude, long timestampMs, CancellationToken ct)
+        int playerId, IReadOnlyList<SyncPosition> path, CancellationToken ct)
     {
+        if (path.Count == 0)
+            return FogRevealResult.Empty;
+
         var now = DateTime.UtcNow;
         var player = await db.Players.FirstAsync(p => p.Id == playerId, ct);
 
+        var last = path[^1];
+
         // ── Anti-cheat: client timestamp sanity ───────────────────
-        var clientTime = DateTimeOffset.FromUnixTimeMilliseconds(timestampMs).UtcDateTime;
+        // Judge the batch by its newest fix; earlier ones are legitimately older.
+        var clientTime = DateTimeOffset.FromUnixTimeMilliseconds(last.TimestampMs).UtcDateTime;
         if (Math.Abs((now - clientTime).TotalSeconds) > MaxClientClockSkewSeconds)
             return FogRevealResult.Empty;
 
         // ── Anti-cheat: sync cooldown ─────────────────────────────
+        // Rate-limits how often a client may *call* us.  It deliberately says nothing
+        // about how long the batch covers: a 40-minute batch arriving 1s after the last
+        // sync is spam, while the same batch 10s later is a normal background flush.
         if (player.LastSyncAtUtc.HasValue)
         {
             var secondsSinceLastSync = (now - player.LastSyncAtUtc.Value).TotalSeconds;
@@ -84,8 +87,8 @@ public class FogService(AppDbContext db) : IFogService
             // ── Anti-cheat: speed / distance cap ─────────────────
             if (player.LastLatitude != 0 || player.LastLongitude != 0)
             {
-                var distance = HaversineMetres(
-                    player.LastLatitude, player.LastLongitude, latitude, longitude);
+                var distance = TraceValidator.HaversineMetres(
+                    player.LastLatitude, player.LastLongitude, last.Latitude, last.Longitude);
                 var maxAllowed = MaxSpeedMetresPerSecond * secondsSinceLastSync;
 
                 // Allow a 100 m grace buffer for GPS drift
@@ -94,23 +97,50 @@ public class FogService(AppDbContext db) : IFogService
             }
         }
 
+        // ── Anti-cheat: cross-sync dwell ──────────────────────────
+        // A batch alone cannot see a phone that has sat still for an hour syncing every
+        // 30 seconds: each batch is individually too short to look like dwelling. Compare
+        // against where the player was at the previous sync to catch it.
+        var dwelling = player.LastSyncAtUtc.HasValue
+            && (player.LastLatitude != 0 || player.LastLongitude != 0)
+            && (now - player.LastSyncAtUtc.Value).TotalSeconds >= TraceValidator.DwellSeconds
+            && TraceValidator.HaversineMetres(
+                   player.LastLatitude, player.LastLongitude, last.Latitude, last.Longitude)
+               < TraceValidator.DwellRadiusMetres;
+
         // ── Update player tracking ────────────────────────────────
-        player.LastLatitude = latitude;
-        player.LastLongitude = longitude;
+        // Done before the anti-cheat verdict: a rejected batch still tells us where the
+        // player is, and not recording it would let a cheat reset the speed check by
+        // alternating good and bad syncs.
+        player.LastLatitude = last.Latitude;
+        player.LastLongitude = last.Longitude;
         player.LastSyncAtUtc = now;
 
-        // ── Reveal cells ──────────────────────────────────────────
-        var centerLat = ToGrid(latitude);
-        var centerLng = ToGrid(longitude);
+        if (dwelling)
+            return FogRevealResult.Empty;
 
-        var candidates = new List<(int lat, int lng)>();
-        for (var dLat = -RevealRadius; dLat <= RevealRadius; dLat++)
-        for (var dLng = -RevealRadius; dLng <= RevealRadius; dLng++)
-            candidates.Add((centerLat + dLat, centerLng + dLng));
+        // ── Anti-cheat: is this batch real travel? ────────────────
+        // Accuracy cutoff, drift, dwell and speed grading.  Swept reveal makes each of
+        // these exploits far more valuable, so they gate the sweep, not the other way round.
+        var verdict = TraceValidator.Validate(path);
+        if (!verdict.Allowed)
+            return FogRevealResult.Empty;
 
-        var candidateLats = candidates.Select(c => c.lat).Distinct().ToList();
-        var candidateLngs = candidates.Select(c => c.lng).Distinct().ToList();
+        // ── Sweep the path ────────────────────────────────────────
+        // Every cell the walked line crosses, not just the cells we happened to get a
+        // fix in — otherwise a 40-minute walk between two syncs loses everything between.
+        var gridPath = verdict.Accepted
+            .Select(p => new GridCell(ToGrid(p.Latitude), ToGrid(p.Longitude)))
+            .ToList();
 
+        var swept = PathSweep.SweepPath(gridPath);
+        var candidates = PathSweep.Dilate(swept, RevealRadius);
+
+        var candidateLats = candidates.Select(c => c.GridLat).Distinct().ToList();
+        var candidateLngs = candidates.Select(c => c.GridLng).Distinct().ToList();
+
+        // Over-fetches the bounding box of the path rather than the path itself; the
+        // set intersection below is what actually decides, and this keeps it to one query.
         var existing = await db.RevealedCells
             .Where(r => r.PlayerId == playerId
                 && candidateLats.Contains(r.GridLat)
@@ -118,29 +148,31 @@ public class FogService(AppDbContext db) : IFogService
             .Select(r => new { r.GridLat, r.GridLng })
             .ToListAsync(ct);
 
-        var existingSet = new HashSet<(int, int)>(existing.Select(e => (e.GridLat, e.GridLng)));
+        var existingSet = existing
+            .Select(e => new GridCell(e.GridLat, e.GridLng))
+            .ToHashSet();
 
         var newCells = new List<CellDto>();
+        var inserts = new List<RevealedCell>();
 
-        foreach (var (lat, lng) in candidates)
+        foreach (var cell in candidates)
         {
-            if (existingSet.Contains((lat, lng))) continue;
-            // Safety cap — ignore excess cells if RevealRadius is ever increased
+            if (existingSet.Contains(cell)) continue;
             if (newCells.Count >= MaxNewCellsPerSync) break;
 
-            db.RevealedCells.Add(new RevealedCell
+            inserts.Add(new RevealedCell
             {
                 PlayerId = playerId,
-                GridLat = lat,
-                GridLng = lng,
+                GridLat = cell.GridLat,
+                GridLng = cell.GridLng,
                 RevealedAtUtc = now,
             });
 
-            var bounds = CellBounds(lat, lng);
+            var bounds = CellBounds(cell.GridLat, cell.GridLng);
             newCells.Add(new CellDto
             {
-                GridLat = lat,
-                GridLng = lng,
+                GridLat = cell.GridLat,
+                GridLng = cell.GridLng,
                 South = bounds.south,
                 West = bounds.west,
                 North = bounds.north,
@@ -148,17 +180,20 @@ public class FogService(AppDbContext db) : IFogService
             });
         }
 
+        // One batch insert — a long walk is hundreds of cells, not nine.
+        if (inserts.Count > 0)
+            db.RevealedCells.AddRange(inserts);
+
         var xpEarned = newCells.Count * XpPerCell;
 
         if (newCells.Count > 0)
         {
+            // `Player.Xp` is *cumulative* lifetime XP, and the level is derived from it
+            // rather than tracked separately.  The old code subtracted on level-up and
+            // kept a running remainder, which cannot survive a curve change and drifts
+            // if the two fields ever disagree.
             player.Xp += xpEarned;
-
-            while (player.Xp >= player.Level * 100)
-            {
-                player.Xp -= player.Level * 100;
-                player.Level++;
-            }
+            player.Level = XpCurve.LevelForXp(player.Xp);
         }
 
         return new FogRevealResult

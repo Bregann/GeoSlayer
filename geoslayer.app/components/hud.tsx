@@ -1,6 +1,7 @@
 import { Text, TouchableOpacity, View } from 'react-native';
 
 import { hudStyles as styles } from '@/styles/hud';
+import { xpProgressPercent } from '@/helpers/xpCurve';
 
 interface HudProps {
   hp: number;
@@ -24,8 +25,9 @@ export function Hud({
   onSkills,
 }: HudProps) {
   const hpPercent = Math.max(0, Math.min(100, (hp / maxHp) * 100));
-  const xpNeeded = level * 100;
-  const xpPercent = Math.max(0, Math.min(100, (xp / xpNeeded) * 100));
+  // `xp` is cumulative lifetime XP, so progress through the current level comes from
+  // the curve rather than a flat `level * 100`.
+  const xpPercent = xpProgressPercent(xp, level);
 
   return (
     <>

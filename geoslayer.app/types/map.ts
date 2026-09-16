@@ -2,6 +2,8 @@ export interface Coord {
   latitude: number;
   longitude: number;
   timestamp: number;
+  /** Horizontal accuracy in metres. Optional — older stored breadcrumbs lack it. */
+  accuracy?: number | null;
 }
 
 export interface CellDto {
