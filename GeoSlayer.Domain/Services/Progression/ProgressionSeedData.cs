@@ -102,6 +102,17 @@ public static class ProgressionSeedData
         },
         new()
         {
+            Key = ProgressionDefaults.UpgradeKeys.CraftSlot,
+            Name = "Craft Slot",
+            Category = "Crafting",
+            MaxRank = 3,
+            CostCurve = "3,6,10",
+            EffectPerRank = 1,          // +1 concurrent craft
+            MinAdventurerLevel = 8,     // Crafting itself unlocks at Adventurer 8.
+            Description = "+1 craft running at once. Crafts finish while you are away.",
+        },
+        new()
+        {
             Key = ProgressionDefaults.UpgradeKeys.OfflineCap,
             Name = "Offline Cap",
             Category = "Idle",

@@ -2,6 +2,7 @@ using GeoSlayer.Domain.Enums;
 using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.DTOs.Journey.Requests;
 using GeoSlayer.Domain.Services;
+using GeoSlayer.Domain.Services.Crafting;
 using GeoSlayer.Domain.Services.Materials;
 using GeoSlayer.Domain.Services.Progression;
 using GeoSlayer.Domain.Services.Skills;
@@ -32,6 +33,7 @@ public class FogServiceIntegrationTests : DatabaseIntegrationTestBase
     private ProgressionService _progression = null!;
     private MaterialService _materials = null!;
     private SkillTrainingService _skillTraining = null!;
+    private CraftingService _crafting = null!;
 
     protected override async Task CustomSetUp()
     {
@@ -46,11 +48,12 @@ public class FogServiceIntegrationTests : DatabaseIntegrationTestBase
 
         await TestDatabaseSeedHelper.SeedMaterialDefinitions(DbContext);
         _materials = TestDatabaseSeedHelper.CreateMaterialService(DbContext);
+        _crafting = TestDatabaseSeedHelper.CreateCraftingService(DbContext, _progression, _materials);
         await TestDatabaseSeedHelper.SeedSkillDefinitions(DbContext);
         _skillTraining = TestDatabaseSeedHelper.CreateSkillTrainingService(
             DbContext, _progression, _materials);
 
-        _sut = new FogService(DbContext, _progression, _materials, _skillTraining);
+        _sut = new FogService(DbContext, _progression, _materials, _skillTraining, _crafting);
     }
 
     private static double LngOffset(double metres, double atLat) =>

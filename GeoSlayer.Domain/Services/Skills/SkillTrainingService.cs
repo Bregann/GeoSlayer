@@ -19,7 +19,8 @@ namespace GeoSlayer.Domain.Services.Skills;
 public class SkillTrainingService(
     AppDbContext db,
     IProgressionService progression,
-    IMaterialService materials) : ISkillTrainingService
+    IMaterialService materials,
+    ICraftingService crafting) : ISkillTrainingService
 {
     /// <summary>
     /// Must match <c>JourneyService.PoiInteractRadius</c>. Range is revalidated here
@@ -152,7 +153,12 @@ public class SkillTrainingService(
         var distance = TraceValidator.HaversineMetres(
             player.LastLatitude, player.LastLongitude, poi.Location.Y, poi.Location.X);
 
-        if (distance > PoiInteractRadius + RangeGraceMetres)
+        // Traveller's Boots and similar extend reach (§4.3) — an equipped item that
+        // changes no behaviour is a bug.
+        var gearRange = await crafting.GetModifierTotal(
+            playerId, ItemModifier.PoiRangeMetres, ct);
+
+        if (distance > PoiInteractRadius + RangeGraceMetres + gearRange)
             throw new BadRequestException(
                 $"Too far from {poi.Name} — {Math.Round(distance)}m away, need {PoiInteractRadius}m.");
 

@@ -17,7 +17,8 @@ namespace GeoSlayer.Domain.Services.Idle;
 public class WorkerService(
     AppDbContext db,
     IProgressionService progression,
-    IMaterialService materials) : IWorkerService
+    IMaterialService materials,
+    ICraftingService crafting) : IWorkerService
 {
     /// <summary>Edge length of a claimable block. A 3×3 must be fully revealed (§5.1).</summary>
     private const int ClaimSize = 3;
@@ -68,7 +69,10 @@ public class WorkerService(
         var bonus = await progression.GetUpgradeEffect(
             playerId, ProgressionDefaults.UpgradeKeys.OfflineCap, ct);
 
-        return OfflineAccrual.BaseOfflineCapHours + bonus;
+        // A Hearthstone Charm extends the cap alongside the upgrade (§4.3).
+        var gear = await crafting.GetModifierTotal(playerId, ItemModifier.OfflineCapHours, ct);
+
+        return OfflineAccrual.BaseOfflineCapHours + bonus + gear;
     }
 
     // ── Offline accrual (§5.3) ──────────────────────────────────────

@@ -16,7 +16,8 @@ public class FogService(
     AppDbContext db,
     IProgressionService progression,
     IMaterialService materials,
-    ISkillTrainingService skillTraining) : IFogService
+    ISkillTrainingService skillTraining,
+    ICraftingService crafting) : IFogService
 {
     /// <summary>
     /// Grid cell size in degrees.  0.0009° ≈ 100 m at the equator, ~64 m at 45° latitude.
@@ -148,7 +149,13 @@ public class FogService(
         var bonusRadius = await progression.GetUpgradeEffect(
             playerId, ProgressionDefaults.UpgradeKeys.RevealRadius, ct);
 
-        var candidates = PathSweep.Dilate(swept, BaseRevealRadius + (int)bonusRadius);
+        // Equipped gear stacks on the upgrade (§4.3): the two are different acquisition
+        // routes to the same stat, and an equipped item that changes no behaviour is a bug.
+        var gearRadius = await crafting.GetModifierTotal(
+            playerId, ItemModifier.RevealRadius, ct);
+
+        var candidates = PathSweep.Dilate(
+            swept, BaseRevealRadius + (int)bonusRadius + (int)gearRadius);
 
         var candidateLats = candidates.Select(c => c.GridLat).Distinct().ToList();
         var candidateLngs = candidates.Select(c => c.GridLng).Distinct().ToList();

@@ -46,8 +46,21 @@ public class ProgressionService(
             // Scholar (+5%/rank) applies to skill XP, and therefore flows into the
             // Adventurer cut below.  §3.0a: the upgrade must change actual XP.
             var scholar = await GetUpgradeEffect(playerId, ProgressionDefaults.UpgradeKeys.Scholar, ct);
-            if (scholar > 0)
-                skillXp = (long)Math.Floor(skillXp * (1 + scholar));
+
+            // Equipped gear stacks with Scholar (§4.3): different acquisition routes to
+            // the same stat. Read here rather than via ICraftingService to avoid a cycle.
+            var gearXp = await db.PlayerItems
+                .Include(pi => pi.Item)
+                .Where(pi => pi.PlayerId == playerId
+                          && pi.IsEquipped
+                          && pi.Quantity > 0
+                          && pi.Item.Modifier == ItemModifier.SkillXpPercent)
+                .SumAsync(pi => pi.Item.ModifierValue, ct);
+
+            var xpBonus = scholar + gearXp;
+
+            if (xpBonus > 0)
+                skillXp = (long)Math.Floor(skillXp * (1 + xpBonus));
 
             var row = await db.PlayerSkills
                 .FirstOrDefaultAsync(s => s.PlayerId == playerId && s.SkillType == skill.Value, ct);

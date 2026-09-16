@@ -3,6 +3,7 @@ using GeoSlayer.Domain.Enums;
 using GeoSlayer.Domain.Exceptions;
 using GeoSlayer.Domain.DTOs.Idle.Responses;
 using GeoSlayer.Domain.Services.Idle;
+using GeoSlayer.Domain.Services.Crafting;
 using GeoSlayer.Domain.Services.Materials;
 using GeoSlayer.Domain.Services.Progression;
 using GeoSlayer.Tests.Infrastructure;
@@ -18,6 +19,7 @@ public class WorkerServiceIntegrationTests : DatabaseIntegrationTestBase
 {
     private ProgressionService _progression = null!;
     private MaterialService _materials = null!;
+    private CraftingService _crafting = null!;
     private WorkerService _sut = null!;
     private Player _player = null!;
 
@@ -34,10 +36,11 @@ public class WorkerServiceIntegrationTests : DatabaseIntegrationTestBase
 
         _progression = TestDatabaseSeedHelper.CreateProgressionService(DbContext);
         _materials = TestDatabaseSeedHelper.CreateMaterialService(DbContext, TerrainType.Woodland);
+        _crafting = TestDatabaseSeedHelper.CreateCraftingService(DbContext, _progression, _materials);
 
         await _progression.EnsureStartingUnlocks(_player.Id, Ct);
 
-        _sut = new WorkerService(DbContext, _progression, _materials);
+        _sut = new WorkerService(DbContext, _progression, _materials, _crafting);
     }
 
     /// <summary>Reveal the 3×3 block centred on a cell, plus enough ground for density.</summary>

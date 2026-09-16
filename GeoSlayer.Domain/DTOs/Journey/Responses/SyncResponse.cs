@@ -1,3 +1,4 @@
+using GeoSlayer.Domain.DTOs.Crafting.Responses;
 using GeoSlayer.Domain.DTOs.Idle.Responses;
 using GeoSlayer.Domain.DTOs.Materials.Responses;
 using GeoSlayer.Domain.DTOs.Skills.Responses;
@@ -28,6 +29,9 @@ public class SyncResponse
     /// so the welcome-back screen never nags.
     /// </summary>
     public OfflineAccrualDto? OfflineAccrual { get; set; }
+
+    /// <summary>Crafts that finished while away, or null when none did (Stage 06).</summary>
+    public CraftCollectionDto? CraftCollection { get; set; }
 
     public List<NearbyPoiDto> NearbyPois { get; set; } = [];
 }

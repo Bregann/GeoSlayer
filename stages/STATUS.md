@@ -1,6 +1,6 @@
 # Build status
 
-**Current stage: `STAGE-06-crafting.md`**
+**Current stage: `STAGE-07-skill-fishing.md`**
 
 Single source of truth for where the build is. Update this when a stage completes.
 
@@ -11,7 +11,7 @@ Single source of truth for where the build is. Update this when a stage complete
 | 03 | Materials & inventory | DONE |
 | 04 | Foraging | DONE |
 | 05 | Workers & idle | DONE |
-| 06 | Crafting | NOT STARTED |
+| 06 | Crafting | DONE |
 | 07 | Fishing | NOT STARTED |
 | 08 | Woodcutting | NOT STARTED |
 | 09 | Cooking | NOT STARTED |
@@ -163,7 +163,9 @@ Needs a working app toolchain:
   material sink against infinite stockpiling. There is no food until Cooking (Stage 09)
   and no coin until Trading, so charging the sink now would strand workers with no way to
   refill — which breaks §7.4's "never punish you for sleeping" harder than the missing
-  sink does. **Pick this up in Stage 06**, which introduces crafted goods.
+  sink does. **Stage 06 did not resolve this** — its recipes produce gear, tools and
+  buildings, not consumable food. Upkeep needs something edible, so this moves to
+  **Stage 09 (Cooking)**.
 - **Claims are not drawn on the map.** `ClaimDto` carries a bounding box for exactly this,
   and the claim/eligibility endpoints exist, but the map outline and the claim-from-map
   action were not built. API-only.
@@ -176,3 +178,26 @@ Needs a human, since only real time shows it:
   the intended direction, but whether that reads as "a helpful floor" or "not worth
   bothering with" is a judgement only play answers. All seeded constants
   (`OfflineAccrual`) so retuning is cheap.
+
+### From Stage 06
+
+Backend fully tested (25 new tests). Two screens added, neither rendered or typechecked.
+
+Needs a working app toolchain:
+
+- Typecheck and launch `app/crafting.tsx` and `app/equipment.tsx`.
+- Confirm a travel-gated recipe is visibly different from a level-gated one — that
+  distinction is criterion 5 and the whole reason the lock reason is an enum rather than
+  a boolean.
+
+Carried forward, deliberately:
+
+- **Tool gating is not enforced.** Tools exist, are craftable, and carry a `ToolTier`
+  modifier, but `DropRoller` still gates purely on skill level. Wire tool tier into the
+  roll when a skill actually needs it — **Mining (Stage 10)** is the natural place, since
+  §4.3's example is a pickaxe. Gating Foraging behind a tool now would block the first
+  skill a new player meets.
+- **No craft-completion notifications.** No push infrastructure exists. §5.3 suggests
+  one-shot jobs at the known completion timestamp; that is notification plumbing, best
+  done once for crafts, workers-at-cap and clue scrolls together — **Stage 14
+  (Retention)** is the right home.

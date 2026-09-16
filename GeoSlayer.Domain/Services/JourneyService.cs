@@ -19,6 +19,7 @@ public class JourneyService(
     IPoiImportService poiImportService,
     ISkillTrainingService skillTraining,
     IWorkerService workerService,
+    ICraftingService craftingService,
     IUserContextHelper userContextHelper) : IJourneyService
 {
     private const double PoiCellSize = 0.05;
@@ -51,6 +52,9 @@ public class JourneyService(
         // welcome-back figures describe the absence rather than including this sync (§5.3).
         var offlineAccrual = await workerService.CollectOfflineAccrual(player.Id, ct);
 
+        // Crafts finish lazily too (§4.2 / §5.3) — no recurring job for either.
+        var craftCollection = await craftingService.CollectCompletedCrafts(player.Id, ct);
+
         // Reveal fog-of-war cells (includes anti-cheat validation)
         var fogResult = await fogService.Reveal(player.Id, path, ct);
 
@@ -72,6 +76,7 @@ public class JourneyService(
             Materials = fogResult.Materials,
             SkillTraining = fogResult.SkillTraining,
             OfflineAccrual = offlineAccrual.HasAccrual ? offlineAccrual : null,
+            CraftCollection = craftCollection.HasCollection ? craftCollection : null,
             BonusPointsGranted = fogResult.Grant?.BonusPointsGranted ?? 0,
             NearbyPois = nearbyPois,
         };

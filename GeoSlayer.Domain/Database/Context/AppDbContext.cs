@@ -25,6 +25,11 @@ namespace GeoSlayer.Domain.Database.Context
         public DbSet<PlayerPoiVisit> PlayerPoiVisits { get; set; } = null!;
         public DbSet<Claim> Claims { get; set; } = null!;
         public DbSet<Worker> Workers { get; set; } = null!;
+        public DbSet<Recipe> Recipes { get; set; } = null!;
+        public DbSet<RecipeInput> RecipeInputs { get; set; } = null!;
+        public DbSet<Item> Items { get; set; } = null!;
+        public DbSet<PlayerItem> PlayerItems { get; set; } = null!;
+        public DbSet<PlayerCraft> PlayerCrafts { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -127,6 +132,37 @@ namespace GeoSlayer.Domain.Database.Context
                       .WithMany()
                       .HasForeignKey(e => e.ClaimId)
                       .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            modelBuilder.Entity<Recipe>(entity =>
+            {
+                entity.HasIndex(e => e.Key).IsUnique();
+            });
+
+            modelBuilder.Entity<RecipeInput>(entity =>
+            {
+                entity.HasIndex(e => new { e.RecipeId, e.MaterialId }).IsUnique();
+            });
+
+            modelBuilder.Entity<Item>(entity =>
+            {
+                entity.HasIndex(e => e.Key).IsUnique();
+            });
+
+            modelBuilder.Entity<PlayerItem>(entity =>
+            {
+                entity.HasIndex(e => new { e.PlayerId, e.ItemId }).IsUnique();
+
+                // Removing a Claim must unplace its buildings, not delete them.
+                entity.HasOne(e => e.Claim)
+                      .WithMany()
+                      .HasForeignKey(e => e.ClaimId)
+                      .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            modelBuilder.Entity<PlayerCraft>(entity =>
+            {
+                entity.HasIndex(e => new { e.PlayerId, e.Collected });
             });
 
             modelBuilder.Entity<RevealedCell>(entity =>

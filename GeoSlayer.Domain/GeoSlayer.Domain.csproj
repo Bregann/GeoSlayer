@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -29,6 +29,12 @@
 
   <ItemGroup>
     <Folder Include="Database\Migrations\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Recipes and items are seeded from JSON (DESIGN.md §4.2) so balance can be
+         retuned without a redeploy. Embedded so the API needs no content files. -->
+    <EmbeddedResource Include="Data\*.json" />
   </ItemGroup>
 
 </Project>

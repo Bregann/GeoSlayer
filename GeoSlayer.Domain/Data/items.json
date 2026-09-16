@@ -1,0 +1,87 @@
+{
+  "_comment": "Items: gear, tools and buildings (DESIGN.md 4.3). Seeded as data so balance can be retuned without a deploy. Gear bonuses are deliberately larger than the equivalent Bonus Point upgrade but slot-competing, so the two acquisition routes do not merely duplicate each other.",
+  "items": [
+    {
+      "key": "foragers_satchel",
+      "name": "Forager's Satchel",
+      "description": "+20% skill XP. Competes with other body gear.",
+      "kind": "Gear",
+      "slot": "Body",
+      "modifier": "SkillXpPercent",
+      "modifierValue": 0.2,
+      "tier": 1
+    },
+    {
+      "key": "surveyors_lens",
+      "name": "Surveyor's Lens",
+      "description": "+1 cell reveal radius. Every step paints a wider corridor.",
+      "kind": "Gear",
+      "slot": "Head",
+      "modifier": "RevealRadius",
+      "modifierValue": 1,
+      "tier": 2
+    },
+    {
+      "key": "travellers_boots",
+      "name": "Traveller's Boots",
+      "description": "+25m POI interact range. Reaches POIs across a road.",
+      "kind": "Gear",
+      "slot": "Feet",
+      "modifier": "PoiRangeMetres",
+      "modifierValue": 25,
+      "tier": 1
+    },
+    {
+      "key": "hearthstone_charm",
+      "name": "Hearthstone Charm",
+      "description": "+4h offline accrual. Bank a whole night rather than half of one.",
+      "kind": "Gear",
+      "slot": "Trinket",
+      "modifier": "OfflineCapHours",
+      "modifierValue": 4,
+      "tier": 2
+    },
+
+    {
+      "key": "foraging_knife",
+      "name": "Foraging Knife",
+      "description": "A basic blade. Permits gathering up to tier 3.",
+      "kind": "Tool",
+      "slot": "Tool",
+      "modifier": "ToolTier",
+      "modifierValue": 3,
+      "tier": 1
+    },
+    {
+      "key": "harvest_sickle",
+      "name": "Harvest Sickle",
+      "description": "Properly weighted. Permits gathering up to tier 5.",
+      "kind": "Tool",
+      "slot": "Tool",
+      "modifier": "ToolTier",
+      "modifierValue": 5,
+      "tier": 2
+    },
+
+    {
+      "key": "storehouse",
+      "name": "Storehouse",
+      "description": "+50% stack caps. Placed on a Claim.",
+      "kind": "Building",
+      "slot": "None",
+      "modifier": "StackCapPercent",
+      "modifierValue": 0.5,
+      "tier": 1
+    },
+    {
+      "key": "workers_lodge",
+      "name": "Worker's Lodge",
+      "description": "+30% worker output. Placed on a Claim.",
+      "kind": "Building",
+      "slot": "None",
+      "modifier": "WorkerRatePercent",
+      "modifierValue": 0.3,
+      "tier": 1
+    }
+  ]
+}

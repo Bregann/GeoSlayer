@@ -29,6 +29,8 @@ function RootNavigator() {
         <Stack.Screen name="inventory" />
         <Stack.Screen name="skills" />
         <Stack.Screen name="workers" />
+        <Stack.Screen name="crafting" />
+        <Stack.Screen name="equipment" />
         <Stack.Screen name="upgrades" />
       </Stack>
       {!isLoggedIn && <Redirect href="/login" />}

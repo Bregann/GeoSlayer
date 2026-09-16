@@ -66,5 +66,6 @@ public static class ProgressionDefaults
         public const string Scholar = "scholar";
         public const string OfflineCap = "offline_cap";
         public const string ClaimSlot = "claim_slot";
+        public const string CraftSlot = "craft_slot";
     }
 }

@@ -3,6 +3,7 @@ using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.Enums;
 using GeoSlayer.Domain.Interfaces.Helpers;
 using GeoSlayer.Domain.Interfaces.Api;
+using GeoSlayer.Domain.Services.Crafting;
 using GeoSlayer.Domain.Services.Materials;
 using GeoSlayer.Domain.Services.Progression;
 using GeoSlayer.Domain.Services.Skills;
@@ -244,7 +245,85 @@ namespace GeoSlayer.Tests.Infrastructure
             AppDbContext context,
             ProgressionService progression,
             MaterialService materials) =>
+            new(context, progression, materials, CreateCraftingService(context, progression, materials));
+
+        /// <summary>A real <see cref="CraftingService"/> over the test database.</summary>
+        public static CraftingService CreateCraftingService(
+            AppDbContext context,
+            ProgressionService progression,
+            MaterialService materials) =>
             new(context, progression, materials);
+
+        /// <summary>
+        /// Seeds items and recipes from the embedded JSON (§4.2, §4.3). Call after
+        /// <see cref="SeedMaterialDefinitions"/> and <see cref="SeedSkillDefinitions"/>.
+        /// </summary>
+        public static async Task SeedCraftingDefinitions(AppDbContext context)
+        {
+            foreach (var definition in RecipeSeedData.Items)
+            {
+                context.Items.Add(new Item
+                {
+                    Key = definition.Key,
+                    Name = definition.Name,
+                    Description = definition.Description,
+                    Kind = definition.Kind,
+                    Slot = definition.Slot,
+                    Modifier = definition.Modifier,
+                    ModifierValue = definition.ModifierValue,
+                    Tier = definition.Tier,
+                });
+            }
+
+            await context.SaveChangesAsync();
+
+            var materialIds = await context.Materials.ToDictionaryAsync(m => m.Key, m => m.Id);
+            var itemIds = await context.Items.ToDictionaryAsync(i => i.Key, i => i.Id);
+
+            foreach (var definition in RecipeSeedData.Recipes)
+            {
+                int? outputMaterialId = definition.OutputMaterial is not null
+                    && materialIds.TryGetValue(definition.OutputMaterial, out var mid) ? mid : null;
+
+                int? outputItemId = definition.OutputItem is not null
+                    && itemIds.TryGetValue(definition.OutputItem, out var iid) ? iid : null;
+
+                if (outputMaterialId is null && outputItemId is null) continue;
+
+                var inputs = new List<RecipeInput>();
+                var resolved = true;
+
+                foreach (var input in definition.Inputs)
+                {
+                    if (!materialIds.TryGetValue(input.Material, out var inputId))
+                    {
+                        resolved = false;
+                        break;
+                    }
+
+                    inputs.Add(new RecipeInput { MaterialId = inputId, Quantity = input.Quantity });
+                }
+
+                if (!resolved) continue;
+
+                context.Recipes.Add(new Recipe
+                {
+                    Key = definition.Key,
+                    Name = definition.Name,
+                    Description = definition.Description,
+                    SkillType = definition.Skill,
+                    LevelRequired = definition.LevelRequired,
+                    DurationSeconds = definition.DurationSeconds,
+                    XpReward = definition.XpReward,
+                    OutputMaterialId = outputMaterialId,
+                    OutputItemId = outputItemId,
+                    OutputQuantity = definition.OutputQuantity,
+                    Inputs = inputs,
+                });
+            }
+
+            await context.SaveChangesAsync();
+        }
 
         /// <summary>
         /// A real <see cref="ProgressionService"/> over the test database, with settings

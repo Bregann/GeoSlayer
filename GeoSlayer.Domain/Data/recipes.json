@@ -1,0 +1,132 @@
+{
+  "_comment": "Recipes (DESIGN.md 4.2). Seeded from JSON rather than hardcoded C# because balance is retuned constantly and must not need a redeploy. DurationSeconds are deliberately real minutes-to-hours: crafting is time-gated, not tap-gated.",
+  "recipes": [
+    {
+      "key": "twine",
+      "name": "Twine",
+      "description": "Grass, twisted. The first thing anyone makes.",
+      "skill": "Foraging",
+      "levelRequired": 1,
+      "durationSeconds": 300,
+      "xpReward": 15,
+      "outputMaterial": "fibre",
+      "outputQuantity": 2,
+      "inputs": [
+        { "material": "wild_grass", "quantity": 5 }
+      ]
+    },
+    {
+      "key": "herb_poultice",
+      "name": "Herb Poultice",
+      "description": "Crushed herbs, bound with twine.",
+      "skill": "Foraging",
+      "levelRequired": 5,
+      "durationSeconds": 900,
+      "xpReward": 45,
+      "outputMaterial": "fibre",
+      "outputQuantity": 4,
+      "inputs": [
+        { "material": "common_herbs", "quantity": 4 },
+        { "material": "fibre", "quantity": 2 }
+      ]
+    },
+    {
+      "key": "foragers_satchel",
+      "name": "Forager's Satchel",
+      "description": "A satchel that makes every skill come a little easier.",
+      "skill": "Foraging",
+      "levelRequired": 8,
+      "durationSeconds": 3600,
+      "xpReward": 200,
+      "outputItem": "foragers_satchel",
+      "inputs": [
+        { "material": "fibre", "quantity": 10 },
+        { "material": "common_herbs", "quantity": 6 }
+      ]
+    },
+    {
+      "key": "foraging_knife",
+      "name": "Foraging Knife",
+      "description": "A working blade. Tools gate what you can gather at all.",
+      "skill": "Foraging",
+      "levelRequired": 10,
+      "durationSeconds": 1800,
+      "xpReward": 120,
+      "outputItem": "foraging_knife",
+      "inputs": [
+        { "material": "scrap", "quantity": 8 },
+        { "material": "wild_grass", "quantity": 10 }
+      ]
+    },
+    {
+      "key": "surveyors_lens",
+      "name": "Surveyor's Lens",
+      "description": "Ground glass. Widens the corridor every walk reveals.",
+      "skill": "Foraging",
+      "levelRequired": 15,
+      "durationSeconds": 7200,
+      "xpReward": 400,
+      "outputItem": "surveyors_lens",
+      "inputs": [
+        { "material": "scrap", "quantity": 15 },
+        { "material": "berries", "quantity": 5 }
+      ]
+    },
+    {
+      "key": "travellers_boots",
+      "name": "Traveller's Boots",
+      "description": "Reach POIs you would otherwise walk past.",
+      "skill": "Foraging",
+      "levelRequired": 12,
+      "durationSeconds": 5400,
+      "xpReward": 300,
+      "outputItem": "travellers_boots",
+      "inputs": [
+        { "material": "fibre", "quantity": 12 },
+        { "material": "salvage", "quantity": 6 }
+      ]
+    },
+    {
+      "key": "storehouse",
+      "name": "Storehouse",
+      "description": "Raises every stack cap. Placed on a Claim.",
+      "skill": "Foraging",
+      "levelRequired": 14,
+      "durationSeconds": 10800,
+      "xpReward": 500,
+      "outputItem": "storehouse",
+      "inputs": [
+        { "material": "timber_rough", "quantity": 20 },
+        { "material": "scrap", "quantity": 12 }
+      ]
+    },
+    {
+      "key": "workers_lodge",
+      "name": "Worker's Lodge",
+      "description": "Somewhere for workers to sleep. They work better for it.",
+      "skill": "Foraging",
+      "levelRequired": 18,
+      "durationSeconds": 14400,
+      "xpReward": 700,
+      "outputItem": "workers_lodge",
+      "inputs": [
+        { "material": "timber_rough", "quantity": 30 },
+        { "material": "fibre", "quantity": 15 }
+      ]
+    },
+    {
+      "key": "relic_reliquary",
+      "name": "Reliquary",
+      "description": "Houses a relic shard. Requires something only found at rare places.",
+      "skill": "Foraging",
+      "levelRequired": 20,
+      "durationSeconds": 21600,
+      "xpReward": 900,
+      "outputItem": "hearthstone_charm",
+      "inputs": [
+        { "material": "blessed_water", "quantity": 1 },
+        { "material": "timber_rough", "quantity": 10 }
+      ]
+    }
+  ]
+}

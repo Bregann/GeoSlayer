@@ -2,6 +2,7 @@ using GeoSlayer.Domain.Database.Context;
 using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.Enums;
 using GeoSlayer.Domain.Interfaces.Helpers;
+using GeoSlayer.Domain.Services.Crafting;
 using GeoSlayer.Domain.Services.Materials;
 using GeoSlayer.Domain.Services.Progression;
 using GeoSlayer.Domain.Services.Skills;
@@ -27,6 +28,11 @@ namespace GeoSlayer.Domain.Helpers
 
             // Drop entries reference material ids, so they need the materials persisted.
             await SeedDropTables(context);
+            await SeedItems(context);
+            await context.SaveChangesAsync();
+
+            // Recipes reference both material and item ids.
+            await SeedRecipes(context);
             await context.SaveChangesAsync();
         }
 
@@ -219,6 +225,86 @@ namespace GeoSlayer.Domain.Helpers
                     Terrain = mapping.Terrain,
                     XpPerCell = mapping.XpPerCell,
                     YieldMultiplier = mapping.YieldMultiplier,
+                });
+            }
+        }
+
+        /// <summary>Gear, tools and buildings from the embedded JSON (§4.3).</summary>
+        private static async Task SeedItems(AppDbContext context)
+        {
+            var have = (await context.Items.Select(i => i.Key).ToListAsync()).ToHashSet();
+
+            foreach (var definition in RecipeSeedData.Items)
+            {
+                if (!have.Add(definition.Key)) continue;
+
+                context.Items.Add(new Item
+                {
+                    Key = definition.Key,
+                    Name = definition.Name,
+                    Description = definition.Description,
+                    Kind = definition.Kind,
+                    Slot = definition.Slot,
+                    Modifier = definition.Modifier,
+                    ModifierValue = definition.ModifierValue,
+                    Tier = definition.Tier,
+                });
+            }
+        }
+
+        /// <summary>
+        /// Recipes from the embedded JSON (§4.2). A recipe naming a material or item that
+        /// does not exist is skipped rather than throwing — a typo in balance data should
+        /// not stop the API booting.
+        /// </summary>
+        private static async Task SeedRecipes(AppDbContext context)
+        {
+            var have = (await context.Recipes.Select(r => r.Key).ToListAsync()).ToHashSet();
+
+            var materialIds = await context.Materials.ToDictionaryAsync(m => m.Key, m => m.Id);
+            var itemIds = await context.Items.ToDictionaryAsync(i => i.Key, i => i.Id);
+
+            foreach (var definition in RecipeSeedData.Recipes)
+            {
+                if (have.Contains(definition.Key)) continue;
+
+                int? outputMaterialId = definition.OutputMaterial is not null
+                    && materialIds.TryGetValue(definition.OutputMaterial, out var mid) ? mid : null;
+
+                int? outputItemId = definition.OutputItem is not null
+                    && itemIds.TryGetValue(definition.OutputItem, out var iid) ? iid : null;
+
+                if (outputMaterialId is null && outputItemId is null) continue;
+
+                var inputs = new List<RecipeInput>();
+                var inputsResolved = true;
+
+                foreach (var input in definition.Inputs)
+                {
+                    if (!materialIds.TryGetValue(input.Material, out var inputId))
+                    {
+                        inputsResolved = false;
+                        break;
+                    }
+
+                    inputs.Add(new RecipeInput { MaterialId = inputId, Quantity = input.Quantity });
+                }
+
+                if (!inputsResolved) continue;
+
+                context.Recipes.Add(new Recipe
+                {
+                    Key = definition.Key,
+                    Name = definition.Name,
+                    Description = definition.Description,
+                    SkillType = definition.Skill,
+                    LevelRequired = definition.LevelRequired,
+                    DurationSeconds = definition.DurationSeconds,
+                    XpReward = definition.XpReward,
+                    OutputMaterialId = outputMaterialId,
+                    OutputItemId = outputItemId,
+                    OutputQuantity = definition.OutputQuantity,
+                    Inputs = inputs,
                 });
             }
         }

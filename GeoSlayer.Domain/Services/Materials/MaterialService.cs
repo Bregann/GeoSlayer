@@ -11,7 +11,9 @@ namespace GeoSlayer.Domain.Services.Materials;
 /// <summary>
 /// Materials, stack caps and cell drops (Stage 03, DESIGN.md §4.1, §4.1a, §7.4).
 /// </summary>
-public class MaterialService(AppDbContext db, ITerrainClassifier classifier) : IMaterialService
+public class MaterialService(
+    AppDbContext db,
+    ITerrainClassifier classifier) : IMaterialService
 {
     /// <summary>
     /// How strongly a matching terrain boosts yield. This is the <i>only</i> thing
@@ -94,6 +96,24 @@ public class MaterialService(AppDbContext db, ITerrainClassifier classifier) : I
         return await GrantMaterials(playerId, totals, ct);
     }
 
+    /// <summary>
+    /// A player's effective cap for a material, including any Storehouse placed on a
+    /// Claim (§4.3 buildings raise stack caps).
+    ///
+    /// Read directly rather than through ICraftingService to avoid a service cycle —
+    /// FogService already depends on both.
+    /// </summary>
+    private async Task<double> StackCapBonus(int playerId, CancellationToken ct)
+    {
+        return await db.PlayerItems
+            .Include(pi => pi.Item)
+            .Where(pi => pi.PlayerId == playerId
+                      && pi.IsEquipped
+                      && pi.Quantity > 0
+                      && pi.Item.Modifier == ItemModifier.StackCapPercent)
+            .SumAsync(pi => pi.Item.ModifierValue, ct);
+    }
+
     public async Task<List<MaterialGainDto>> GrantMaterials(
         int playerId, IReadOnlyDictionary<int, int> quantityByMaterialId, CancellationToken ct)
     {
@@ -110,6 +130,8 @@ public class MaterialService(AppDbContext db, ITerrainClassifier classifier) : I
         var existing = await db.PlayerMaterials
             .Where(pm => pm.PlayerId == playerId)
             .ToDictionaryAsync(pm => pm.MaterialId, ct);
+
+        var capBonus = await StackCapBonus(playerId, ct);
 
         var gains = new List<MaterialGainDto>();
         var dustFromOverflow = 0L;
@@ -128,7 +150,8 @@ public class MaterialService(AppDbContext db, ITerrainClassifier classifier) : I
                 existing[materialId] = row;
             }
 
-            var space = Math.Max(0, material.StackCap - row.Quantity);
+            var cap = EffectiveCap(material.StackCap, capBonus);
+            var space = Math.Max(0, cap - row.Quantity);
             var accepted = (int)Math.Min(requested, space);
             var overflow = requested - accepted;
 
@@ -164,7 +187,8 @@ public class MaterialService(AppDbContext db, ITerrainClassifier classifier) : I
 
             // Dust has its own (very large) cap, so it is clamped like anything else
             // rather than being allowed to grow without bound.
-            dustRow.Quantity = Math.Min(dust.StackCap, dustRow.Quantity + dustFromOverflow);
+            dustRow.Quantity = Math.Min(
+                EffectiveCap(dust.StackCap, capBonus), dustRow.Quantity + dustFromOverflow);
 
             var dustGain = gains.FirstOrDefault(g => g.MaterialId == dust.Id);
 
@@ -190,8 +214,14 @@ public class MaterialService(AppDbContext db, ITerrainClassifier classifier) : I
         return gains;
     }
 
+    /// <summary>Base cap raised by any stack-cap bonus, floored at the base.</summary>
+    private static long EffectiveCap(int baseCap, double bonus) =>
+        (long)Math.Max(baseCap, Math.Floor(baseCap * (1 + Math.Max(0, bonus))));
+
     public async Task<InventoryDto> GetInventory(int playerId, CancellationToken ct)
     {
+        var capBonus = await StackCapBonus(playerId, ct);
+
         var rows = await db.PlayerMaterials
             .Include(pm => pm.Material)
             .Where(pm => pm.PlayerId == playerId && pm.Quantity > 0)
@@ -207,10 +237,10 @@ public class MaterialService(AppDbContext db, ITerrainClassifier classifier) : I
                 Category = pm.Material.Category,
                 SkillType = pm.Material.SkillType,
                 Quantity = pm.Quantity,
-                StackCap = pm.Material.StackCap,
+                StackCap = (int)EffectiveCap(pm.Material.StackCap, capBonus),
                 IsUnique = pm.Material.IsUnique,
-                IsNearCap = pm.Quantity >= pm.Material.StackCap * NearCapFraction,
-                IsFull = pm.Quantity >= pm.Material.StackCap,
+                IsNearCap = pm.Quantity >= EffectiveCap(pm.Material.StackCap, capBonus) * NearCapFraction,
+                IsFull = pm.Quantity >= EffectiveCap(pm.Material.StackCap, capBonus),
             })
             .ToList();
 
