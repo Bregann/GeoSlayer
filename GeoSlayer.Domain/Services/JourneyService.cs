@@ -2,6 +2,7 @@ using GeoSlayer.Domain.Database.Context;
 using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.DTOs.Journey.Requests;
 using GeoSlayer.Domain.DTOs.Journey.Responses;
+using GeoSlayer.Domain.DTOs.Idle.Responses;
 using GeoSlayer.Domain.DTOs.Skills.Responses;
 using GeoSlayer.Domain.Exceptions;
 using GeoSlayer.Domain.Interfaces.Api;
@@ -17,6 +18,7 @@ public class JourneyService(
     IFogService fogService,
     IPoiImportService poiImportService,
     ISkillTrainingService skillTraining,
+    IWorkerService workerService,
     IUserContextHelper userContextHelper) : IJourneyService
 {
     private const double PoiCellSize = 0.05;
@@ -45,6 +47,10 @@ public class JourneyService(
         player.LastCellLat = cellLat;
         player.LastCellLng = cellLng;
 
+        // Collect what workers produced while away, before the walk is processed, so the
+        // welcome-back figures describe the absence rather than including this sync (§5.3).
+        var offlineAccrual = await workerService.CollectOfflineAccrual(player.Id, ct);
+
         // Reveal fog-of-war cells (includes anti-cheat validation)
         var fogResult = await fogService.Reveal(player.Id, path, ct);
 
@@ -65,6 +71,7 @@ public class JourneyService(
             Unlocks = fogResult.Grant?.Unlocks ?? [],
             Materials = fogResult.Materials,
             SkillTraining = fogResult.SkillTraining,
+            OfflineAccrual = offlineAccrual.HasAccrual ? offlineAccrual : null,
             BonusPointsGranted = fogResult.Grant?.BonusPointsGranted ?? 0,
             NearbyPois = nearbyPois,
         };

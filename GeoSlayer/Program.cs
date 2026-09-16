@@ -12,6 +12,7 @@ using GeoSlayer.Domain.Interfaces.Api;
 using GeoSlayer.Domain.Services;
 using GeoSlayer.Domain.Services.Materials;
 using GeoSlayer.Domain.Services.Progression;
+using GeoSlayer.Domain.Services.Idle;
 using GeoSlayer.Domain.Services.Skills;
 using GeoSlayer.Domain.Database.Context;
 using GeoSlayer.Domain.Enums;
@@ -59,6 +60,7 @@ builder.Services.AddScoped<IProgressionService, ProgressionService>();
 builder.Services.AddScoped<ITerrainClassifier, PoiTerrainClassifier>();
 builder.Services.AddScoped<IMaterialService, MaterialService>();
 builder.Services.AddScoped<ISkillTrainingService, SkillTrainingService>();
+builder.Services.AddScoped<IWorkerService, WorkerService>();
 builder.Services.AddScoped<IFogService, FogService>();
 builder.Services.AddScoped<IJourneyService, JourneyService>();
 

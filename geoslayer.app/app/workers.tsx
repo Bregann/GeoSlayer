@@ -1,0 +1,183 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { router } from 'expo-router';
+import { useState } from 'react';
+import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+
+import { authApiClient } from '@/helpers/apiClient';
+import { hoursUntilCap, terrainNote, workerStatus, type Worker } from '@/helpers/idle';
+import { formatDuration } from '@/helpers/idle';
+import { progressionStyles as styles } from '@/styles/progression';
+import type { PlayerSkills } from '@/types/progression';
+
+interface Claim {
+  id: number;
+  name: string;
+  terrains: string[];
+  workerCount: number;
+}
+
+/**
+ * Worker management (Stage 05 task 5).
+ *
+ * Assign to a Claim and a skill, see rates, and see time-to-cap so the player can plan a
+ * return. Any unlocked skill can go on any Claim — terrain changes the rate, never the
+ * eligibility (§5.2), so nothing here filters skills by terrain.
+ */
+export default function WorkersScreen() {
+  const queryClient = useQueryClient();
+  const [error, setError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<number | null>(null);
+
+  const workers = useQuery<Worker[]>({
+    queryKey: ['player', 'workers'],
+    queryFn: async () => (await authApiClient.get<Worker[]>('/api/idle/workers')).data,
+  });
+
+  const claims = useQuery<Claim[]>({
+    queryKey: ['player', 'claims'],
+    queryFn: async () => (await authApiClient.get<Claim[]>('/api/idle/claims')).data,
+  });
+
+  const skills = useQuery<PlayerSkills>({
+    queryKey: ['player', 'skills'],
+    queryFn: async () => (await authApiClient.get<PlayerSkills>('/api/player/skills')).data,
+  });
+
+  const failureMessage = (err: unknown): string => {
+    const data = (err as { response?: { data?: unknown } })?.response?.data;
+    if (typeof data === 'string' && data) return data;
+    return err instanceof Error ? err.message : 'Something went wrong';
+  };
+
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['player', 'workers'] });
+    queryClient.invalidateQueries({ queryKey: ['player', 'claims'] });
+  };
+
+  const hire = useMutation<Worker, unknown, void>({
+    mutationFn: async () => (await authApiClient.post<Worker>('/api/idle/workers')).data,
+    onSuccess: () => { setError(null); refresh(); },
+    onError: (err: unknown) => setError(failureMessage(err)),
+  });
+
+  const assign = useMutation<Worker, unknown, { id: number; claimId: number; skill: number }>({
+    mutationFn: async (input) =>
+      (await authApiClient.post<Worker>(`/api/idle/workers/${input.id}/assign`, {
+        claimId: input.claimId,
+        skill: input.skill,
+      })).data,
+    onSuccess: () => { setError(null); setSelected(null); refresh(); },
+    onError: (err: unknown) => setError(failureMessage(err)),
+  });
+
+  const isLoading = workers.isLoading || claims.isLoading || skills.isLoading;
+
+  return (
+    <View style={styles.screen}>
+      <View style={styles.header}>
+        <View style={styles.headerRow}>
+          <Text style={styles.title}>⛏️ WORKERS</Text>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <Text style={styles.backText}>← BACK</Text>
+          </TouchableOpacity>
+        </View>
+
+        <Text style={styles.xpText}>
+          Workers run while the app is closed. They are a floor, not a substitute for walking.
+        </Text>
+      </View>
+
+      {isLoading && (
+        <View style={styles.centred}>
+          <ActivityIndicator color="#39ff14" />
+          <Text style={styles.message}>Loading…</Text>
+        </View>
+      )}
+
+      {!isLoading && (
+        <ScrollView contentContainerStyle={styles.scroll}>
+          {error && <Text style={styles.errorText}>{error}</Text>}
+
+          {(workers.data ?? []).map((worker) => {
+            const note = terrainNote(worker);
+            const remaining = hoursUntilCap(worker);
+
+            return (
+              <View key={worker.id} style={styles.card}>
+                <View style={styles.cardRow}>
+                  <Text style={styles.cardName}>{worker.name}</Text>
+                  <Text style={styles.cardLevel}>T{worker.tier}</Text>
+                </View>
+
+                <Text style={styles.cardMeta}>{workerStatus(worker)}</Text>
+
+                {note && <Text style={styles.effectText}>{note}</Text>}
+
+                {!worker.isIdle && (
+                  <Text style={styles.cardMeta}>
+                    {worker.xpPerHour.toFixed(1)} XP/h ·{' '}
+                    {worker.isAtCap
+                      ? 'at cap'
+                      : `${formatDuration(remaining)} until cap`}
+                  </Text>
+                )}
+
+                <TouchableOpacity
+                  style={styles.buyButton}
+                  onPress={() => setSelected(selected === worker.id ? null : worker.id)}
+                >
+                  <Text style={styles.buyText}>
+                    {selected === worker.id ? 'CANCEL' : 'ASSIGN'}
+                  </Text>
+                </TouchableOpacity>
+
+                {selected === worker.id && (
+                  <View style={{ gap: 6, marginTop: 6 }}>
+                    {(claims.data ?? []).length === 0 && (
+                      <Text style={styles.cardMeta}>
+                        No Claims yet — claim territory on the map first.
+                      </Text>
+                    )}
+
+                    {(claims.data ?? []).map((claim) =>
+                      (skills.data?.unlocked ?? []).map((skill) => (
+                        <TouchableOpacity
+                          key={`${claim.id}-${skill.skillType}`}
+                          style={styles.buyButton}
+                          disabled={assign.isPending}
+                          onPress={() =>
+                            assign.mutate({
+                              id: worker.id,
+                              claimId: claim.id,
+                              skill: skill.skillType,
+                            })
+                          }
+                        >
+                          <Text style={styles.buyText}>
+                            {skill.name} on {claim.name}
+                          </Text>
+                        </TouchableOpacity>
+                      )),
+                    )}
+                  </View>
+                )}
+              </View>
+            );
+          })}
+
+          {(workers.data ?? []).length === 0 && (
+            <Text style={styles.message}>No workers yet.</Text>
+          )}
+
+          <TouchableOpacity
+            style={styles.buyButton}
+            disabled={hire.isPending}
+            onPress={() => hire.mutate()}
+          >
+            <Text style={styles.buyText}>HIRE WORKER</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      )}
+    </View>
+  );
+}

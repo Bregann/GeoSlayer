@@ -65,5 +65,6 @@ public static class ProgressionDefaults
         public const string RevealRadius = "reveal_radius";
         public const string Scholar = "scholar";
         public const string OfflineCap = "offline_cap";
+        public const string ClaimSlot = "claim_slot";
     }
 }

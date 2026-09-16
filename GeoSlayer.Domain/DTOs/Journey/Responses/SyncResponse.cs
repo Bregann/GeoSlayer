@@ -1,3 +1,4 @@
+using GeoSlayer.Domain.DTOs.Idle.Responses;
 using GeoSlayer.Domain.DTOs.Materials.Responses;
 using GeoSlayer.Domain.DTOs.Skills.Responses;
 using GeoSlayer.Domain.DTOs.Progression.Responses;
@@ -21,6 +22,12 @@ public class SyncResponse
 
     /// <summary>Per-skill XP earned this sync (Stage 04).</summary>
     public List<SkillTrainingDto> SkillTraining { get; set; } = [];
+
+    /// <summary>
+    /// What workers produced while away (Stage 05 task 4). Null when nothing accrued,
+    /// so the welcome-back screen never nags.
+    /// </summary>
+    public OfflineAccrualDto? OfflineAccrual { get; set; }
 
     public List<NearbyPoiDto> NearbyPois { get; set; } = [];
 }

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Moq;
 using Moq.Protected;
 using System.Security.Claims;
+using SecurityClaim = System.Security.Claims.Claim;
 
 namespace GeoSlayer.Tests.Infrastructure
 {
@@ -20,10 +21,10 @@ namespace GeoSlayer.Tests.Infrastructure
         {
             var mockHttpContextAccessor = new Mock<IHttpContextAccessor>();
 
-            var claims = new List<Claim>
+            var claims = new List<SecurityClaim>
             {
-                new Claim(ClaimTypes.NameIdentifier, userId),
-                new Claim(ClaimTypes.Name, firstName)
+                new SecurityClaim(ClaimTypes.NameIdentifier, userId),
+                new SecurityClaim(ClaimTypes.Name, firstName)
             };
 
             var identity = new ClaimsIdentity(claims, "TestAuth");

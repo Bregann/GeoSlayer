@@ -91,6 +91,17 @@ public static class ProgressionSeedData
         },
         new()
         {
+            Key = ProgressionDefaults.UpgradeKeys.ClaimSlot,
+            Name = "Claim Slot",
+            Category = "Territory",
+            MaxRank = 4,
+            CostCurve = "2,4,7,11",     // §3.0a lists Claim Slot as escalating.
+            EffectPerRank = 1,          // +1 Claim
+            MinAdventurerLevel = 5,     // Claims themselves unlock at Adventurer 5.
+            Description = "+1 territory Claim. Claims are where workers are stationed.",
+        },
+        new()
+        {
             Key = ProgressionDefaults.UpgradeKeys.OfflineCap,
             Name = "Offline Cap",
             Category = "Idle",

@@ -23,6 +23,8 @@ namespace GeoSlayer.Domain.Database.Context
         public DbSet<SkillDefinition> SkillDefinitions { get; set; } = null!;
         public DbSet<SkillTerrainMapping> SkillTerrainMappings { get; set; } = null!;
         public DbSet<PlayerPoiVisit> PlayerPoiVisits { get; set; } = null!;
+        public DbSet<Claim> Claims { get; set; } = null!;
+        public DbSet<Worker> Workers { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -103,6 +105,28 @@ namespace GeoSlayer.Domain.Database.Context
             {
                 entity.HasIndex(e => new { e.PlayerId, e.PoiId }).IsUnique();
                 entity.HasIndex(e => e.PlayerId);
+            });
+
+            modelBuilder.Entity<Claim>(entity =>
+            {
+                entity.HasIndex(e => e.PlayerId);
+
+                // One Claim per centre cell per player — the overlap check guards the
+                // wider case, but this makes a duplicate impossible at the storage layer.
+                entity.HasIndex(e => new { e.PlayerId, e.CentreGridLat, e.CentreGridLng })
+                      .IsUnique();
+            });
+
+            modelBuilder.Entity<Worker>(entity =>
+            {
+                entity.HasIndex(e => e.PlayerId);
+
+                // Deleting a Claim must not delete the worker standing on it — it should
+                // simply become unassigned.
+                entity.HasOne(e => e.Claim)
+                      .WithMany()
+                      .HasForeignKey(e => e.ClaimId)
+                      .OnDelete(DeleteBehavior.SetNull);
             });
 
             modelBuilder.Entity<RevealedCell>(entity =>

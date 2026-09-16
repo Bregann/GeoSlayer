@@ -29,6 +29,8 @@ import type { CellDto, Coord, NearbyPoi, SyncData } from '@/types/map';
 import type { UnlockEvent } from '@/types/progression';
 import { UnlockCelebration } from '@/components/unlockCelebration';
 import { formatPickups, hasOverflow } from '@/helpers/inventory';
+import { shouldShowWelcomeBack, type OfflineAccrual } from '@/helpers/idle';
+import { WelcomeBack } from '@/components/welcomeBack';
 
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */
@@ -59,6 +61,7 @@ export default function MapScreen() {
   const [pickupText, setPickupText] = useState<string | null>(null);
   const [pickupOverflow, setPickupOverflow] = useState(false);
   const [visitCounts, setVisitCounts] = useState<Record<number, number>>({});
+  const [welcomeBack, setWelcomeBack] = useState<OfflineAccrual | null>(null);
 
   // Pickups fade themselves; requiring a tap to clear ambient feedback would be a chore
   // on a walk. Overflow lingers longer because it costs the player something.
@@ -153,6 +156,12 @@ export default function MapScreen() {
 
           // Materials picked up this sync. Replaced rather than queued: the newest
           // pickup is the interesting one, and a backlog of toasts would obscure the map.
+          // Only surfaced when something meaningful accrued, so returning to an empty
+          // screen never trains the player to dismiss it unread (§5 task 4).
+          if (shouldShowWelcomeBack(data.offlineAccrual)) {
+            setWelcomeBack(data.offlineAccrual);
+          }
+
           if (data.materials && data.materials.length > 0) {
             const text = formatPickups(data.materials);
             if (text) {
@@ -416,6 +425,9 @@ export default function MapScreen() {
           )}
         </TouchableOpacity>
       )}
+
+      {/* Welcome back — what workers produced while away (Stage 05 task 4) */}
+      <WelcomeBack accrual={welcomeBack} onDismiss={() => setWelcomeBack(null)} />
 
       {/* Unlock celebration (§3.1c) */}
       <UnlockCelebration

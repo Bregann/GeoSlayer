@@ -1,4 +1,5 @@
 import type { MaterialGain } from './inventory';
+import type { OfflineAccrual } from '../helpers/idle';
 import type { UnlockEvent } from './progression';
 
 export interface Coord {
@@ -30,6 +31,8 @@ export interface SyncData {
   bonusPointsGranted: number;
   /** Materials picked up this sync (Stage 03). */
   materials: MaterialGain[];
+  /** What workers produced while away, or null when nothing did (Stage 05). */
+  offlineAccrual: OfflineAccrual | null;
   nearbyPois: NearbyPoi[];
 }
 

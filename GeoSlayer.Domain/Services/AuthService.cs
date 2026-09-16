@@ -10,12 +10,16 @@ using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using SecurityClaim = System.Security.Claims.Claim;
 using System.Security.Cryptography;
 using System.Text;
 
 namespace GeoSlayer.Domain.Services
 {
-    public class AuthService(AppDbContext dbContext, IProgressionService progression) : IAuthService
+    public class AuthService(
+        AppDbContext dbContext,
+        IProgressionService progression,
+        IWorkerService workerService) : IAuthService
     {
         private readonly AppDbContext _context = dbContext;
         private readonly PasswordHasher<User> _passwordHasher = new();
@@ -54,6 +58,10 @@ namespace GeoSlayer.Domain.Services
             // Level 1 ships with Exploration *and* Foraging (§3.1, the cold-start fix):
             // a first walk that paints cells but drops nothing is not a game.
             await progression.EnsureStartingUnlocks(player.Id, CancellationToken.None);
+
+            // Level 1 ships with one worker (§3.1's cold-start note): the first time the
+            // app is closed, something must already be working.
+            await workerService.HireWorker(player.Id, CancellationToken.None);
 
             Log.Information($"User registered {request.Username}");
         }
@@ -148,8 +156,8 @@ namespace GeoSlayer.Domain.Services
         {
             var claims = new[]
             {
-                new Claim(ClaimTypes.Name, user.Username),
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
+                new SecurityClaim(ClaimTypes.Name, user.Username),
+                new SecurityClaim(ClaimTypes.NameIdentifier, user.Id.ToString())
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JwtKey")!));

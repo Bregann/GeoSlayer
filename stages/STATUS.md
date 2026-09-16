@@ -1,6 +1,6 @@
 # Build status
 
-**Current stage: `STAGE-05-workers-idle.md`**
+**Current stage: `STAGE-06-crafting.md`**
 
 Single source of truth for where the build is. Update this when a stage completes.
 
@@ -10,7 +10,7 @@ Single source of truth for where the build is. Update this when a stage complete
 | 02 | Progression core | DONE |
 | 03 | Materials & inventory | DONE |
 | 04 | Foraging | DONE |
-| 05 | Workers & idle | NOT STARTED |
+| 05 | Workers & idle | DONE |
 | 06 | Crafting | NOT STARTED |
 | 07 | Fishing | NOT STARTED |
 | 08 | Woodcutting | NOT STARTED |
@@ -146,3 +146,26 @@ Needs a human with a phone, since only a real POI shows it:
   spoofing vector.
 - **Whether a garden or allotment actually appears as a Foraging POI** — the tag mapping
   changed, so previously-imported POIs still carry their old skill until re-imported.
+
+### From Stage 05
+
+**Stage 05 is the ship gate — Stages 01–05 form one release.** Backend fully tested
+(33 new tests); the screens are not.
+
+Needs a working app toolchain:
+
+- Typecheck and launch `app/workers.tsx` and `components/welcomeBack.tsx`.
+- Confirm the welcome-back screen appears after a real absence and stays away when
+  nothing accrued.
+- **Claims are not yet drawn on the map.** `ClaimDto` carries a bounding box for exactly
+  this, and the claim/eligibility endpoints exist, but the map outline and the
+  claim-from-map action were not built. This is the one piece of task 5 that is API-only.
+
+Needs a human, since only real time shows it:
+
+- **Leave the app closed overnight** and confirm the welcome-back numbers match the cap
+  (4h base) rather than the full absence.
+- **Whether the worker rate feels right.** Numerically it is ~7× below walking, which is
+  the intended direction, but whether that reads as "a helpful floor" or "not worth
+  bothering with" is a judgement only play answers. All seeded constants
+  (`OfflineAccrual`) so retuning is cheap.
