@@ -1,6 +1,6 @@
 # Build status
 
-**Current stage: `STAGE-08-skill-woodcutting.md`**
+**Current stage: `STAGE-09-skill-cooking.md`**
 
 Single source of truth for where the build is. Update this when a stage completes.
 
@@ -13,7 +13,7 @@ Single source of truth for where the build is. Update this when a stage complete
 | 05 | Workers & idle | DONE |
 | 06 | Crafting | DONE |
 | 07 | Fishing | DONE |
-| 08 | Woodcutting | NOT STARTED |
+| 08 | Woodcutting | DONE |
 | 09 | Cooking | NOT STARTED |
 | 10 | Mining | NOT STARTED |
 | 11 | Smithing | NOT STARTED |
@@ -213,3 +213,13 @@ Worth a human eye eventually:
 - **Whether a landlocked player actually finds Fishing playable.** Base rate is 1 XP/cell
   against 3 on water, so it is 3× slower rather than blocked — that ratio is the whole
   geography compromise and it is the thing most likely to feel wrong in practice.
+
+### From Stage 08
+
+Nothing outstanding — Woodcutting was seed data and needed no app work.
+
+One thing to watch when adding the remaining gathering skills: **Stage 03's placeholder
+materials keep colliding.** Fishing hit it, Woodcutting hit it. Any skill whose materials
+were sketched into `MaterialSeedData` during Stage 03 needs its own `MaterialCategory` and
+the placeholders reassigned. `SkillLaddersDoNotShareAMaterialCategory` catches it, so it
+fails loudly rather than producing a subtly wrong drop table — but expect it.

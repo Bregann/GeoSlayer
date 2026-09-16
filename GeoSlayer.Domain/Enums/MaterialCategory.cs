@@ -26,6 +26,9 @@ public enum MaterialCategory
     /// <summary>What is pulled from the water — the Fishing ladder (Stage 07).</summary>
     Caught,
 
+    /// <summary>What is cut from trees — the Woodcutting ladder (Stage 08).</summary>
+    Logged,
+
     /// <summary>
     /// The small reserved set of named materials from the rarest POIs (§7.4).
     ///

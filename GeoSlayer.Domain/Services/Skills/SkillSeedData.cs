@@ -61,6 +61,15 @@ public static class SkillSeedData
             UnlockLevel = 3,
             Category = SkillCategory.Gathering,
         },
+        new()
+        {
+            SkillType = SkillType.Woodcutting,
+            Name = "Woodcutting",
+            Description = "Felling and splitting. Woodland is best, and a woodland cell trains this alongside Foraging — the same ground, two different harvests.",
+            Icon = "🪓",
+            UnlockLevel = 5,
+            Category = SkillCategory.Gathering,
+        },
     };
 
     /// <summary>
@@ -97,6 +106,18 @@ public static class SkillSeedData
         new() { SkillType = SkillType.Fishing, Terrain = TerrainType.Urban,      XpPerCell = 1.0, YieldMultiplier = 1.0 },
         new() { SkillType = SkillType.Fishing, Terrain = TerrainType.Industrial, XpPerCell = 1.0, YieldMultiplier = 1.0 },
         new() { SkillType = SkillType.Fishing, Terrain = TerrainType.Rocky,      XpPerCell = 1.0, YieldMultiplier = 1.0 },
+
+        // ── Woodcutting (Stage 08) ────────────────────────────────────────────────────
+        // Woodland is best. Note this overlaps Foraging deliberately: one woodland cell
+        // trains both, and each rolls its own tier from its own ladder.
+        new() { SkillType = SkillType.Woodcutting, Terrain = TerrainType.Open,       XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Woodcutting, Terrain = TerrainType.Woodland,   XpPerCell = 3.0, YieldMultiplier = 2.0 },
+        new() { SkillType = SkillType.Woodcutting, Terrain = TerrainType.Farmland,   XpPerCell = 1.5, YieldMultiplier = 1.25 },
+        new() { SkillType = SkillType.Woodcutting, Terrain = TerrainType.Coastal,    XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Woodcutting, Terrain = TerrainType.Water,      XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Woodcutting, Terrain = TerrainType.Urban,      XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Woodcutting, Terrain = TerrainType.Industrial, XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Woodcutting, Terrain = TerrainType.Rocky,      XpPerCell = 1.0, YieldMultiplier = 1.0 },
     };
 
     /// <summary>
@@ -176,9 +197,23 @@ public static class SkillSeedData
             ("moonfish",  "Moonfish"),
         ]);
 
+    /// <summary>Woodcutting's ladder (Stage 08).</summary>
+    public static IReadOnlyList<Material> WoodcuttingMaterials { get; } = BuildLadder(
+        SkillType.Woodcutting,
+        MaterialCategory.Logged,
+        [
+            ("deadwood",  "Deadwood"),
+            ("softwood",  "Softwood"),
+            ("oak",       "Oak"),
+            ("ash",       "Ash"),
+            ("yew",       "Yew"),
+            ("ironbark",  "Ironbark"),
+            ("elderwood", "Elderwood"),
+        ]);
+
     /// <summary>Every gathering skill's ladder, so seeders iterate rather than enumerate.</summary>
     public static IReadOnlyList<Material> AllSkillMaterials { get; } =
-        [.. ForagingMaterials, .. FishingMaterials];
+        [.. ForagingMaterials, .. FishingMaterials, .. WoodcuttingMaterials];
 
     /// <summary>
     /// Drop entries for the Foraging ladder, by terrain.

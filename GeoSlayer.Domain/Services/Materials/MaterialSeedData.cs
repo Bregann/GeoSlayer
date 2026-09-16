@@ -72,10 +72,14 @@ public static class MaterialSeedData
             DustPerOverflow = 1,
         },
 
-        // ── Woodland (Woodcutting) ───────────────────────────────────
-        Tiered("timber_rough",  "Rough Timber",  MaterialCategory.Woodland, 1, 1,  3,  SkillType.Woodcutting),
-        Tiered("timber_oak",    "Oak Timber",    MaterialCategory.Woodland, 2, 10, 5,  SkillType.Woodcutting),
-        Tiered("timber_yew",    "Yew Timber",    MaterialCategory.Woodland, 3, 20, 9,  SkillType.Woodcutting),
+        // ── Woodland ─────────────────────────────────────────────────
+        // Woodcutting's own ladder lives in SkillSeedData (Stage 08). The three timber
+        // placeholders that sat here shared its tiers and levels, so both ladders would
+        // have competed for the same tier band — the same collision Fishing hit in
+        // Stage 07. Reassigned to Foraging, which is the better fit for gathered
+        // deadfall, and kept so the Stage 06 recipes referencing timber_rough still
+        // resolve.
+        Tiered("timber_rough",  "Rough Timber",  MaterialCategory.Woodland, 1, 1,  3,  SkillType.Foraging),
 
         // ── Water ────────────────────────────────────────────────────
         // Fishing's own ladder lives in SkillSeedData (Stage 07). The three placeholder
