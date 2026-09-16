@@ -1,4 +1,4 @@
-﻿using GeoSlayer.Domain.Database.Context;
+using GeoSlayer.Domain.Database.Context;
 using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.DTOs.Auth.Requests;
 using GeoSlayer.Domain.DTOs.Auth.Responses;
@@ -15,7 +15,7 @@ using System.Text;
 
 namespace GeoSlayer.Domain.Services
 {
-    public class AuthService(AppDbContext dbContext) : IAuthService
+    public class AuthService(AppDbContext dbContext, IProgressionService progression) : IAuthService
     {
         private readonly AppDbContext _context = dbContext;
         private readonly PasswordHasher<User> _passwordHasher = new();
@@ -50,6 +50,10 @@ namespace GeoSlayer.Domain.Services
             };
             _context.Players.Add(player);
             await _context.SaveChangesAsync();
+
+            // Level 1 ships with Exploration *and* Foraging (§3.1, the cold-start fix):
+            // a first walk that paints cells but drops nothing is not a game.
+            await progression.EnsureStartingUnlocks(player.Id, CancellationToken.None);
 
             Log.Information($"User registered {request.Username}");
         }
@@ -87,8 +91,8 @@ namespace GeoSlayer.Domain.Services
                 RefreshToken = refreshToken,
                 PlayerId = player?.Id ?? 0,
                 Username = user.Username,
-                Level = player?.Level ?? 1,
-                Xp = player?.Xp ?? 0
+                Level = player?.AdventurerLevel ?? 1,
+                Xp = player?.AdventurerXp ?? 0
             };
         }
 
@@ -135,8 +139,8 @@ namespace GeoSlayer.Domain.Services
                 RefreshToken = newRefreshToken,
                 PlayerId = player?.Id ?? 0,
                 Username = user.Username,
-                Level = player?.Level ?? 1,
-                Xp = player?.Xp ?? 0
+                Level = player?.AdventurerLevel ?? 1,
+                Xp = player?.AdventurerXp ?? 0
             };
         }
 

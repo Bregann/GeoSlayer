@@ -49,4 +49,7 @@ public enum SkillType
 
     /// <summary>Anything that doesn't fit the above.</summary>
     Exploration,
+
+    /// <summary>Hedgerows, verges, meadows, scrub — the everyday gathering skill.</summary>
+    Foraging,
 }

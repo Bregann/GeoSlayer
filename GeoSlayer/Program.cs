@@ -10,6 +10,7 @@ using GeoSlayer.Domain.Helpers;
 using GeoSlayer;
 using GeoSlayer.Domain.Interfaces.Api;
 using GeoSlayer.Domain.Services;
+using GeoSlayer.Domain.Services.Progression;
 using GeoSlayer.Domain.Database.Context;
 using GeoSlayer.Domain.Enums;
 
@@ -52,6 +53,7 @@ builder.Services.AddProblemDetails();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IPoiImportService, PoiImportService>();
+builder.Services.AddScoped<IProgressionService, ProgressionService>();
 builder.Services.AddScoped<IFogService, FogService>();
 builder.Services.AddScoped<IJourneyService, JourneyService>();
 

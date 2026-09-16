@@ -1,4 +1,4 @@
-﻿using GeoSlayer.Domain.Database.Models;
+using GeoSlayer.Domain.Database.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace GeoSlayer.Domain.Database.Context
@@ -12,6 +12,10 @@ namespace GeoSlayer.Domain.Database.Context
         public DbSet<RevealedCell> RevealedCells { get; set; } = null!;
         public DbSet<ImportedRegion> ImportedRegions { get; set; } = null!;
         public DbSet<PointOfInterest> PointsOfInterest { get; set; } = null!;
+        public DbSet<PlayerSkill> PlayerSkills { get; set; } = null!;
+        public DbSet<PlayerUpgrade> PlayerUpgrades { get; set; } = null!;
+        public DbSet<UnlockDefinition> UnlockDefinitions { get; set; } = null!;
+        public DbSet<UpgradeDefinition> UpgradeDefinitions { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -22,6 +26,34 @@ namespace GeoSlayer.Domain.Database.Context
             modelBuilder.Entity<Player>(entity =>
             {
                 entity.HasIndex(p => p.UserId);
+            });
+
+            modelBuilder.Entity<PlayerSkill>(entity =>
+            {
+                // Row exists <=> skill unlocked, so this index is the unlock guarantee.
+                entity.HasIndex(e => new { e.PlayerId, e.SkillType })
+                      .IsUnique();
+            });
+
+            modelBuilder.Entity<PlayerUpgrade>(entity =>
+            {
+                entity.HasIndex(e => new { e.PlayerId, e.UpgradeKey })
+                      .IsUnique();
+            });
+
+            modelBuilder.Entity<UnlockDefinition>(entity =>
+            {
+                entity.HasIndex(e => e.AdventurerLevel);
+
+                // One rung per level per payload — re-seeding must not duplicate the ladder.
+                entity.HasIndex(e => new { e.AdventurerLevel, e.Payload })
+                      .IsUnique();
+            });
+
+            modelBuilder.Entity<UpgradeDefinition>(entity =>
+            {
+                entity.HasIndex(e => e.Key)
+                      .IsUnique();
             });
 
             modelBuilder.Entity<RevealedCell>(entity =>

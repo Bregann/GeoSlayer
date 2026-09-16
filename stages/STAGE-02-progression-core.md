@@ -5,44 +5,63 @@
 
 ## Status
 
-- **State:** BLOCKED
-- **Completed:** _(none)_
-- **Remaining:** all tasks
+- **State:** IN PROGRESS — backend complete (tasks 1–4), app pending (task 5)
+- **Completed:** tasks 1, 2, 3, 4
+- **Remaining:** task 5 (app screens)
 - **Notes:**
-  - Stage 01 is `DONE`, so the stated prerequisite is met: the RS curve is in place at
-    `GeoSlayer.Domain/Services/Progression/XpCurve.cs`.
-  - The blocker is `DESIGN.md`. It has **never existed in this repository** — no file on
-    disk, and `git log --diff-filter=D` finds no commit that deleted one. The stage
-    files reference it throughout.
-- **Blockers:**
-  - **`DESIGN.md` is missing, and this stage cannot be written without it.**
+  - **The `DESIGN.md` blocker is resolved.** The file now exists at the repo root (1182
+    lines, added in `277e40e`) and covers §3.0, §3.0a, §3.0b, §3.1, §3.1c and §3.3. The
+    earlier note that it "has never existed" was written before that commit and is stale.
+  - §3.1 pins the unlock ladder concretely (levels 1/3/5/8/12/16/20/25 with the skills and
+    systems at each), so task 3 needed no invention — it is transcribed in
+    `ProgressionSeedData.Ladder`.
+  - Two things §3.0a/§3.0b give only qualitatively were chosen as **tuning values**, which
+    is what DESIGN.md asks for ("seeded data, not code… this tree will be retuned
+    constantly"; "the numbers are for tuning, the structure is the point"). Each is
+    documented with its reasoning in `ProgressionDefaults.cs`:
+    - **Milestone XP** (§3.0b says "small, flat" / "moderate" / "large"): anchored to the
+      one rate §3.3 does pin — a revealed cell is 2 skill XP — giving 1 / 20 / 50 / 100
+      while preserving §3.0b's stated ordering.
+    - **Upgrade cost curves** (§3.0a's table is "indicative"): Worker Slot uses the
+      `1,2,4,7,11` curve §3.0a gives verbatim; the others follow its stated shape rules
+      (Reveal Radius "high cost, few ranks"; the percentage upgrades cheap with many ranks).
+  - Effects, the four upgrade choices and the ladder are all taken from DESIGN.md directly.
 
-    Stage 01 survived the same gap because the one thing it needed from `DESIGN.md`
-    (§3.2, the XP curve) was pinned exactly by the three known values the task listed —
-    they identify the standard RuneScape curve and nothing else. That is not true here.
-    This stage needs *content*, not a formula, and the stage file gives defaults for
-    only some of it:
+### Verification
 
-    - §3.0 — how Adventurer XP relates to skill XP beyond `GLOBAL_XP_RATIO` (0.25 given).
-    - §3.0b — the milestone grant values: new cell, first POI visit, new region, craft
-      complete, skill unlock. **No values given anywhere.**
-    - §3.1 — the unlock ladder: which skills and systems unlock at which Adventurer
-      level. Only level 1 is specified (Exploration + Foraging). **The rest of the
-      ladder is the substance of task 3 and is unspecified.**
-    - §3.1c — the roadmap/celebration UX.
-    - §3.3 — the idle XP rules ("0.25x the normal cut" is given, the surrounding rules
-      are not).
-    - §3.0a — bonus points: the four upgrades are named, but `CostCurve`,
-      `EffectPerRank` and `MinAdventurerLevel` are not.
+- **Build:** green (`dotnet build GeoSlayer.sln`).
+- **Tests:** **99 passed, 0 failed, 0 skipped** (was 76 before this stage).
+  - Note: the 12 Stage 01 database tests had been *silently skipping*. `TestContainerSetup`
+    was a `[SetUpFixture]` in namespace `GeoSlayer.Tests.Infrastructure`, but NUnit scopes
+    a setup fixture to its own namespace and descendants — the tests live in the sibling
+    `GeoSlayer.Tests.Services.*`, so `OneTimeSetUp` never ran and the container never
+    started. Moved to the root `GeoSlayer.Tests` namespace; they now genuinely execute.
+    **This clears the highest-value item in the STATUS.md manual queue.**
+- **Migration verified against real legacy data**, not just a fresh schema: applied the
+  Stage 01 schema to a scratch PostGIS container, inserted a player with `Xp=4000, Level=10`,
+  then applied `Stage02ProgressionCore`. Result: `AdventurerXp` rescaled to 1000 (the 0.25
+  cut), Exploration skill row created holding the full original 4000, and both cached levels
+  recomputed to 9 and 19 — matching the C# `XpCurve` for those totals exactly.
+  - EF's scaffolder had guessed the rename as `Level` → `RespecCount`, which would have
+    moved every player's level into the respec counter and left `AdventurerLevel` at 0.
+    Corrected to drop the derived column and recompute it in SQL.
 
-    Guessing these would be worse than stopping. The README's own rule is that game data
-    is seeded so it can be retuned without a deploy — but seeding *invented* numbers
-    still bakes invented game design into migrations, and acceptance criteria 3, 5, 6
-    and 7 all assert behaviour against values that only `DESIGN.md` defines.
+### Acceptance criteria
 
-    **To unblock:** add `DESIGN.md` at the repository root with at least §3.0, §3.0a,
-    §3.0b, §3.1, §3.1c and §3.3. Alternatively, state the missing values directly in
-    this stage file and remove the `DESIGN.md` references.
+| # | Criterion | State |
+|---|---|---|
+| 1 | Build green, tests pass | ✅ 99/99 |
+| 2 | Every XP grant flows through `IProgressionService` | ✅ verified by grep — no direct XP mutation outside it |
+| 3 | Skill XP raises both pools at the configured ratio | ✅ `GrantXp_RaisesBothTheSkillAndAdventurerXp` |
+| 4 | New account starts with Exploration **and** Foraging only | ✅ `NewAccount_StartsWithExplorationAndForagingOnly` |
+| 5 | Unlock threshold grants the skill and returns an event | ✅ `ReachingLevel3_UnlocksFishingAndReturnsAnEvent` |
+| 6 | Each Adventurer level grants exactly one bonus point | ✅ `EachAdventurerLevel_GrantsExactlyOneBonusPoint` |
+| 7 | Reveal Radius measurably changes cells revealed | ✅ `RevealRadiusUpgradeTests` (with a control test) |
+| 8 | Respec refunds every point and clears ranks | ✅ `Respec_RefundsEveryPointAndClearsRanks` |
+| 9 | Skills screen shows unlocked + locked ladder | ⚠️ API verified (`GetSkills_*`); **screen is task 5** |
+| 10 | Nothing from Stage 01 regressed | ✅ all Stage 01 tests pass, now actually executing |
+
+- **Blockers:** none.
 
 ## Prerequisites
 
@@ -66,52 +85,52 @@ decisions look arbitrary without it.
 Per `DESIGN.md` §3.0. **Reuse the existing `Player.Xp` / `Player.Level` columns** — rename
 rather than adding new state.
 
-- [ ] Rename `Player.Xp` → `AdventurerXp` (long), `Player.Level` → `AdventurerLevel`.
-- [ ] Migration includes a one-off rescale of existing values onto the new curve.
-- [ ] Central `IProgressionService.GrantXp(playerId, skill?, amount, source)` — **every** XP
+- [x] Rename `Player.Xp` → `AdventurerXp` (long), `Player.Level` → `AdventurerLevel`.
+- [x] Migration includes a one-off rescale of existing values onto the new curve.
+- [x] Central `IProgressionService.GrantXp(playerId, skill?, amount, source)` — **every** XP
       grant in the codebase goes through it. No exceptions; later stages depend on this being
       the only path.
-- [ ] Dual payout: skill XP (if a skill is given) **plus**
+- [x] Dual payout: skill XP (if a skill is given) **plus**
       `floor(amount * GLOBAL_XP_RATIO)` Adventurer XP.
-- [ ] `GLOBAL_XP_RATIO` in seeded config (default 0.25). Idle sources use a reduced ratio
+- [x] `GLOBAL_XP_RATIO` in seeded config (default 0.25). Idle sources use a reduced ratio
       (default 0.25× the normal cut) — see §3.3.
-- [ ] Milestone grants (§3.0b): new cell, first visit to a POI, new region, craft complete,
+- [x] Milestone grants (§3.0b): new cell, first visit to a POI, new region, craft complete,
       skill unlock. Seeded values.
 
 ### 2. Skills
 
-- [ ] `PlayerSkill` table: `PlayerId, SkillType, Xp, Level, UnlockedAtUtc`, unique
+- [x] `PlayerSkill` table: `PlayerId, SkillType, Xp, Level, UnlockedAtUtc`, unique
       `(PlayerId, SkillType)`. **Row exists ⟺ unlocked** — no level-0 state.
-- [ ] Add `Foraging` to the `SkillType` enum.
-- [ ] Skill levels use the same RS curve as Adventurer, undivided.
-- [ ] `GET /api/player/skills` returns unlocked skills plus the locked ladder (name + unlock
+- [x] Add `Foraging` to the `SkillType` enum.
+- [x] Skill levels use the same RS curve as Adventurer, undivided.
+- [x] `GET /api/player/skills` returns unlocked skills plus the locked ladder (name + unlock
       level — the roadmap, §3.1c).
 
 ### 3. Unlock ladder
 
-- [ ] `UnlockDefinition` table, **seeded**: `AdventurerLevel, UnlockType (Skill|System),
+- [x] `UnlockDefinition` table, **seeded**: `AdventurerLevel, UnlockType (Skill|System),
       Payload`.
-- [ ] Seed the ladder from `DESIGN.md` §3.1. Level 1 grants **Exploration and Foraging**
+- [x] Seed the ladder from `DESIGN.md` §3.1. Level 1 grants **Exploration and Foraging**
       (the cold-start fix — both, not just Exploration).
-- [ ] On Adventurer level-up, apply any unlocks transactionally with the level change.
-- [ ] Unlock events returned in the sync response so the app can celebrate them.
+- [x] On Adventurer level-up, apply any unlocks transactionally with the level change.
+- [x] Unlock events returned in the sync response so the app can celebrate them.
 
 ### 4. Bonus points
 
 Per `DESIGN.md` §3.0a.
 
-- [ ] `Player.BonusPointsEarned` / `BonusPointsSpent`.
-- [ ] `PlayerUpgrade` table: `PlayerId, UpgradeKey, Rank`, unique `(PlayerId, UpgradeKey)`.
-- [ ] `UpgradeDefinition` **seeded**: `Key, Name, Category, MaxRank, CostCurve,
+- [x] `Player.BonusPointsEarned` / `BonusPointsSpent`.
+- [x] `PlayerUpgrade` table: `PlayerId, UpgradeKey, Rank`, unique `(PlayerId, UpgradeKey)`.
+- [x] `UpgradeDefinition` **seeded**: `Key, Name, Category, MaxRank, CostCurve,
       EffectPerRank, MinAdventurerLevel`.
-- [ ] One point per Adventurer level.
-- [ ] **Ship a deliberately small tree** — four upgrades only: Worker Slot, Reveal Radius,
+- [x] One point per Adventurer level.
+- [x] **Ship a deliberately small tree** — four upgrades only: Worker Slot, Reveal Radius,
       Scholar (+5% skill XP), Offline Cap. Four balanced beats fifteen unbalanced. Later
       stages add more.
-- [ ] `POST /api/player/upgrades/{key}/purchase` — validates points, rank cap, min level.
-- [ ] **Respec** from day one: `POST /api/player/upgrades/respec`, refunds all points for a
+- [x] `POST /api/player/upgrades/{key}/purchase` — validates points, rank cap, min level.
+- [x] **Respec** from day one: `POST /api/player/upgrades/respec`, refunds all points for a
       cost. Players will mis-invest while learning; a permanently wrong build is churn.
-- [ ] Upgrade effects must be **read by the systems they affect** — Reveal Radius changes the
+- [x] Upgrade effects must be **read by the systems they affect** — Reveal Radius changes the
       actual reveal, Scholar changes actual XP. An upgrade that displays but does nothing is
       worse than no upgrade.
 

@@ -1,6 +1,10 @@
 using GeoSlayer.Domain.Database.Context;
 using GeoSlayer.Domain.Database.Models;
+using GeoSlayer.Domain.Enums;
+using GeoSlayer.Domain.Interfaces.Helpers;
+using GeoSlayer.Domain.Services.Progression;
 using Microsoft.AspNetCore.Identity;
+using Moq;
 
 namespace GeoSlayer.Tests.Infrastructure
 {
@@ -48,6 +52,58 @@ namespace GeoSlayer.Tests.Infrastructure
             var user = await SeedTestUser(context);
             var player = await SeedTestPlayer(context, user);
             return (user, player);
+        }
+
+        /// <summary>
+        /// Seeds the unlock ladder and upgrade tree (DESIGN.md §3.0a, §3.1).  Tests that
+        /// touch progression need these rows: without the ladder nothing unlocks, and
+        /// without the tree no upgrade can be bought.
+        /// </summary>
+        public static async Task SeedProgressionDefinitions(AppDbContext context)
+        {
+            foreach (var rung in ProgressionSeedData.Ladder)
+            {
+                context.UnlockDefinitions.Add(new UnlockDefinition
+                {
+                    AdventurerLevel = rung.AdventurerLevel,
+                    UnlockType = rung.UnlockType,
+                    Payload = rung.Payload,
+                    DisplayName = rung.DisplayName,
+                });
+            }
+
+            foreach (var upgrade in ProgressionSeedData.Upgrades)
+            {
+                context.UpgradeDefinitions.Add(new UpgradeDefinition
+                {
+                    Key = upgrade.Key,
+                    Name = upgrade.Name,
+                    Category = upgrade.Category,
+                    MaxRank = upgrade.MaxRank,
+                    CostCurve = upgrade.CostCurve,
+                    EffectPerRank = upgrade.EffectPerRank,
+                    MinAdventurerLevel = upgrade.MinAdventurerLevel,
+                    Description = upgrade.Description,
+                });
+            }
+
+            await context.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// A real <see cref="ProgressionService"/> over the test database, with settings
+        /// falling back to <see cref="ProgressionDefaults"/> — the values the game ships.
+        /// </summary>
+        public static ProgressionService CreateProgressionService(AppDbContext context)
+        {
+            var settings = new Mock<IEnvironmentalSettingHelper>();
+
+            // Return null for every key so the service uses its documented defaults,
+            // rather than a sentinel string that would silently parse as garbage.
+            settings.Setup(x => x.TryGetEnviromentalSettingValue(It.IsAny<EnvironmentalSettingEnum>()))
+                    .Returns((string?)null);
+
+            return new ProgressionService(context, settings.Object);
         }
     }
 }

@@ -58,8 +58,10 @@ public class JourneyService(
         return new SyncResponse
         {
             NewCells = fogResult.NewCells,
-            Xp = player.Xp,
-            Level = player.Level,
+            Xp = player.AdventurerXp,
+            Level = player.AdventurerLevel,
+            Unlocks = fogResult.Grant?.Unlocks ?? [],
+            BonusPointsGranted = fogResult.Grant?.BonusPointsGranted ?? 0,
             NearbyPois = nearbyPois,
         };
     }

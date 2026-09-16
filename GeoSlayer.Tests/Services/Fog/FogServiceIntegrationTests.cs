@@ -1,3 +1,4 @@
+using GeoSlayer.Domain.Enums;
 using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.DTOs.Journey.Requests;
 using GeoSlayer.Domain.Services;
@@ -26,11 +27,20 @@ public class FogServiceIntegrationTests : DatabaseIntegrationTestBase
     private const double OriginLng = -0.1278;
     private const double MetresPerDegreeLat = 111_320.0;
 
+    private ProgressionService _progression = null!;
+
     protected override async Task CustomSetUp()
     {
         var (_, player) = await TestDatabaseSeedHelper.SeedMinimalData(DbContext);
         _player = player;
-        _sut = new FogService(DbContext);
+
+        // Stage 02: the ladder and tree must exist, and the player needs their level-1
+        // unlocks or Exploration XP has nowhere to land.
+        await TestDatabaseSeedHelper.SeedProgressionDefinitions(DbContext);
+        _progression = TestDatabaseSeedHelper.CreateProgressionService(DbContext);
+        await _progression.EnsureStartingUnlocks(_player.Id, CancellationToken.None);
+
+        _sut = new FogService(DbContext, _progression);
     }
 
     private static double LngOffset(double metres, double atLat) =>
@@ -110,7 +120,7 @@ public class FogServiceIntegrationTests : DatabaseIntegrationTestBase
         var first = await _sut.Reveal(_player.Id, path, CancellationToken.None);
         await DbContext.SaveChangesAsync();
 
-        var xpAfterFirst = (await DbContext.Players.FirstAsync(p => p.Id == _player.Id)).Xp;
+        var xpAfterFirst = (await DbContext.Players.FirstAsync(p => p.Id == _player.Id)).AdventurerXp;
         var cellsAfterFirst = await DbContext.RevealedCells.CountAsync(r => r.PlayerId == _player.Id);
 
         await ClearSyncCooldown();
@@ -119,7 +129,7 @@ public class FogServiceIntegrationTests : DatabaseIntegrationTestBase
         var second = await _sut.Reveal(_player.Id, path, CancellationToken.None);
         await DbContext.SaveChangesAsync();
 
-        var xpAfterSecond = (await DbContext.Players.FirstAsync(p => p.Id == _player.Id)).Xp;
+        var xpAfterSecond = (await DbContext.Players.FirstAsync(p => p.Id == _player.Id)).AdventurerXp;
         var cellsAfterSecond = await DbContext.RevealedCells.CountAsync(r => r.PlayerId == _player.Id);
 
         Assert.Multiple(() =>
@@ -212,8 +222,17 @@ public class FogServiceIntegrationTests : DatabaseIntegrationTestBase
 
         var player = await DbContext.Players.FirstAsync(p => p.Id == _player.Id);
 
+        // Stage 02 splits the pools: XpEarned is Exploration (skill) XP, while the player
+        // row holds Adventurer XP — the 0.25 cut plus the per-cell milestone (§3.0b).
         Assert.That(result.XpEarned, Is.GreaterThan(0));
-        Assert.That(player.Xp, Is.EqualTo(result.XpEarned));
+        Assert.That(player.AdventurerXp, Is.GreaterThan(0));
+        Assert.That(player.AdventurerXp, Is.LessThan(result.XpEarned),
+            "Adventurer XP is a fraction of skill XP, not equal to it");
+
+        var skill = await DbContext.PlayerSkills
+            .FirstAsync(sk => sk.PlayerId == _player.Id && sk.SkillType == SkillType.Exploration);
+
+        Assert.That(skill.Xp, Is.EqualTo(result.XpEarned), "Exploration XP should land on the skill row");
     }
 
     [Test]
@@ -224,8 +243,8 @@ public class FogServiceIntegrationTests : DatabaseIntegrationTestBase
 
         var player = await DbContext.Players.FirstAsync(p => p.Id == _player.Id);
 
-        // Stage 01 made Xp cumulative and Level derived — they must agree on reload.
-        Assert.That(player.Level, Is.EqualTo(XpCurve.LevelForXp(player.Xp)));
+        // Stage 01 made XP cumulative and level derived — they must agree on reload.
+        Assert.That(player.AdventurerLevel, Is.EqualTo(XpCurve.LevelForXp(player.AdventurerXp)));
     }
 
     // ── Anti-cheat against real persisted state ─────────────────────

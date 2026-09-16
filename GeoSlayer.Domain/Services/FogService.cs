@@ -1,6 +1,8 @@
 using GeoSlayer.Domain.Database.Context;
 using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.DTOs.Journey.Requests;
+using GeoSlayer.Domain.DTOs.Progression.Responses;
+using GeoSlayer.Domain.Enums;
 using GeoSlayer.Domain.Interfaces.Api;
 using GeoSlayer.Domain.Services.Fog;
 using GeoSlayer.Domain.Services.Progression;
@@ -8,15 +10,18 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GeoSlayer.Domain.Services;
 
-public class FogService(AppDbContext db) : IFogService
+public class FogService(AppDbContext db, IProgressionService progression) : IFogService
 {
     /// <summary>
     /// Grid cell size in degrees.  0.0009° ≈ 100 m at the equator, ~64 m at 45° latitude.
     /// </summary>
     public const double CellSize = 0.0009;
 
-    /// <summary>How many cells around each swept cell to reveal (1 = a 3×3 block).</summary>
-    private const int RevealRadius = 1;
+    /// <summary>
+    /// Base cells revealed around each swept cell (1 = a 3×3 block).  The Reveal Radius
+    /// upgrade adds to this (§3.0a), so the effective radius is per-player.
+    /// </summary>
+    private const int BaseRevealRadius = 1;
 
     /// <summary>XP awarded for each newly revealed cell.</summary>
     private const int XpPerCell = 2;
@@ -134,7 +139,13 @@ public class FogService(AppDbContext db) : IFogService
             .ToList();
 
         var swept = PathSweep.SweepPath(gridPath);
-        var candidates = PathSweep.Dilate(swept, RevealRadius);
+
+        // Reveal Radius is bought with Bonus Points and must change the actual reveal —
+        // an upgrade that only displays is worse than no upgrade (§3.0a).
+        var bonusRadius = await progression.GetUpgradeEffect(
+            playerId, ProgressionDefaults.UpgradeKeys.RevealRadius, ct);
+
+        var candidates = PathSweep.Dilate(swept, BaseRevealRadius + (int)bonusRadius);
 
         var candidateLats = candidates.Select(c => c.GridLat).Distinct().ToList();
         var candidateLngs = candidates.Select(c => c.GridLng).Distinct().ToList();
@@ -186,20 +197,36 @@ public class FogService(AppDbContext db) : IFogService
 
         var xpEarned = newCells.Count * XpPerCell;
 
+        XpGrantResult? grant = null;
+
         if (newCells.Count > 0)
         {
-            // `Player.Xp` is *cumulative* lifetime XP, and the level is derived from it
-            // rather than tracked separately.  The old code subtracted on level-up and
-            // kept a running remainder, which cannot survive a curve change and drifts
-            // if the two fields ever disagree.
-            player.Xp += xpEarned;
-            player.Level = XpCurve.LevelForXp(player.Xp);
+            // Persist the cells before granting: GrantXp saves, and the reveal and its XP
+            // must land together or a crash between them pays for cells twice.
+            await db.SaveChangesAsync(ct);
+
+            // All XP goes through IProgressionService — it owns the Adventurer cut, the
+            // Scholar modifier, level-ups, Bonus Points and the unlock ladder.
+            grant = await progression.GrantXp(
+                playerId, SkillType.Exploration, xpEarned, XpSource.Walk, ct);
+
+            // Each new cell is also a small flat Adventurer milestone (§3.0b).
+            var milestone = await progression.GrantMilestone(
+                playerId, MilestoneType.NewCell, newCells.Count, ct);
+
+            grant.AdventurerXpEarned += milestone.AdventurerXpEarned;
+            grant.AdventurerLevel = milestone.AdventurerLevel;
+            grant.AdventurerXp = milestone.AdventurerXp;
+            grant.AdventurerLevelledUp |= milestone.AdventurerLevelledUp;
+            grant.BonusPointsGranted += milestone.BonusPointsGranted;
+            grant.Unlocks.AddRange(milestone.Unlocks);
         }
 
         return new FogRevealResult
         {
             NewCells = newCells,
-            XpEarned = xpEarned,
+            XpEarned = (int)(grant?.SkillXpEarned ?? 0),
+            Grant = grant,
         };
     }
 
@@ -238,5 +265,10 @@ public class FogRevealResult
     public static readonly FogRevealResult Empty = new();
 
     public List<CellDto> NewCells { get; set; } = [];
+
+    /// <summary>Exploration XP awarded, after upgrade modifiers.</summary>
     public int XpEarned { get; set; }
+
+    /// <summary>Full progression outcome — levels, Bonus Points and unlocks (§3.1c).</summary>
+    public XpGrantResult? Grant { get; set; }
 }
