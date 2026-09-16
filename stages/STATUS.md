@@ -1,6 +1,6 @@
 # Build status
 
-**Current stage: `STAGE-10-skill-mining.md`**
+**Current stage: `STAGE-11-skill-smithing.md`**
 
 Single source of truth for where the build is. Update this when a stage completes.
 
@@ -15,7 +15,7 @@ Single source of truth for where the build is. Update this when a stage complete
 | 07 | Fishing | DONE |
 | 08 | Woodcutting | DONE |
 | 09 | Cooking | DONE |
-| 10 | Mining | NOT STARTED |
+| 10 | Mining | DONE |
 | 11 | Smithing | NOT STARTED |
 | 12 | Museum | NOT STARTED |
 | 13 | Clue scrolls | NOT STARTED |
@@ -188,11 +188,9 @@ Needs a working app toolchain:
 
 Carried forward, deliberately:
 
-- **Tool gating is not enforced.** Tools exist, are craftable, and carry a `ToolTier`
-  modifier, but `DropRoller` still gates purely on skill level. Wire tool tier into the
-  roll when a skill actually needs it — **Mining (Stage 10)** is the natural place, since
-  §4.3's example is a pickaxe. Gating Foraging behind a tool now would block the first
-  skill a new player meets.
+- ~~**Tool gating is not enforced.**~~ **Resolved in Stage 10.** `DropRoller` now takes an
+  optional `maxToolTier`, read from equipped items. No tool means no cap — not tier 1 —
+  which is what makes it safe for skills the tutorial teaches.
 - **No craft-completion notifications.** No push infrastructure exists. §5.3 suggests
   one-shot jobs at the known completion timestamp; that is notification plumbing, best
   done once for crafts, workers-at-cap and clue scrolls together — **Stage 14
@@ -238,3 +236,18 @@ Worth a human eye:
   forgets to cook for a week returns to a stalled larder, and whether that reads as "I
   should cook more" or "this is a chore" is a judgement only play answers. All constants
   are in `OfflineAccrual`.
+
+### From Stage 10
+
+Nothing outstanding. Mining needed no app work.
+
+**The accessibility rule is verified, not assumed.** A simulated suburban player with zero
+rocky terrain reaches tier 7 Meteoric Ore, and rocky ground yields under 4× urban — the
+gap §4.1a wants to be "meaningful, not disqualifying". If that ratio ever drifts,
+`RockyGround_IsMeaningfullyFasterWithoutBeingRequired` is where it surfaces.
+
+Worth a human eye:
+
+- **Whether under-4× actually feels acceptable in play.** It is the right shape
+  numerically, but a player who knows a quarry-dweller mines twice as fast may still feel
+  it. That is a judgement only real play answers, and the multipliers are seeded.

@@ -1,6 +1,7 @@
 using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.Enums;
 using GeoSlayer.Domain.Services.Materials;
+using GeoSlayer.Domain.Services.Skills;
 
 namespace GeoSlayer.Tests.Services.Materials;
 
@@ -13,13 +14,22 @@ namespace GeoSlayer.Tests.Services.Materials;
 [TestFixture]
 public class MaterialTierTests
 {
+    /// <summary>
+    /// Every seeded material — terrain pools plus skill ladders.
+    ///
+    /// Stage 10 moved Mining's ore out of <see cref="MaterialSeedData"/> and into
+    /// <see cref="SkillSeedData"/>, so a table built from one alone is now incomplete.
+    /// </summary>
+    private static IEnumerable<Material> AllMaterials =>
+        MaterialSeedData.Materials.Concat(SkillSeedData.AllSkillMaterials);
+
     /// <summary>Build drop entries from the seed data, assigning ids as a database would.</summary>
     private static (List<DropTableEntry> Entries, Dictionary<string, Material> ByKey) BuildTable()
     {
         var byKey = new Dictionary<string, Material>();
         var id = 1;
 
-        foreach (var material in MaterialSeedData.Materials)
+        foreach (var material in AllMaterials)
         {
             var copy = new Material
             {
@@ -44,7 +54,8 @@ public class MaterialTierTests
         var entryId = 1;
         var seen = new HashSet<(TerrainType, int)>();
 
-        foreach (var (terrain, key, weight, min, max) in MaterialSeedData.DropEntries())
+        foreach (var (terrain, key, weight, min, max) in
+                 MaterialSeedData.DropEntries().Concat(SkillSeedData.DropEntries()))
         {
             if (!byKey.TryGetValue(key, out var material)) continue;
             if (!seen.Add((terrain, material.Id))) continue;
@@ -69,6 +80,8 @@ public class MaterialTierTests
     [Test]
     public void SeededMaterials_StayWithinTheStageBudget()
     {
+        // Stage 03's own budget. Per-skill ladders are counted against their own stages,
+        // and each is a fixed seven tiers by construction.
         var total = MaterialSeedData.Materials.Count;
         var unique = MaterialSeedData.Materials.Count(m => m.IsUnique);
 
@@ -82,7 +95,9 @@ public class MaterialTierTests
     [Test]
     public void MaterialKeys_AreUnique()
     {
-        var keys = MaterialSeedData.Materials.Select(m => m.Key).ToList();
+        // Across everything, not just Stage 03's pools: a duplicate key between a
+        // terrain pool and a skill ladder would leave one silently unseeded.
+        var keys = AllMaterials.Select(m => m.Key).ToList();
         Assert.That(keys, Is.Unique);
     }
 
@@ -97,6 +112,7 @@ public class MaterialTierTests
         var gathered = MaterialSeedData.Materials
             .Where(m => m.Category != MaterialCategory.Dust)
             .ToList();
+
 
         Assert.That(gathered, Is.Not.Empty);
 
@@ -184,7 +200,7 @@ public class MaterialTierTests
 
             foreach (var drop in drops)
             {
-                var material = MaterialSeedData.Materials.First(m => m.Key == drop.MaterialKey);
+                var material = AllMaterials.First(m => m.Key == drop.MaterialKey);
 
                 Assert.That(material.SkillType, Is.Null,
                     $"{drop.MaterialKey} dropped with no skill unlocked");
@@ -262,8 +278,10 @@ public class MaterialTierTests
 
         // Rocky entries are reachable regardless of the cell's terrain: what you can
         // obtain depends only on skill level (§4.1a).
+        // Mining's ladder moved to the Mined category in Stage 10; Rocky is now the
+        // terrain, not the material pool.
         var obtainable = entries
-            .Where(e => e.Material.Category == MaterialCategory.Rocky)
+            .Where(e => e.Material.SkillType == SkillType.Mining)
             .Where(e => DropRoller.IsObtainable(e.Material, levels))
             .Select(e => e.Material.Key)
             .ToList();

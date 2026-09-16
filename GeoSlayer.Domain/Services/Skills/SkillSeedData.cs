@@ -63,6 +63,15 @@ public static class SkillSeedData
         },
         new()
         {
+            SkillType = SkillType.Mining,
+            Name = "Mining",
+            Description = "Working stone and ore. Quarries and industry are best — and this is the skill that proves geography never locks you out, because most players have neither.",
+            Icon = "⛏️",
+            UnlockLevel = 12,
+            Category = SkillCategory.Gathering,
+        },
+        new()
+        {
             SkillType = SkillType.Cooking,
             Name = "Cooking",
             Description = "Turning what you gathered into what your workers eat. Trained at the fire, not on the road — the first skill that consumes rather than collects.",
@@ -127,6 +136,19 @@ public static class SkillSeedData
         new() { SkillType = SkillType.Woodcutting, Terrain = TerrainType.Urban,      XpPerCell = 1.0, YieldMultiplier = 1.0 },
         new() { SkillType = SkillType.Woodcutting, Terrain = TerrainType.Industrial, XpPerCell = 1.0, YieldMultiplier = 1.0 },
         new() { SkillType = SkillType.Woodcutting, Terrain = TerrainType.Rocky,      XpPerCell = 1.0, YieldMultiplier = 1.0 },
+
+        // ── Mining (Stage 10) ─────────────────────────────────────────────────────────
+        // The accessibility stress test. Rocky and industrial ground is genuinely rare
+        // for most players, so the Open row here is doing the most work of any mapping
+        // in the game: it is what lets a suburban player reach Meteoric Ore at all.
+        new() { SkillType = SkillType.Mining, Terrain = TerrainType.Open,       XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Mining, Terrain = TerrainType.Rocky,      XpPerCell = 3.0, YieldMultiplier = 2.0 },
+        new() { SkillType = SkillType.Mining, Terrain = TerrainType.Industrial, XpPerCell = 3.0, YieldMultiplier = 2.0 },
+        new() { SkillType = SkillType.Mining, Terrain = TerrainType.Coastal,    XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Mining, Terrain = TerrainType.Water,      XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Mining, Terrain = TerrainType.Woodland,   XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Mining, Terrain = TerrainType.Farmland,   XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Mining, Terrain = TerrainType.Urban,      XpPerCell = 1.0, YieldMultiplier = 1.0 },
     };
 
     /// <summary>
@@ -241,6 +263,23 @@ public static class SkillSeedData
             ("ambrosia",           "Ambrosia"),
         ]);
 
+    /// <summary>Mining's ladder (Stage 10) — the §4.1a worked example.</summary>
+    public static IReadOnlyList<Material> MiningMaterials { get; } = BuildLadder(
+        SkillType.Mining,
+        MaterialCategory.Mined,
+        [
+            // Keys carried over from Stage 03, which sketched the first five of these as
+            // placeholders. Adopting the keys rather than inventing new ones keeps the
+            // existing Stage 03 tests meaningful and avoids two names for one ore.
+            ("stone_rough",  "Rough Stone"),
+            ("ore_copper",   "Copper Ore"),
+            ("ore_iron",     "Iron Ore"),
+            ("ore_silver",   "Silver Ore"),
+            ("ore_gold",     "Gold Ore"),
+            ("gemstone",     "Gemstone"),
+            ("meteoric_ore", "Meteoric Ore"),
+        ]);
+
     /// <summary>
     /// Skills whose materials are <b>produced, not gathered</b>, so they are excluded
     /// from terrain drop tables. A cooked pie must not be found lying in a field.
@@ -253,7 +292,8 @@ public static class SkillSeedData
 
     /// <summary>Every gathering skill's ladder, so seeders iterate rather than enumerate.</summary>
     public static IReadOnlyList<Material> AllSkillMaterials { get; } =
-        [.. ForagingMaterials, .. FishingMaterials, .. WoodcuttingMaterials, .. CookingMaterials];
+        [.. ForagingMaterials, .. FishingMaterials, .. WoodcuttingMaterials,
+         .. CookingMaterials, .. MiningMaterials];
 
     /// <summary>
     /// Drop entries for the Foraging ladder, by terrain.

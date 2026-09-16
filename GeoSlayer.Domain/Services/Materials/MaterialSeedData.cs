@@ -103,14 +103,11 @@ public static class MaterialSeedData
         Tiered("ingot_crude",   "Crude Ingot",   MaterialCategory.Industrial, 2, 10, 5,  SkillType.Smithing),
         Tiered("coal",          "Coal",          MaterialCategory.Industrial, 3, 20, 9,  SkillType.Smithing),
 
-        // ── Rocky (Mining) ───────────────────────────────────────────
-        // The §4.1a worked example. A landlocked player reaches Gold Ore at Mining 50;
-        // it simply takes them longer than someone living by a quarry.
-        Tiered("stone_rough",   "Rough Stone",   MaterialCategory.Rocky, 1, 1,  3,  SkillType.Mining),
-        Tiered("ore_copper",    "Copper Ore",    MaterialCategory.Rocky, 2, 10, 5,  SkillType.Mining),
-        Tiered("ore_iron",      "Iron Ore",      MaterialCategory.Rocky, 3, 20, 9,  SkillType.Mining),
-        Tiered("ore_silver",    "Silver Ore",    MaterialCategory.Rocky, 4, 35, 15, SkillType.Mining),
-        Tiered("ore_gold",      "Gold Ore",      MaterialCategory.Rocky, 5, 50, 24, SkillType.Mining),
+        // ── Rocky ────────────────────────────────────────────────────
+        // Mining's ladder lives in SkillSeedData (Stage 10) and adopted these five keys,
+        // extending them to the full seven tiers. They are defined there rather than
+        // duplicated here — two definitions of one ore is how a key silently ends up
+        // seeded with the wrong tier.
 
         // ── Coastal ──────────────────────────────────────────────────
         // Likewise reassigned to Foraging: beachcombing is foraging, and leaving them on
@@ -143,6 +140,7 @@ public static class MaterialSeedData
             [TerrainType.Farmland] = [MaterialCategory.Farmland],
             [TerrainType.Urban] = [MaterialCategory.Urban],
             [TerrainType.Industrial] = [MaterialCategory.Industrial],
+            // Rocky's pool is Mining's ladder, contributed from SkillSeedData.
             [TerrainType.Rocky] = [MaterialCategory.Rocky],
             [TerrainType.Coastal] = [MaterialCategory.Coastal],
         };

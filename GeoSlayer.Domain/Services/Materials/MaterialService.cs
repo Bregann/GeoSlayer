@@ -61,6 +61,29 @@ public class MaterialService(
         return terrain;
     }
 
+    /// <summary>
+    /// Highest tier the player's equipped tool permits (§4.3), or null when they have no
+    /// tool equipped.
+    ///
+    /// <para>Null means <b>no cap</b>, deliberately. Tools gate access for skills that
+    /// have them; applying a cap to a player with no tool would silently lock every skill
+    /// behind gear the tutorial does not teach. Stage 06 built the tools and left the gate
+    /// to Stage 10 for exactly this reason.</para>
+    /// </summary>
+    private async Task<int?> EquippedToolTier(int playerId, CancellationToken ct)
+    {
+        var tiers = await db.PlayerItems
+            .Include(pi => pi.Item)
+            .Where(pi => pi.PlayerId == playerId
+                      && pi.IsEquipped
+                      && pi.Quantity > 0
+                      && pi.Item.Modifier == ItemModifier.ToolTier)
+            .Select(pi => pi.Item.ModifierValue)
+            .ToListAsync(ct);
+
+        return tiers.Count == 0 ? null : (int)tiers.Max();
+    }
+
     public async Task<List<MaterialGainDto>> AwardCellDrops(
         int playerId, IReadOnlyList<GridCell> cells, CancellationToken ct)
     {
@@ -78,6 +101,8 @@ public class MaterialService(
             .Where(s => s.PlayerId == playerId)
             .ToDictionaryAsync(s => s.SkillType, s => s.Level, ct);
 
+        var toolTier = await EquippedToolTier(playerId, ct);
+
         var totals = new Dictionary<int, int>();
 
         foreach (var cell in cells)
@@ -87,7 +112,8 @@ public class MaterialService(
             var multiplier = terrain == TerrainType.Open ? 1.0 : MatchingTerrainMultiplier;
 
             var drops = DropRoller.Roll(
-                playerId, cell.GridLat, cell.GridLng, terrain, entries, skillLevels, multiplier);
+                playerId, cell.GridLat, cell.GridLng, terrain, entries, skillLevels,
+                multiplier, toolTier);
 
             foreach (var drop in drops)
                 totals[drop.MaterialId] = totals.GetValueOrDefault(drop.MaterialId) + drop.Quantity;

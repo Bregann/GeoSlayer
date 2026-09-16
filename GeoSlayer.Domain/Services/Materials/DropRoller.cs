@@ -60,6 +60,13 @@ public static class DropRoller
     /// How much this terrain favours the material's pool. Terrain scales <i>quantity</i>
     /// only — never which tiers are reachable (§4.1a).
     /// </param>
+    /// <param name="maxToolTier">
+    /// Highest tier the player's equipped tool permits (§4.3: "tools gate access").
+    ///
+    /// <para>Null means no tool requirement applies — which is the correct default, not a
+    /// permissive fallback. A tool gate is only meaningful for skills that have tools; a
+    /// skill without one must never be silently capped.</para>
+    /// </param>
     public static List<Drop> Roll(
         int playerId,
         int gridLat,
@@ -67,7 +74,8 @@ public static class DropRoller
         TerrainType terrain,
         IReadOnlyList<DropTableEntry> entries,
         IReadOnlyDictionary<SkillType, int> skillLevels,
-        double terrainMultiplier = 1.0)
+        double terrainMultiplier = 1.0,
+        int? maxToolTier = null)
     {
         var random = new Random(SeedFor(playerId, gridLat, gridLng));
 
@@ -78,6 +86,7 @@ public static class DropRoller
             .Where(e => e.Terrain == TerrainType.Open
                      || (e.Terrain != TerrainType.Open && (terrain & e.Terrain) == e.Terrain))
             .Where(e => IsObtainable(e.Material, skillLevels))
+            .Where(e => maxToolTier is null || e.Material.Tier <= maxToolTier.Value)
             .ToList();
 
         if (candidates.Count == 0) return [];
