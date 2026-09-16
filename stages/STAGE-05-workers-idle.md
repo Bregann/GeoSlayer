@@ -5,9 +5,14 @@
 
 ## Status
 
-- **State:** DONE
-- **Completed:** tasks 1, 2, 3, 4, 5
-- **Remaining:** none — see the app caveat below.
+- **State:** DONE, with two deliberate deferrals
+- **Completed:** tasks 1, 3, 4; task 2 except upkeep; task 5 except the map view
+- **Remaining:**
+  - **Worker upkeep** — deferred to Stage 06. There is no food or coin in the game yet, so
+    charging the sink would strand workers with no way to refill, which breaks §7.4's
+    "never punish you for sleeping" harder than the missing sink does.
+  - **Claims drawn on the map** — API-only. The DTO carries a bounding box and both
+    endpoints exist; the outline and claim-from-map action were not built.
 - **Notes:**
   - **Accrual is lazy, with no Hangfire job**, per §5.3. A test greps the whole
     non-test tree for `RecurringJob` / `AddOrUpdate` and fails if one appears, so
@@ -51,6 +56,11 @@ order of 100 cells at 3 XP each, or ~315 XP. **Walking beats a full idle cycle b
 | 9 | Welcome-back shows accurate accrual | ✅ service tested; screen logic in 22 `idle.ts` tests |
 | 10 | Stages 01–04 criteria still pass | ✅ all prior tests green |
 
+**Note on the ship gate:** the 10 acceptance criteria all pass, but two *tasks* are
+deferred (above). Neither is in the criteria, and neither blocks a first session — a new
+player gets a worker, a Claim, and a welcome-back screen. Upkeep's absence makes the
+early game slightly more generous than designed, not less.
+
 - **Blockers:** none.
 
 ## Prerequisites
@@ -93,8 +103,12 @@ and was a bug in an earlier draft.
       > hard requirement and silently reintroduced the geographic lockout the whole unlock
       > ladder exists to prevent. Do not reintroduce it.
 
-- [x] Upkeep: workers consume food/coin per hour. Unfed workers idle (they do not die, and
-      nothing is lost).
+- [ ] **NOT DONE — upkeep.** Workers do not yet consume food or coin. §5.2 wants upkeep as
+      the material sink that stops infinite stockpiling, but there is no consumable food
+      material until Cooking (Stage 09) and no coin until Trading (Stage 25-level unlock).
+      Charging a sink that a player cannot yet refill would strand workers permanently,
+      which breaks the "never punish you for sleeping" rule harder than the missing sink
+      does. **Deferred to Stage 06**, which introduces crafted goods. Recorded in STATUS.md.
 - [x] Worker XP rate must sit **well below** walking rate for the same skill (§3.3). The
       worker is a floor, not a substitute.
 
@@ -127,8 +141,11 @@ than like quitting.
 
 ### 5. App
 
-- [x] Claims view on the map — outline claimed territory.
-- [x] Worker management: assign to Claim + skill, view rates, feed.
+- [ ] **NOT DONE — Claims on the map.** `ClaimDto` carries a bounding box for exactly this
+      and both endpoints exist, but the map outline and the claim-from-map action were not
+      built. API-only. Recorded in STATUS.md.
+- [x] Worker management: assign to Claim + skill, view rates. *(No "feed" — upkeep is
+      deferred, see task 2.)*
 - [x] Offline cap and time-to-cap visible, so players can plan.
 
 ---

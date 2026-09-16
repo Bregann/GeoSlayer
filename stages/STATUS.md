@@ -157,9 +157,16 @@ Needs a working app toolchain:
 - Typecheck and launch `app/workers.tsx` and `components/welcomeBack.tsx`.
 - Confirm the welcome-back screen appears after a real absence and stays away when
   nothing accrued.
-- **Claims are not yet drawn on the map.** `ClaimDto` carries a bounding box for exactly
-  this, and the claim/eligibility endpoints exist, but the map outline and the
-  claim-from-map action were not built. This is the one piece of task 5 that is API-only.
+**Two deferrals carried out of Stage 05, both deliberate:**
+
+- **Worker upkeep is not implemented.** §5.2 wants workers to consume food/coin as the
+  material sink against infinite stockpiling. There is no food until Cooking (Stage 09)
+  and no coin until Trading, so charging the sink now would strand workers with no way to
+  refill — which breaks §7.4's "never punish you for sleeping" harder than the missing
+  sink does. **Pick this up in Stage 06**, which introduces crafted goods.
+- **Claims are not drawn on the map.** `ClaimDto` carries a bounding box for exactly this,
+  and the claim/eligibility endpoints exist, but the map outline and the claim-from-map
+  action were not built. API-only.
 
 Needs a human, since only real time shows it:
 
