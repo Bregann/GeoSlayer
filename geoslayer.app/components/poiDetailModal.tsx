@@ -1,15 +1,83 @@
-import { Modal, Text, TouchableOpacity, View } from 'react-native';
+import { useMutation } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Modal, Text, TouchableOpacity, View } from 'react-native';
 
+import { authApiClient } from '@/helpers/apiClient';
+import { formatPickups } from '@/helpers/inventory';
+import {
+  decayLabel,
+  previewXp,
+  summariseVisit,
+  visitBlockedReason,
+  type PoiVisitResult,
+} from '@/helpers/poiVisit';
 import { poiModalStyles as styles } from '@/styles/mapScreen';
+import { visitStyles } from '@/styles/progression';
 import { SKILL_ICONS } from '@/styles/poiMarker';
 import type { NearbyPoi } from '@/types/map';
 
 interface Props {
   poi: NearbyPoi | null;
+  /** Visits this player has already made here, for the decay preview (§3.4). */
+  visitCount?: number;
   onClose: () => void;
+  onVisited?: (_result: PoiVisitResult) => void;
 }
 
-export function PoiDetailModal({ poi, onClose }: Props) {
+/**
+ * POI detail, with the visit action (Stage 04 task 4).
+ *
+ * The decay state is shown *before* visiting, so a reduced reward is never a surprise —
+ * §3.4 makes revisits deliberately worth less, and the player should be able to see that
+ * rather than infer it from a shrinking number.
+ */
+export function PoiDetailModal({ poi, visitCount = 0, onClose, onVisited }: Props) {
+  const [result, setResult] = useState<PoiVisitResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // A new POI clears the previous result, or the old outcome would appear attached to it.
+  useEffect(() => {
+    setResult(null);
+    setError(null);
+  }, [poi?.id]);
+
+  const visit = useMutation<PoiVisitResult, unknown, number>({
+    mutationFn: async (poiId: number) => {
+      const response = await authApiClient.post<PoiVisitResult>(
+        `/api/journey/poi/${poiId}/visit`,
+      );
+
+      if (response.status >= 400) {
+        const data = response.data as unknown;
+        throw new Error(
+          typeof data === 'string' && data ? data : 'Could not visit this place',
+        );
+      }
+
+      return response.data;
+    },
+    onSuccess: (visited: PoiVisitResult) => {
+      setResult(visited);
+      setError(null);
+      onVisited?.(visited);
+    },
+    onError: (err: unknown) => {
+      // The server rejects out-of-range and too-soon visits with a reason; show it.
+      const response = (err as { response?: { data?: unknown } })?.response?.data;
+      setError(
+        typeof response === 'string' && response
+          ? response
+          : err instanceof Error
+            ? err.message
+            : 'Could not visit this place',
+      );
+    },
+  });
+
+  const blocked = poi ? visitBlockedReason(poi) : null;
+  const decay = decayLabel(visitCount);
+  const expected = poi ? previewXp(poi.xpReward, visitCount) : 0;
+
   return (
     <Modal
       visible={poi !== null}
@@ -17,23 +85,52 @@ export function PoiDetailModal({ poi, onClose }: Props) {
       animationType="fade"
       onRequestClose={onClose}
     >
-      <TouchableOpacity
-        style={styles.overlay}
-        activeOpacity={1}
-        onPress={onClose}
-      >
+      <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onClose}>
         <View style={styles.card}>
-          <Text style={styles.icon}>
-            {SKILL_ICONS[poi?.skill ?? ''] ?? '❓'}
-          </Text>
-          <Text style={styles.name}>
-            {poi?.name || 'Unknown Place'}
-          </Text>
+          <Text style={styles.icon}>{SKILL_ICONS[poi?.skill ?? ''] ?? '❓'}</Text>
+          <Text style={styles.name}>{poi?.name || 'Unknown Place'}</Text>
           <Text style={styles.skill}>{poi?.skill}</Text>
-          <Text style={styles.xp}>+{poi?.xpReward} XP</Text>
+
+          <Text style={styles.xp}>+{expected} XP</Text>
+
+          {decay && <Text style={visitStyles.decay}>{decay}</Text>}
+
           <Text style={styles.distance}>
             {Math.round(poi?.distanceMetres ?? 0)}m away
           </Text>
+
+          {result && (
+            <View style={visitStyles.resultBox}>
+              <Text style={visitStyles.resultText}>{summariseVisit(result)}</Text>
+
+              {formatPickups(result.materials) && (
+                <Text style={visitStyles.resultMaterials}>
+                  {formatPickups(result.materials)}
+                </Text>
+              )}
+            </View>
+          )}
+
+          {error && <Text style={visitStyles.error}>{error}</Text>}
+
+          {!result && (
+            <TouchableOpacity
+              style={[visitStyles.visitButton, blocked && visitStyles.visitButtonDisabled]}
+              disabled={blocked !== null || visit.isPending || !poi}
+              onPress={() => poi && visit.mutate(poi.id)}
+            >
+              {visit.isPending ? (
+                <ActivityIndicator color="#39ff14" />
+              ) : (
+                <Text
+                  style={[visitStyles.visitText, blocked && visitStyles.visitTextDisabled]}
+                >
+                  {blocked ?? 'VISIT'}
+                </Text>
+              )}
+            </TouchableOpacity>
+          )}
+
           <TouchableOpacity style={styles.closeButton} onPress={onClose}>
             <Text style={styles.closeText}>CLOSE</Text>
           </TouchableOpacity>

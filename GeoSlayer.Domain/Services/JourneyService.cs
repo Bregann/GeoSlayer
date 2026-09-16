@@ -2,6 +2,7 @@ using GeoSlayer.Domain.Database.Context;
 using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.DTOs.Journey.Requests;
 using GeoSlayer.Domain.DTOs.Journey.Responses;
+using GeoSlayer.Domain.DTOs.Skills.Responses;
 using GeoSlayer.Domain.Exceptions;
 using GeoSlayer.Domain.Interfaces.Api;
 using GeoSlayer.Domain.Interfaces.Helpers;
@@ -15,6 +16,7 @@ public class JourneyService(
     AppDbContext db,
     IFogService fogService,
     IPoiImportService poiImportService,
+    ISkillTrainingService skillTraining,
     IUserContextHelper userContextHelper) : IJourneyService
 {
     private const double PoiCellSize = 0.05;
@@ -62,6 +64,7 @@ public class JourneyService(
             Level = player.AdventurerLevel,
             Unlocks = fogResult.Grant?.Unlocks ?? [],
             Materials = fogResult.Materials,
+            SkillTraining = fogResult.SkillTraining,
             BonusPointsGranted = fogResult.Grant?.BonusPointsGranted ?? 0,
             NearbyPois = nearbyPois,
         };
@@ -73,6 +76,16 @@ public class JourneyService(
     {
         var player = await CurrentPlayer(ct);
         return await fogService.GetAllRevealed(player.Id, ct);
+    }
+
+    // ── POI visits ─────────────────────────────────────────────────
+
+    public async Task<PoiVisitResultDto> VisitPoi(int poiId, CancellationToken ct)
+    {
+        // The player id comes from the JWT, never the request, so one account cannot
+        // visit on another's behalf.
+        var player = await CurrentPlayer(ct);
+        return await skillTraining.VisitPoi(player.Id, poiId, ct);
     }
 
     // ── Helpers ────────────────────────────────────────────────────

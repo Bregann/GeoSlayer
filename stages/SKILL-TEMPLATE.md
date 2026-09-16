@@ -7,6 +7,48 @@ By design, adding a skill after Stage 04 should be **mostly data, not code**. If
 stage requires significant new C#, that is a signal the systems in Stages 02–06 were built
 too narrowly — fix the system rather than special-casing the skill.
 
+## What Stage 04 proved (read this first)
+
+Foraging was built as the worked example. The findings that change how you should use
+this template:
+
+**Adding a gathering skill is now genuinely seed data.** Three rows in
+`SkillSeedData` — a `SkillDefinition`, a set of `SkillTerrainMapping` rows, and a tier
+ladder built from `StandardLadder` — plus drop entries derived from those mappings. No
+new C#. `ForagingTierTests.NoServiceCode_BranchesOnASpecificSkill` greps the whole
+services tree and fails the build if a `== SkillType.X` comparison appears, so this stays
+true rather than decaying.
+
+**Every gathering skill MUST have a `TerrainType.Open` mapping row.** That row is the
+base rate, and it is the single thing standing between the design and a geographic
+lockout. `SkillTrainingService.XpForCell` falls back to it when no terrain flag matches;
+a skill without one silently trains nothing on unclassified ground.
+
+**Things that needed code, not data — already built, do not rebuild:**
+
+- `SkillTrainingService.TrainFromCells` — matches every unlocked skill against the
+  seeded mappings. Generic.
+- `SkillTrainingService.VisitPoi` — range check, decay, visit log. Generic; the skill
+  comes from the POI's own mapping.
+- `VisitDecay` — the §3.4 curve. Shared by every skill.
+- `DropRoller` — tier selection and the level gate. Shared.
+
+**Two traps Stage 04 hit, both worth checking for in a new skill stage:**
+
+1. **Double-granting.** `FogService` used to grant Exploration XP directly. Once
+   Exploration had a terrain mapping it was paid twice. If a skill is granted anywhere
+   other than through `SkillTerrainMapping`, delete that path rather than adding a
+   guard.
+2. **POI tag mappings are first-match-wins.** `PoiImportService.TagMappings` returns the
+   first matching row, so a tag already claimed by an earlier skill cannot be remapped by
+   appending. Check for an existing claim before adding — an appended duplicate is dead
+   code that reads as though it works. (`natural=wood` is Woodcutting's; `leisure=park` is
+   Exploration's.)
+
+**The XP ladder is not flat.** The table below yields 6,000 → 14,400 XP/hour from tier 1
+to 7. That is intended — §4.1a requires only that advancing is never a *punishment*. Test
+it as monotonic non-decreasing, not as flat.
+
 ## The pattern
 
 ### 1. Seed data — the bulk of the work
@@ -110,4 +152,7 @@ still be able to train the skill, just slower.
 - [ ] Tests: terrain XP, POI XP, base rate, drop distribution, tier gating,
       no-terrain fixture reaches all tiers, flat XP/hour
 - [ ] Verify no regression in earlier stages
+- [ ] Confirm the skill has a `TerrainType.Open` mapping row (the base rate)
+- [ ] Check `PoiImportService.TagMappings` for tags already claimed by another skill
+- [ ] Confirm no service grants this skill XP outside `SkillTerrainMapping`
 ```

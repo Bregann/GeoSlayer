@@ -3,6 +3,7 @@ using GeoSlayer.Domain.DTOs.Journey.Requests;
 using GeoSlayer.Domain.Services;
 using GeoSlayer.Domain.Services.Materials;
 using GeoSlayer.Domain.Services.Progression;
+using GeoSlayer.Domain.Services.Skills;
 using GeoSlayer.Tests.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
@@ -26,6 +27,7 @@ public class RevealRadiusUpgradeTests : DatabaseIntegrationTestBase
 
     private ProgressionService _progression = null!;
     private MaterialService _materials = null!;
+    private SkillTrainingService _skillTraining = null!;
     private FogService _fog = null!;
 
     protected override async Task CustomSetUp()
@@ -34,8 +36,11 @@ public class RevealRadiusUpgradeTests : DatabaseIntegrationTestBase
         _progression = TestDatabaseSeedHelper.CreateProgressionService(DbContext);
         await TestDatabaseSeedHelper.SeedMaterialDefinitions(DbContext);
         _materials = TestDatabaseSeedHelper.CreateMaterialService(DbContext);
+        await TestDatabaseSeedHelper.SeedSkillDefinitions(DbContext);
+        _skillTraining = TestDatabaseSeedHelper.CreateSkillTrainingService(
+            DbContext, _progression, _materials);
 
-        _fog = new FogService(DbContext, _progression, _materials);
+        _fog = new FogService(DbContext, _progression, _materials, _skillTraining);
     }
 
     /// <summary>A fresh player with their starting unlocks, so each run is independent.</summary>

@@ -122,8 +122,17 @@ public class PoiImportService(AppDbContext db) : IPoiImportService
 
         // ── Farming ─────────────────────────────────────────────
         ("landuse",  "farmland",          SkillType.Farming,     10),
-        ("landuse",  "allotments",        SkillType.Farming,     10),
-        ("leisure",  "garden",            SkillType.Farming,     10),
+
+        // Foraging (Stage 04 task 3). Allotments and gardens previously mapped to
+        // Farming, which is not unlocked until Adventurer 20 — so at level 1, when
+        // Foraging is the only gathering skill a player has, these POIs trained nothing
+        // they could use. Foraging is the better fit for somewhere you pick things.
+        //
+        // `natural=wood` and `leisure=park` are deliberately NOT remapped here: the first
+        // match wins (see MapTag), and both are already claimed above by Woodcutting and
+        // Exploration. Adding them would be dead rows that read as though they work.
+        ("landuse",  "allotments",        SkillType.Foraging,    12),
+        ("leisure",  "garden",            SkillType.Foraging,    12),
         ("building", "farm",              SkillType.Farming,     10),
         ("building", "greenhouse",        SkillType.Farming,     10),
         ("shop",     "farm",              SkillType.Farming,     10),

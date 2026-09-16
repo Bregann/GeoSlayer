@@ -1,6 +1,6 @@
 # Build status
 
-**Current stage: `STAGE-04-skill-foraging.md`**
+**Current stage: `STAGE-05-workers-idle.md`**
 
 Single source of truth for where the build is. Update this when a stage completes.
 
@@ -9,7 +9,7 @@ Single source of truth for where the build is. Update this when a stage complete
 | 01 | Prototype | DONE |
 | 02 | Progression core | DONE |
 | 03 | Materials & inventory | DONE |
-| 04 | Foraging | NOT STARTED |
+| 04 | Foraging | DONE |
 | 05 | Workers & idle | NOT STARTED |
 | 06 | Crafting | NOT STARTED |
 | 07 | Fishing | NOT STARTED |
@@ -123,3 +123,26 @@ Needs a human with a phone, since only real geography shows it:
   query with landuse/natural polygons — `ITerrainClassifier` exists so that swap is local.
 - **Whether the drop rates feel right.** The weights and quantities are reasoned from
   §4.1a's ratios, not playtested. All seeded data, so retuning needs no deploy.
+
+### From Stage 04
+
+Backend fully tested (41 new tests). The POI visit UI's logic is unit-tested via
+`npm test`, but the `.tsx` changes have **never been rendered or typechecked** here.
+
+Needs a working app toolchain:
+
+- Typecheck and launch the updated `components/poiDetailModal.tsx` — the visit button,
+  the decay preview, and the result box.
+- Confirm an out-of-range POI shows "Move closer — Nm away" and the button is disabled.
+
+Needs a human with a phone, since only a real POI shows it:
+
+- **Visit the same POI several times** and confirm the yield visibly drops (100% → 67% →
+  50%) and the modal explains why. This is §3.4's anti-degeneracy rule, and it is the
+  thing most likely to feel wrong in practice rather than on paper.
+- **Confirm the 30 m range grace is right.** `SkillTrainingService.RangeGraceMetres`
+  widens the 50 m interact radius because the stored position is from the last sync. Too
+  tight and a real visit fails while standing at the door; too loose and it is a
+  spoofing vector.
+- **Whether a garden or allotment actually appears as a Foraging POI** — the tag mapping
+  changed, so previously-imported POIs still carry their old skill until re-imported.

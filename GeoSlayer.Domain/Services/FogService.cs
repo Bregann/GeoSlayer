@@ -2,6 +2,7 @@ using GeoSlayer.Domain.Database.Context;
 using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.DTOs.Journey.Requests;
 using GeoSlayer.Domain.DTOs.Materials.Responses;
+using GeoSlayer.Domain.DTOs.Skills.Responses;
 using GeoSlayer.Domain.DTOs.Progression.Responses;
 using GeoSlayer.Domain.Enums;
 using GeoSlayer.Domain.Interfaces.Api;
@@ -11,7 +12,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GeoSlayer.Domain.Services;
 
-public class FogService(AppDbContext db, IProgressionService progression, IMaterialService materials) : IFogService
+public class FogService(
+    AppDbContext db,
+    IProgressionService progression,
+    IMaterialService materials,
+    ISkillTrainingService skillTraining) : IFogService
 {
     /// <summary>
     /// Grid cell size in degrees.  0.0009° ≈ 100 m at the equator, ~64 m at 45° latitude.
@@ -23,9 +28,6 @@ public class FogService(AppDbContext db, IProgressionService progression, IMater
     /// upgrade adds to this (§3.0a), so the effective radius is per-player.
     /// </summary>
     private const int BaseRevealRadius = 1;
-
-    /// <summary>XP awarded for each newly revealed cell.</summary>
-    private const int XpPerCell = 2;
 
     // ── Anti-cheat constants ───────────────────────────────────────
 
@@ -196,10 +198,9 @@ public class FogService(AppDbContext db, IProgressionService progression, IMater
         if (inserts.Count > 0)
             db.RevealedCells.AddRange(inserts);
 
-        var xpEarned = newCells.Count * XpPerCell;
-
         XpGrantResult? grant = null;
         var materialGains = new List<MaterialGainDto>();
+        var skillTraining_ = new List<SkillTrainingDto>();
 
         if (newCells.Count > 0)
         {
@@ -207,14 +208,30 @@ public class FogService(AppDbContext db, IProgressionService progression, IMater
             // must land together or a crash between them pays for cells twice.
             await db.SaveChangesAsync(ct);
 
-            // All XP goes through IProgressionService — it owns the Adventurer cut, the
-            // Scholar modifier, level-ups, Bonus Points and the unlock ladder.
-            grant = await progression.GrantXp(
-                playerId, SkillType.Exploration, xpEarned, XpSource.Walk, ct);
+            // Every skill whose terrain mapping matches trains from these cells (Stage 04).
+            //
+            // Exploration used to be granted here directly, as `newCells.Count * 2`. That
+            // was a hardcoded per-skill branch, and once Exploration gained a seeded
+            // terrain mapping it also double-paid. It is now just another row in
+            // SkillTerrainMappings, which is what criterion 13 requires.
+            skillTraining_ = await skillTraining.TrainFromCells(
+                playerId,
+                newCells.Select(c => new GridCell(c.GridLat, c.GridLng)).ToList(),
+                ct);
 
             // Each new cell is also a small flat Adventurer milestone (§3.0b).
             var milestone = await progression.GrantMilestone(
                 playerId, MilestoneType.NewCell, newCells.Count, ct);
+
+            // Summed across every skill rather than singling one out. Naming a skill here
+            // would be exactly the per-skill branch criterion 13 forbids, and the caller
+            // has the full per-skill breakdown in SkillTraining anyway.
+            grant = new XpGrantResult
+            {
+                SkillXpEarned = skillTraining_.Sum(t => t.SkillXpEarned),
+                AdventurerXpEarned = skillTraining_.Sum(t => t.AdventurerXpEarned),
+                SkillLevelledUp = skillTraining_.Any(t => t.LevelledUp),
+            };
 
             // Materials for the cells just revealed (Stage 03). Rolled per (player, cell)
             // so a replayed sync cannot re-roll for a better result.
@@ -237,6 +254,7 @@ public class FogService(AppDbContext db, IProgressionService progression, IMater
             XpEarned = (int)(grant?.SkillXpEarned ?? 0),
             Grant = grant,
             Materials = materialGains,
+            SkillTraining = skillTraining_,
         };
     }
 
@@ -276,7 +294,13 @@ public class FogRevealResult
 
     public List<CellDto> NewCells { get; set; } = [];
 
-    /// <summary>Exploration XP awarded, after upgrade modifiers.</summary>
+    /// <summary>
+    /// Total skill XP awarded across every skill trained this reveal.
+    ///
+    /// Stage 04 made this a sum rather than Exploration's alone: cells now train every
+    /// skill whose terrain mapping matches, so singling one out would misreport the walk.
+    /// The per-skill breakdown is in <see cref="SkillTraining"/>.
+    /// </summary>
     public int XpEarned { get; set; }
 
     /// <summary>Full progression outcome — levels, Bonus Points and unlocks (§3.1c).</summary>
@@ -284,4 +308,7 @@ public class FogRevealResult
 
     /// <summary>Materials picked up, so the app can show the pickups (Stage 03 task 5).</summary>
     public List<MaterialGainDto> Materials { get; set; } = [];
+
+    /// <summary>Per-skill XP earned from the revealed cells (Stage 04).</summary>
+    public List<SkillTrainingDto> SkillTraining { get; set; } = [];
 }

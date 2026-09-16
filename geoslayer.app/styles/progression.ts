@@ -330,3 +330,68 @@ export const pickupStyles = StyleSheet.create({
     fontFamily: 'monospace',
   },
 });
+
+/**
+ * The POI visit action and its outcome (Stage 04 task 4).
+ */
+export const visitStyles = StyleSheet.create({
+  decay: {
+    color: GOLD,
+    fontSize: 11,
+    fontFamily: 'monospace',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  visitButton: {
+    marginTop: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: ACCENT,
+    backgroundColor: '#14321a',
+    minWidth: 180,
+  },
+  visitButtonDisabled: {
+    borderColor: '#3a3a5e',
+    backgroundColor: '#1a1a2e',
+  },
+  visitText: {
+    color: ACCENT,
+    fontSize: 13,
+    fontWeight: 'bold',
+    fontFamily: 'monospace',
+  },
+  visitTextDisabled: {
+    color: MUTED,
+  },
+  resultBox: {
+    marginTop: 10,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: ACCENT,
+    backgroundColor: 'rgba(20, 50, 26, 0.6)',
+    gap: 4,
+    alignItems: 'center',
+  },
+  resultText: {
+    color: ACCENT,
+    fontSize: 12,
+    fontWeight: 'bold',
+    fontFamily: 'monospace',
+    textAlign: 'center',
+  },
+  resultMaterials: {
+    color: '#c8c8e0',
+    fontSize: 11,
+    fontFamily: 'monospace',
+    textAlign: 'center',
+  },
+  error: {
+    color: '#ff6666',
+    fontSize: 11,
+    fontFamily: 'monospace',
+    marginTop: 8,
+    textAlign: 'center',
+  },
+});

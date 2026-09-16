@@ -1,5 +1,6 @@
 using GeoSlayer.Domain.DTOs.Journey.Requests;
 using GeoSlayer.Domain.DTOs.Journey.Responses;
+using GeoSlayer.Domain.DTOs.Skills.Responses;
 using GeoSlayer.Domain.Interfaces.Api;
 using GeoSlayer.Domain.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -23,6 +24,18 @@ public class JourneyController(IJourneyService journeyService) : ControllerBase
     {
         var result = await journeyService.Sync(request, ct);
         return Ok(result);
+    }
+
+    /// <summary>
+    /// Visit a POI the caller is standing at (Stage 04 task 2).
+    ///
+    /// Range is checked server-side against the player's last verified position; the
+    /// request carries no coordinates, so this cannot be used to teleport.
+    /// </summary>
+    [HttpPost("poi/{id:int}/visit")]
+    public async Task<ActionResult<PoiVisitResultDto>> VisitPoi(int id, CancellationToken ct)
+    {
+        return Ok(await journeyService.VisitPoi(id, ct));
     }
 
     /// <summary>

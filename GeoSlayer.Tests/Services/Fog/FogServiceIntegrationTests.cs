@@ -4,6 +4,7 @@ using GeoSlayer.Domain.DTOs.Journey.Requests;
 using GeoSlayer.Domain.Services;
 using GeoSlayer.Domain.Services.Materials;
 using GeoSlayer.Domain.Services.Progression;
+using GeoSlayer.Domain.Services.Skills;
 using GeoSlayer.Tests.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
@@ -30,6 +31,7 @@ public class FogServiceIntegrationTests : DatabaseIntegrationTestBase
 
     private ProgressionService _progression = null!;
     private MaterialService _materials = null!;
+    private SkillTrainingService _skillTraining = null!;
 
     protected override async Task CustomSetUp()
     {
@@ -44,8 +46,11 @@ public class FogServiceIntegrationTests : DatabaseIntegrationTestBase
 
         await TestDatabaseSeedHelper.SeedMaterialDefinitions(DbContext);
         _materials = TestDatabaseSeedHelper.CreateMaterialService(DbContext);
+        await TestDatabaseSeedHelper.SeedSkillDefinitions(DbContext);
+        _skillTraining = TestDatabaseSeedHelper.CreateSkillTrainingService(
+            DbContext, _progression, _materials);
 
-        _sut = new FogService(DbContext, _progression, _materials);
+        _sut = new FogService(DbContext, _progression, _materials, _skillTraining);
     }
 
     private static double LngOffset(double metres, double atLat) =>
@@ -234,10 +239,18 @@ public class FogServiceIntegrationTests : DatabaseIntegrationTestBase
         Assert.That(player.AdventurerXp, Is.LessThan(result.XpEarned),
             "Adventurer XP is a fraction of skill XP, not equal to it");
 
-        var skill = await DbContext.PlayerSkills
-            .FirstAsync(sk => sk.PlayerId == _player.Id && sk.SkillType == SkillType.Exploration);
+        // Stage 04 made a cell train *every* skill whose terrain mapping matches, so
+        // XpEarned is now the sum across skills rather than Exploration's alone.
+        // Exploration is therefore a component of it, not equal to it.
+        var skills = await DbContext.PlayerSkills
+            .Where(sk => sk.PlayerId == _player.Id)
+            .ToListAsync();
 
-        Assert.That(skill.Xp, Is.EqualTo(result.XpEarned), "Exploration XP should land on the skill row");
+        var exploration = skills.Single(sk => sk.SkillType == SkillType.Exploration);
+
+        Assert.That(exploration.Xp, Is.GreaterThan(0), "Exploration XP should land on its skill row");
+        Assert.That(skills.Sum(sk => sk.Xp), Is.EqualTo(result.XpEarned),
+            "XpEarned should be the total across every skill the walk trained");
     }
 
     [Test]

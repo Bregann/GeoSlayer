@@ -5,6 +5,7 @@ using GeoSlayer.Domain.Interfaces.Helpers;
 using GeoSlayer.Domain.Interfaces.Api;
 using GeoSlayer.Domain.Services.Materials;
 using GeoSlayer.Domain.Services.Progression;
+using GeoSlayer.Domain.Services.Skills;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Moq;
@@ -158,6 +159,92 @@ namespace GeoSlayer.Tests.Infrastructure
 
             return new MaterialService(context, classifier.Object);
         }
+
+        /// <summary>
+        /// Seeds skill definitions, terrain mappings and the Foraging tier ladder
+        /// (Stage 04). Call after <see cref="SeedMaterialDefinitions"/>.
+        /// </summary>
+        public static async Task SeedSkillDefinitions(AppDbContext context)
+        {
+            foreach (var definition in SkillSeedData.Definitions)
+            {
+                context.SkillDefinitions.Add(new SkillDefinition
+                {
+                    SkillType = definition.SkillType,
+                    Name = definition.Name,
+                    Description = definition.Description,
+                    Icon = definition.Icon,
+                    UnlockLevel = definition.UnlockLevel,
+                    Category = definition.Category,
+                });
+            }
+
+            foreach (var mapping in SkillSeedData.TerrainMappings)
+            {
+                context.SkillTerrainMappings.Add(new SkillTerrainMapping
+                {
+                    SkillType = mapping.SkillType,
+                    Terrain = mapping.Terrain,
+                    XpPerCell = mapping.XpPerCell,
+                    YieldMultiplier = mapping.YieldMultiplier,
+                });
+            }
+
+            foreach (var material in SkillSeedData.ForagingMaterials)
+            {
+                context.Materials.Add(new Material
+                {
+                    Key = material.Key,
+                    Name = material.Name,
+                    Tier = material.Tier,
+                    Category = material.Category,
+                    SkillType = material.SkillType,
+                    StackCap = material.StackCap,
+                    IsUnique = material.IsUnique,
+                    LevelRequired = material.LevelRequired,
+                    BaseGatherSeconds = material.BaseGatherSeconds,
+                    XpPerUnit = material.XpPerUnit,
+                    DustPerOverflow = material.DustPerOverflow,
+                });
+            }
+
+            await context.SaveChangesAsync();
+
+            var ids = await context.Materials.ToDictionaryAsync(m => m.Key, m => m.Id);
+
+            var seen = (await context.DropTableEntries
+                    .Select(e => new { e.Terrain, e.MaterialId })
+                    .ToListAsync())
+                .Select(e => (e.Terrain, e.MaterialId))
+                .ToHashSet();
+
+            foreach (var (terrain, key, weight, min, max) in SkillSeedData.DropEntries())
+            {
+                if (!ids.TryGetValue(key, out var materialId)) continue;
+                if (!seen.Add((terrain, materialId))) continue;
+
+                context.DropTableEntries.Add(new DropTableEntry
+                {
+                    Terrain = terrain,
+                    MaterialId = materialId,
+                    Weight = weight,
+                    MinQuantity = min,
+                    MaxQuantity = max,
+                });
+            }
+
+            await context.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// A real <see cref="SkillTrainingService"/> over the test database, with terrain
+        /// supplied by a fake classifier.
+        /// </summary>
+        public static SkillTrainingService CreateSkillTrainingService(
+            AppDbContext context,
+            ProgressionService progression,
+            MaterialService materials) =>
+            new(context, progression, materials);
 
         /// <summary>
         /// A real <see cref="ProgressionService"/> over the test database, with settings

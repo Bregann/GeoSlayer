@@ -4,6 +4,7 @@ using GeoSlayer.Domain.Enums;
 using GeoSlayer.Domain.Interfaces.Helpers;
 using GeoSlayer.Domain.Services.Materials;
 using GeoSlayer.Domain.Services.Progression;
+using GeoSlayer.Domain.Services.Skills;
 using Microsoft.EntityFrameworkCore;
 
 namespace GeoSlayer.Domain.Helpers
@@ -19,6 +20,8 @@ namespace GeoSlayer.Domain.Helpers
             await SeedUnlockLadder(context);
             await SeedUpgrades(context);
             await SeedMaterials(context);
+            await SeedSkillDefinitions(context);
+            await SeedSkillTerrainMappings(context);
 
             await context.SaveChangesAsync();
 
@@ -118,9 +121,9 @@ namespace GeoSlayer.Domain.Helpers
         {
             var have = (await context.Materials.Select(m => m.Key).ToListAsync()).ToHashSet();
 
-            foreach (var material in MaterialSeedData.Materials)
+            foreach (var material in MaterialSeedData.Materials.Concat(SkillSeedData.ForagingMaterials))
             {
-                if (have.Contains(material.Key)) continue;
+                if (!have.Add(material.Key)) continue;
 
                 context.Materials.Add(new Material
                 {
@@ -153,7 +156,8 @@ namespace GeoSlayer.Domain.Helpers
                 .Select(e => (e.Terrain, e.MaterialId))
                 .ToHashSet();
 
-            foreach (var (terrain, key, weight, min, max) in MaterialSeedData.DropEntries())
+            foreach (var (terrain, key, weight, min, max) in
+                     MaterialSeedData.DropEntries().Concat(SkillSeedData.DropEntries()))
             {
                 if (!materialIds.TryGetValue(key, out var materialId)) continue;
                 if (have.Contains((terrain, materialId))) continue;
@@ -167,6 +171,54 @@ namespace GeoSlayer.Domain.Helpers
                     Weight = weight,
                     MinQuantity = min,
                     MaxQuantity = max,
+                });
+            }
+        }
+
+        /// <summary>Skill metadata for the skills screen (Stage 04 task 1).</summary>
+        private static async Task SeedSkillDefinitions(AppDbContext context)
+        {
+            var have = (await context.SkillDefinitions.Select(d => d.SkillType).ToListAsync())
+                .ToHashSet();
+
+            foreach (var definition in SkillSeedData.Definitions)
+            {
+                if (have.Contains(definition.SkillType)) continue;
+
+                context.SkillDefinitions.Add(new SkillDefinition
+                {
+                    SkillType = definition.SkillType,
+                    Name = definition.Name,
+                    Description = definition.Description,
+                    Icon = definition.Icon,
+                    UnlockLevel = definition.UnlockLevel,
+                    Category = definition.Category,
+                });
+            }
+        }
+
+        /// <summary>
+        /// Which terrain trains which skill (Stage 04 task 1). Terrain multiplies, never
+        /// gates — every gathering skill needs an Open row for that to hold.
+        /// </summary>
+        private static async Task SeedSkillTerrainMappings(AppDbContext context)
+        {
+            var existing = await context.SkillTerrainMappings
+                .Select(m => new { m.SkillType, m.Terrain })
+                .ToListAsync();
+
+            var have = existing.Select(m => (m.SkillType, m.Terrain)).ToHashSet();
+
+            foreach (var mapping in SkillSeedData.TerrainMappings)
+            {
+                if (have.Contains((mapping.SkillType, mapping.Terrain))) continue;
+
+                context.SkillTerrainMappings.Add(new SkillTerrainMapping
+                {
+                    SkillType = mapping.SkillType,
+                    Terrain = mapping.Terrain,
+                    XpPerCell = mapping.XpPerCell,
+                    YieldMultiplier = mapping.YieldMultiplier,
                 });
             }
         }

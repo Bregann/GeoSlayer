@@ -20,6 +20,9 @@ public enum MaterialCategory
     Rocky,
     Coastal,
 
+    /// <summary>What grows wild — the Foraging ladder (Stage 04).</summary>
+    Foraged,
+
     /// <summary>
     /// The small reserved set of named materials from the rarest POIs (§7.4).
     ///

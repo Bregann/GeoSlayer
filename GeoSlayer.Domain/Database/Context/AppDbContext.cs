@@ -20,6 +20,9 @@ namespace GeoSlayer.Domain.Database.Context
         public DbSet<PlayerMaterial> PlayerMaterials { get; set; } = null!;
         public DbSet<CellTerrain> CellTerrains { get; set; } = null!;
         public DbSet<DropTableEntry> DropTableEntries { get; set; } = null!;
+        public DbSet<SkillDefinition> SkillDefinitions { get; set; } = null!;
+        public DbSet<SkillTerrainMapping> SkillTerrainMappings { get; set; } = null!;
+        public DbSet<PlayerPoiVisit> PlayerPoiVisits { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -82,6 +85,24 @@ namespace GeoSlayer.Domain.Database.Context
             {
                 entity.HasIndex(e => e.Terrain);
                 entity.HasIndex(e => new { e.Terrain, e.MaterialId }).IsUnique();
+            });
+
+            modelBuilder.Entity<SkillDefinition>(entity =>
+            {
+                entity.HasIndex(e => e.SkillType).IsUnique();
+            });
+
+            modelBuilder.Entity<SkillTerrainMapping>(entity =>
+            {
+                // One rate per (skill, terrain); a duplicate would make training
+                // order-dependent.
+                entity.HasIndex(e => new { e.SkillType, e.Terrain }).IsUnique();
+            });
+
+            modelBuilder.Entity<PlayerPoiVisit>(entity =>
+            {
+                entity.HasIndex(e => new { e.PlayerId, e.PoiId }).IsUnique();
+                entity.HasIndex(e => e.PlayerId);
             });
 
             modelBuilder.Entity<RevealedCell>(entity =>

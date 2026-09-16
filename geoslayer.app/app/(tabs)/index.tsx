@@ -58,6 +58,7 @@ export default function MapScreen() {
   const [pendingUnlocks, setPendingUnlocks] = useState<UnlockEvent[]>([]);
   const [pickupText, setPickupText] = useState<string | null>(null);
   const [pickupOverflow, setPickupOverflow] = useState(false);
+  const [visitCounts, setVisitCounts] = useState<Record<number, number>>({});
 
   // Pickups fade themselves; requiring a tap to clear ambient feedback would be a chore
   // on a walk. Overflow lingers longer because it costs the player something.
@@ -425,7 +426,25 @@ export default function MapScreen() {
       {/* POI detail modal */}
       <PoiDetailModal
         poi={selectedPoi}
+        visitCount={selectedPoi ? (visitCounts[selectedPoi.id] ?? 0) : 0}
         onClose={() => setSelectedPoi(null)}
+        onVisited={(result) => {
+          // Track locally so the decay preview is right on a second look without
+          // waiting for the next sync to tell us.
+          setVisitCounts((prev) => ({ ...prev, [result.poiId]: result.visitCount }));
+
+          if (result.materials.length > 0) {
+            const text = formatPickups(result.materials);
+            if (text) {
+              setPickupText(text);
+              setPickupOverflow(hasOverflow(result.materials));
+            }
+          }
+
+          if (result.unlocks.length > 0) {
+            setPendingUnlocks((prev) => [...prev, ...result.unlocks]);
+          }
+        }}
       />
 
       {/* Cluster list modal */}
