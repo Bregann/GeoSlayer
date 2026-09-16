@@ -5,11 +5,44 @@
 
 ## Status
 
-- **State:** NOT STARTED
+- **State:** BLOCKED
 - **Completed:** _(none)_
 - **Remaining:** all tasks
-- **Notes:** _(none)_
-- **Blockers:** _(none)_
+- **Notes:**
+  - Stage 01 is `DONE`, so the stated prerequisite is met: the RS curve is in place at
+    `GeoSlayer.Domain/Services/Progression/XpCurve.cs`.
+  - The blocker is `DESIGN.md`. It has **never existed in this repository** — no file on
+    disk, and `git log --diff-filter=D` finds no commit that deleted one. The stage
+    files reference it throughout.
+- **Blockers:**
+  - **`DESIGN.md` is missing, and this stage cannot be written without it.**
+
+    Stage 01 survived the same gap because the one thing it needed from `DESIGN.md`
+    (§3.2, the XP curve) was pinned exactly by the three known values the task listed —
+    they identify the standard RuneScape curve and nothing else. That is not true here.
+    This stage needs *content*, not a formula, and the stage file gives defaults for
+    only some of it:
+
+    - §3.0 — how Adventurer XP relates to skill XP beyond `GLOBAL_XP_RATIO` (0.25 given).
+    - §3.0b — the milestone grant values: new cell, first POI visit, new region, craft
+      complete, skill unlock. **No values given anywhere.**
+    - §3.1 — the unlock ladder: which skills and systems unlock at which Adventurer
+      level. Only level 1 is specified (Exploration + Foraging). **The rest of the
+      ladder is the substance of task 3 and is unspecified.**
+    - §3.1c — the roadmap/celebration UX.
+    - §3.3 — the idle XP rules ("0.25x the normal cut" is given, the surrounding rules
+      are not).
+    - §3.0a — bonus points: the four upgrades are named, but `CostCurve`,
+      `EffectPerRank` and `MinAdventurerLevel` are not.
+
+    Guessing these would be worse than stopping. The README's own rule is that game data
+    is seeded so it can be retuned without a deploy — but seeding *invented* numbers
+    still bakes invented game design into migrations, and acceptance criteria 3, 5, 6
+    and 7 all assert behaviour against values that only `DESIGN.md` defines.
+
+    **To unblock:** add `DESIGN.md` at the repository root with at least §3.0, §3.0a,
+    §3.0b, §3.1, §3.1c and §3.3. Alternatively, state the missing values directly in
+    this stage file and remove the `DESIGN.md` references.
 
 ## Prerequisites
 

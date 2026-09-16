@@ -7,7 +7,7 @@ Single source of truth for where the build is. Update this when a stage complete
 | # | Stage | State |
 |---|---|---|
 | 01 | Prototype | DONE |
-| 02 | Progression core | NOT STARTED |
+| 02 | Progression core | BLOCKED |
 | 03 | Materials & inventory | NOT STARTED |
 | 04 | Foraging | NOT STARTED |
 | 05 | Workers & idle | NOT STARTED |
@@ -26,7 +26,21 @@ States: `NOT STARTED` → `IN PROGRESS` → `DONE` (or `BLOCKED`, with a reason)
 
 ## Blockers
 
-None.
+**Stage 02 is BLOCKED: `DESIGN.md` does not exist.**
+
+It has never existed in this repo — no file on disk, and no commit in history deleted
+one — yet the stage files reference it throughout. Stage 01 got through because the only
+thing it needed from it (§3.2, the XP curve) was pinned exactly by the three known values
+the task listed. Stage 02 needs actual game content that nothing else specifies: the
+milestone XP grants (§3.0b), the unlock ladder above level 1 (§3.1), the idle XP rules
+(§3.3), and the upgrade cost curves and effects (§3.0a).
+
+Inventing those numbers would bake made-up game design into seed data and migrations, and
+four of Stage 02's acceptance criteria assert behaviour against values only `DESIGN.md`
+defines. See the blocker note in `STAGE-02-progression-core.md` for the specific list.
+
+**To unblock:** add `DESIGN.md` at the repo root covering §3.0, §3.0a, §3.0b, §3.1, §3.1c
+and §3.3 — or write the missing values into the stage file and drop the references.
 
 ## Manual verification queue
 
