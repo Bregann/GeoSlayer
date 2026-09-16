@@ -77,10 +77,29 @@
     now warning-free.
   - Seq endpoint reads `SEQ_URL`, defaulting to `http://localhost:5341` rather than the
     hardcoded `192.168.1.20`.
+
+  Added after the stage was first marked done, while Stage 02 sat blocked:
+
+  - `GeoSlayer.Tests/Services/Fog/FogServiceIntegrationTests.cs` — 12 database-backed
+    tests covering what the pure tests cannot reach: cells actually persisting, the
+    unique index making a replay a no-op rather than a duplicate-key crash, XP and the
+    derived level landing on the player row, the cooldown, a rejected batch still
+    updating last-known position, and one player's walk not leaking into another's map.
+    **Written but never executed** — no Docker in this environment.
+  - `TestContainerSetup` no longer throws when the container cannot start. It records
+    the reason and `DatabaseIntegrationTestBase` calls `Assert.Ignore` with it, so a
+    missing daemon reads as "skipped, needs Docker" instead of 12 failures with an
+    unrelated stack trace. Without this the suite looked broken rather than incomplete.
+  - `geoslayer.app/helpers/__tests__/xpCurve.test.mjs` + an `npm test` script. Runs on
+    bare Node with no dependencies, so it works without `node_modules`. Mutation-checked:
+    changing `300` to `301` in the curve fails 9 checks and exits 1.
 - **Acceptance criteria:**
   1. `dotnet build GeoSlayer.sln` — **PASS**, 0 errors, 0 warnings.
-  2. Unit tests — **PASS**, 64/64. (Testcontainers integration tests were *not* run;
-     Docker is unavailable here. All 64 are pure-function tests that need no database.)
+  2. Unit tests — **PASS**, 64/64 pure-function tests, plus 12 database integration
+     tests that **skip** (Docker unavailable here). The suite reports
+     `Failed: 0, Passed: 64, Skipped: 12` rather than 12 red failures — see the note on
+     `TestContainerSetup` below. App-side: `npm test` in `geoslayer.app/` passes 19
+     checks with no `node_modules` required.
   3. Unauthenticated `POST /api/journey/sync` → 401 — **PASS by inspection**:
      `[Authorize]` on the controller, `AddJwtBearer` + `UseAuthentication`/
      `UseAuthorization` wired in `Program.cs`. Not exercised against a running server.
@@ -94,11 +113,19 @@
   7. 15 m/s vehicle trace reveals zero cells — **PASS** (`Validate_DrivingTrace_*`).
   8. Replaying a path grants nothing — **PASS at the geometry level**
      (`Sweep_ReplayingTheSamePath_YieldsNoCellsNotAlreadyRevealed`). The DB-level
-     guarantee is the existing unique index plus the "skip what exists" filter in
-     `FogService`; that path needs Docker to test end to end.
+     guarantee now has tests too
+     (`FogServiceIntegrationTests.Reveal_ReplayingAnIdenticalPath_RevealsNothingAndGrantsNoXp`,
+     `RevealedCells_DuplicateForTheSamePlayer_IsRejectedByTheUniqueIndex`), but they are
+     **written, not executed** — no Docker here. Treat criterion 8 as fully verified only
+     once `dotnet test` has run with a daemon up.
   9. XP curve known values — **PASS** (level 2 = 83, 50 = 101,333, 99 = 13,034,431).
-  10. App builds, map renders, fog draws — **NOT VERIFIED.** `geoslayer.app/node_modules`
-      is not installed here, so the app was neither typechecked nor run.
+  10. App builds, map renders, fog draws — **STILL NOT VERIFIED.**
+      `geoslayer.app/node_modules` is not installed, so the app was neither typechecked
+      nor run. Partially narrowed: `helpers/xpCurve.ts` is now covered by
+      `helpers/__tests__/xpCurve.test.mjs`, which confirms the client curve matches the
+      server on all 11 known values and that the HUD progress bar reads 0% / 50% / ~100%
+      across a level band. That closes the riskiest hand-written app logic, but says
+      nothing about whether the app compiles or renders.
 - **Blockers:** _(none)_
 
 ## Goal

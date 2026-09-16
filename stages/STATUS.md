@@ -63,7 +63,14 @@ so the app was never typechecked or built — **acceptance criterion 10 is unver
   `components/hud.tsx`, `app/(tabs)/index.tsx`, `types/map.ts`).
 - Launch the app and confirm the map screen still renders, tracks position and draws fog.
 
+  Partially narrowed since: `npm test` (no `node_modules` needed) checks `helpers/xpCurve.ts`
+  against the server curve and the HUD progress bar across a level band. `backgroundLocation.ts`
+  and the screen changes remain entirely unverified — they need the real toolchain.
+
 Needs Docker (unavailable here, so the Testcontainers integration tests never ran):
 
-- `dotnet test` with Docker running, to exercise the DB-backed paths — in particular
-  that re-revealing a cell is a no-op at the unique-index level (criterion 8).
+- `dotnet test` with Docker running. There are now **12 database integration tests** in
+  `GeoSlayer.Tests/Services/Fog/FogServiceIntegrationTests.cs` covering criterion 8 at the
+  unique-index level, XP landing on the player row, the sync cooldown, and cross-player
+  isolation. They are **written but never executed** — they currently report as *skipped*,
+  not passed. Running them is the single highest-value outstanding check.

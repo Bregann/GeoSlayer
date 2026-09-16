@@ -14,6 +14,15 @@ namespace GeoSlayer.Tests.Infrastructure
         [SetUp]
         public async Task SetUp()
         {
+            // No Docker means these cannot run.  Skip with the real reason rather than
+            // failing — a missing daemon is not a broken test.
+            if (!TestContainerSetup.IsAvailable)
+            {
+                Assert.Ignore(
+                    "Database tests need Docker for Testcontainers. " +
+                    $"Container unavailable: {TestContainerSetup.UnavailableReason ?? "not started"}");
+            }
+
             var options = new DbContextOptionsBuilder<AppDbContext>()
                 .UseNpgsql(TestContainerSetup.ConnectionString, o => o.UseNetTopologySuite())
                 .UseLazyLoadingProxies()
@@ -41,6 +50,9 @@ namespace GeoSlayer.Tests.Infrastructure
         [TearDown]
         public async Task TearDown()
         {
+            // SetUp may have been skipped before the context existed.
+            if (DbContext is null) return;
+
             // Custom teardown for derived classes
             await CustomTearDown();
 

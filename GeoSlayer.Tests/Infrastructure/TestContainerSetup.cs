@@ -11,6 +11,16 @@ namespace GeoSlayer.Tests.Infrastructure
         private static PostgreSqlContainer? _postgresContainer;
         private static string? _connectionString;
 
+        /// <summary>
+        /// Why the container could not start, or null if it did.  Kept so that a missing
+        /// Docker daemon reports as "skipped, no Docker" rather than a wall of failures
+        /// that look like broken code.
+        /// </summary>
+        public static string? UnavailableReason { get; private set; }
+
+        /// <summary>True when a database-backed test can actually run.</summary>
+        public static bool IsAvailable => _connectionString is not null;
+
         public static string ConnectionString
         {
             get
@@ -26,7 +36,17 @@ namespace GeoSlayer.Tests.Infrastructure
         [OneTimeSetUp]
         public async Task OneTimeSetUp()
         {
-            await InitializeContainerAsync();
+            try
+            {
+                await InitializeContainerAsync();
+            }
+            catch (Exception ex)
+            {
+                // Do not throw: that fails every integration test with an unrelated stack
+                // trace.  Record the reason and let the base class skip them instead.
+                UnavailableReason = ex.Message;
+                Console.WriteLine($"Test container unavailable, database tests will be skipped: {ex.Message}");
+            }
         }
 
         private static async Task InitializeContainerAsync()
