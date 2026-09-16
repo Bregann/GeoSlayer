@@ -1,6 +1,8 @@
 using Testcontainers.PostgreSql;
 
-namespace GeoSlayer.Tests.Infrastructure
+// NUnit scopes a [SetUpFixture] to its own namespace and descendants only, so this
+// must sit in the root test namespace to cover fixtures under GeoSlayer.Tests.Services.
+namespace GeoSlayer.Tests
 {
     /// <summary>
     /// Manages the lifecycle of the PostgreSQL (PostGIS) test container across all tests
