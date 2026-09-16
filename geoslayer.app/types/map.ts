@@ -1,3 +1,5 @@
+import type { UnlockEvent } from './progression';
+
 export interface Coord {
   latitude: number;
   longitude: number;
@@ -17,8 +19,14 @@ export interface CellDto {
 
 export interface SyncData {
   newCells: CellDto[];
+  /** Cumulative Adventurer XP (DESIGN.md §3.0). */
   xp: number;
+  /** Adventurer level. */
   level: number;
+  /** Ladder rungs crossed by this sync, for the celebration (§3.1c). */
+  unlocks: UnlockEvent[];
+  /** Bonus Points granted by this sync's level-ups. */
+  bonusPointsGranted: number;
   nearbyPois: NearbyPoi[];
 }
 

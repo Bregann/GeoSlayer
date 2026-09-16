@@ -1,13 +1,13 @@
 # Build status
 
-**Current stage: `STAGE-02-progression-core.md`**
+**Current stage: `STAGE-03-materials-inventory.md`**
 
 Single source of truth for where the build is. Update this when a stage completes.
 
 | # | Stage | State |
 |---|---|---|
 | 01 | Prototype | DONE |
-| 02 | Progression core | IN PROGRESS |
+| 02 | Progression core | DONE |
 | 03 | Materials & inventory | NOT STARTED |
 | 04 | Foraging | NOT STARTED |
 | 05 | Workers & idle | NOT STARTED |
@@ -79,15 +79,21 @@ whole time, so CI would have stayed green with the entire database layer unteste
 
 ### From Stage 02
 
-Backend only; task 5 (app screens) is not yet built. Needs a working app toolchain:
+All five tasks are built. `npm test` covers the app's progression logic (32 tests, no
+`node_modules` required), but the screens themselves have **never been rendered or
+typechecked** — this environment has no app toolchain.
 
-- Skills screen wired to `GET /api/player/skills` — unlocked skills with progress, locked
-  ones greyed with their unlock level.
-- Upgrade screen wired to `GET /api/player/upgrades`,
-  `POST /api/player/upgrades/{key}/purchase` and `POST /api/player/upgrades/respec`.
-- Unlock celebration (full screen, not a toast — §3.1c). The sync response already carries
-  `Unlocks` and `BonusPointsGranted` for this.
-- HUD: show Adventurer level/XP and drop the hardcoded `hp={85}` / `gold={0}`.
+Needs a working app toolchain:
+
+- `cd geoslayer.app && npm install && npx tsc --noEmit` — typecheck the Stage 02 screens
+  (`app/skills.tsx`, `app/upgrades.tsx`, `components/unlockCelebration.tsx`,
+  `components/hud.tsx`, `types/progression.ts`, `helpers/progression.ts`,
+  `styles/progression.ts`).
+- Launch and walk the three new surfaces: the Skills screen (✨), the Upgrade screen (⚡),
+  and the unlock celebration. The celebration only fires on a sync that crosses a ladder
+  rung, so reaching Adventurer level 3 is the cheapest way to see it.
+- Confirm the HUD still reads correctly now that `hp` and `gold` are gone — those were
+  hardcoded `85/100` and `0g`, and were removed rather than left showing fake state.
 
 Worth a human eye when the app lands, since only a real session shows it:
 

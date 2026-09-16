@@ -51,7 +51,10 @@ public class SkillDto
 /// <summary>A skill not yet unlocked, shown greyed with its unlock level (§3.1c).</summary>
 public class LockedSkillDto
 {
-    public string Name { get; set; } = null!;
+    /// <summary>The ladder's display label. Named to match <see cref="UnlockEventDto"/>,
+    /// which carries the same value — the two differing was a live source of blank
+    /// labels in the app.</summary>
+    public string DisplayName { get; set; } = null!;
     public string Payload { get; set; } = null!;
     public UnlockType UnlockType { get; set; }
     public int UnlocksAtAdventurerLevel { get; set; }

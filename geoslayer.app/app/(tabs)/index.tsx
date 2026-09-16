@@ -10,6 +10,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { Hud } from '@/components/hud';
+import { router } from 'expo-router';
 import { PlayerMarker } from '@/components/playerMarker';
 import { PoiClusterModal } from '@/components/poiClusterModal';
 import { PoiDetailModal } from '@/components/poiDetailModal';
@@ -24,6 +25,8 @@ import {
 import { buildFogGeoJSON, clusterPois, distanceMetres, toBreadcrumbGeoJSON } from '@/helpers/geo';
 import { mapScreenStyles as styles, overviewStyles } from '@/styles/mapScreen';
 import type { CellDto, Coord, NearbyPoi, SyncData } from '@/types/map';
+import type { UnlockEvent } from '@/types/progression';
+import { UnlockCelebration } from '@/components/unlockCelebration';
 
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */
@@ -50,6 +53,7 @@ export default function MapScreen() {
   const [overviewMode, setOverviewMode] = useState(false);
   const [selectedPoi, setSelectedPoi] = useState<NearbyPoi | null>(null);
   const [selectedCluster, setSelectedCluster] = useState<NearbyPoi[] | null>(null);
+  const [pendingUnlocks, setPendingUnlocks] = useState<UnlockEvent[]>([]);
 
   const { player, updatePlayer } = useAuth();
 
@@ -124,6 +128,13 @@ export default function MapScreen() {
               xp: data.xp,
               level: data.level,
             });
+          }
+
+          // Crossing a ladder rung is the payoff for several sessions of walking, so it
+          // interrupts with a full screen rather than a toast (DESIGN.md §3.1c).
+          // Queued rather than replaced: a long background batch can cross more than one.
+          if (data.unlocks && data.unlocks.length > 0) {
+            setPendingUnlocks((prev) => [...prev, ...data.unlocks]);
           }
         }
       } catch {
@@ -360,14 +371,18 @@ export default function MapScreen() {
 
       {/* HUD overlay */}
       <Hud
-        hp={85}
-        maxHp={100}
         xp={syncData?.xp ?? player?.xp ?? 0}
         level={syncData?.level ?? player?.level ?? 1}
-        gold={0}
         cellsRevealed={revealedCells.length}
         onInventory={() => {}}
-        onSkills={() => {}}
+        onSkills={() => router.push('/skills')}
+        onUpgrades={() => router.push('/upgrades')}
+      />
+
+      {/* Unlock celebration (§3.1c) */}
+      <UnlockCelebration
+        unlocks={pendingUnlocks}
+        onDismiss={() => setPendingUnlocks([])}
       />
 
       {/* POI detail modal */}

@@ -5,9 +5,9 @@
 
 ## Status
 
-- **State:** IN PROGRESS — backend complete (tasks 1–4), app pending (task 5)
-- **Completed:** tasks 1, 2, 3, 4
-- **Remaining:** task 5 (app screens)
+- **State:** DONE
+- **Completed:** tasks 1, 2, 3, 4, 5
+- **Remaining:** none — see the verification caveat on the app screens below.
 - **Notes:**
   - **The `DESIGN.md` blocker is resolved.** The file now exists at the repo root (1182
     lines, added in `277e40e`) and covers §3.0, §3.0a, §3.0b, §3.1, §3.1c and §3.3. The
@@ -37,6 +37,20 @@
     `GeoSlayer.Tests.Services.*`, so `OneTimeSetUp` never ran and the container never
     started. Moved to the root `GeoSlayer.Tests` namespace; they now genuinely execute.
     **This clears the highest-value item in the STATUS.md manual queue.**
+- **App (task 5):** `npm test` runs two suites with no `node_modules` needed — the
+  existing `xpCurve` parity check plus **32 new tests** for `helpers/progression.ts`.
+  All pass.
+  - The screens are deliberately thin rendering over pure helpers, so the logic that can
+    hold a bug (ladder grouping, progress bars, purchase gating, effect formatting) is
+    tested directly. **The .tsx components themselves are still unrendered and
+    untypechecked** — that needs the real toolchain and stays in the manual queue.
+  - A partial typecheck (TypeScript fetched into the scratch dir, since the repo has no
+    `node_modules`) surfaced implicit-`any` in the upgrade mutation callbacks; those are
+    now explicitly annotated. The rest of its output was missing-dependency noise that hit
+    pre-existing files equally, so it is not evidence the screens are clean.
+  - **A test caught a real contract bug:** `LockedSkillDto` exposed the ladder label as
+    `Name` while `UnlockEventDto` used `DisplayName`, so the app read the wrong field and
+    rendered a blank label. Both DTOs now use `DisplayName`.
 - **Migration verified against real legacy data**, not just a fresh schema: applied the
   Stage 01 schema to a scratch PostGIS container, inserted a player with `Xp=4000, Level=10`,
   then applied `Stage02ProgressionCore`. Result: `AdventurerXp` rescaled to 1000 (the 0.25
@@ -58,7 +72,7 @@
 | 6 | Each Adventurer level grants exactly one bonus point | ✅ `EachAdventurerLevel_GrantsExactlyOneBonusPoint` |
 | 7 | Reveal Radius measurably changes cells revealed | ✅ `RevealRadiusUpgradeTests` (with a control test) |
 | 8 | Respec refunds every point and clears ranks | ✅ `Respec_RefundsEveryPointAndClearsRanks` |
-| 9 | Skills screen shows unlocked + locked ladder | ⚠️ API verified (`GetSkills_*`); **screen is task 5** |
+| 9 | Skills screen shows unlocked + locked ladder | ✅ API verified (`GetSkills_*`); screen built, its logic unit-tested — see caveat |
 | 10 | Nothing from Stage 01 regressed | ✅ all Stage 01 tests pass, now actually executing |
 
 - **Blockers:** none.
@@ -136,12 +150,12 @@ Per `DESIGN.md` §3.0a.
 
 ### 5. App
 
-- [ ] Skills screen (wire up the ✨ stub in `components/hud.tsx`). Unlocked skills with
+- [x] Skills screen (wire up the ✨ stub in `components/hud.tsx`). Unlocked skills with
       progress; locked ones **named and greyed with their unlock level** — the ladder is a
       roadmap and should be visible.
-- [ ] Upgrade screen: points available, the four upgrades, purchase, respec.
-- [ ] Unlock celebration — full screen, not a toast (§3.1c).
-- [ ] HUD shows Adventurer level and XP. Remove the hardcoded `hp={85}` / `gold={0}`; show
+- [x] Upgrade screen: points available, the four upgrades, purchase, respec.
+- [x] Unlock celebration — full screen, not a toast (§3.1c).
+- [x] HUD shows Adventurer level and XP. Remove the hardcoded `hp={85}` / `gold={0}`; show
       real values or omit those elements until the systems exist.
 
 ---

@@ -26,6 +26,8 @@ function RootNavigator() {
         <Stack.Screen name="login" />
         <Stack.Screen name="register" />
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="skills" />
+        <Stack.Screen name="upgrades" />
       </Stack>
       {!isLoggedIn && <Redirect href="/login" />}
     </>

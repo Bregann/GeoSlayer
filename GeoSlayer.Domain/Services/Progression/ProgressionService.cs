@@ -245,7 +245,7 @@ public class ProgressionService(
             }).ToList(),
             Locked = locked.Select(u => new LockedSkillDto
             {
-                Name = u.DisplayName,
+                DisplayName = u.DisplayName,
                 Payload = u.Payload,
                 UnlockType = u.UnlockType,
                 UnlocksAtAdventurerLevel = u.AdventurerLevel,
