@@ -257,8 +257,6 @@ Worth a human eye:
 Nothing outstanding on the backend. The gathering/production loop is now closed: Mining
 produces ore, Smithing turns it into tools, and the tools make Mining faster.
 
-Needs an app toolchain when one exists:
-
-- **Tools show only their primary modifier.** `PlayerItemDto.ModifierText` renders the tier
-  gate but not the speed bonus, so the equipment screen currently undersells every tool.
-  The data is there (`SecondaryModifier`); the DTO and `ModifierText` need to carry both.
+~~Tools show only their primary modifier.~~ **Fixed immediately after** — `ModifierText`
+now reads "Gathers up to tier 3 · 20% faster gathering", and the DTO carries the secondary
+modifier so the app can render them separately if it prefers.

@@ -311,6 +311,24 @@ public class SmithingIntegrationTests : DatabaseIntegrationTestBase
     }
 
     [Test]
+    public async Task AToolsDisplayText_MentionsBothItsEffects()
+    {
+        // Showing only the tier gate would undersell every tool — a player comparing an
+        // Iron Pickaxe to a Foraging Knife would see no difference at all.
+        await EquipTool("iron_pickaxe");
+
+        var items = await _crafting.GetItems(_player.Id, Ct);
+        var pickaxe = items.First(i => i.Key == "iron_pickaxe");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(pickaxe.ModifierText, Does.Contain("tier 3"));
+            Assert.That(pickaxe.ModifierText, Does.Contain("faster"),
+                "the speed bonus must be visible, not just stored");
+        });
+    }
+
+    [Test]
     public void EveryToolCarriesBothATierGateAndASpeedBonus()
     {
         var tools = RecipeSeedData.Items

@@ -112,8 +112,15 @@ public class PlayerItemDto
     public ItemModifier Modifier { get; set; }
     public double ModifierValue { get; set; }
 
-    /// <summary>The effect as text, e.g. "+20% skill XP".</summary>
+    /// <summary>
+    /// The effect as text, e.g. "+20% skill XP". Includes a secondary modifier when the
+    /// item has one — a tool that gates a tier *and* gathers faster must say both, or the
+    /// screen undersells it.
+    /// </summary>
     public string ModifierText { get; set; } = null!;
+
+    public ItemModifier? SecondaryModifier { get; set; }
+    public double SecondaryModifierValue { get; set; }
 
     public int Tier { get; set; }
     public int Quantity { get; set; }

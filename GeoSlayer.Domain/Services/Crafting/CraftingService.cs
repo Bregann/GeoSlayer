@@ -344,13 +344,29 @@ public class CraftingService(
         Slot = playerItem.Item.Slot,
         Modifier = playerItem.Item.Modifier,
         ModifierValue = playerItem.Item.ModifierValue,
-        ModifierText = ModifierText(playerItem.Item.Modifier, playerItem.Item.ModifierValue),
+        ModifierText = FullModifierText(playerItem.Item),
+        SecondaryModifier = playerItem.Item.SecondaryModifier,
+        SecondaryModifierValue = playerItem.Item.SecondaryModifierValue,
         Tier = playerItem.Item.Tier,
         Quantity = playerItem.Quantity,
         IsEquipped = playerItem.IsEquipped,
         ClaimId = playerItem.ClaimId,
         ClaimName = playerItem.Claim?.Name,
     };
+
+    /// <summary>
+    /// Both of an item's effects as one line. A tool carries a tier gate and a speed
+    /// bonus, and showing only the first undersells every tool in the game.
+    /// </summary>
+    public static string FullModifierText(Item item)
+    {
+        var primary = ModifierText(item.Modifier, item.ModifierValue);
+
+        if (item.SecondaryModifier is null || item.SecondaryModifierValue == 0)
+            return primary;
+
+        return $"{primary} · {ModifierText(item.SecondaryModifier.Value, item.SecondaryModifierValue)}";
+    }
 
     /// <summary>The modifier as text. The unit depends on which modifier it is.</summary>
     public static string ModifierText(ItemModifier modifier, double value) => modifier switch
@@ -362,6 +378,7 @@ public class CraftingService(
         ItemModifier.StackCapPercent => $"+{Math.Round(value * 100)}% stack caps",
         ItemModifier.WorkerRatePercent => $"+{Math.Round(value * 100)}% worker output",
         ItemModifier.ToolTier => $"Gathers up to tier {value:0}",
+        ItemModifier.GatherSpeedPercent => $"{Math.Round(value * 100)}% faster gathering",
         _ => $"+{value:0.##}",
     };
 
