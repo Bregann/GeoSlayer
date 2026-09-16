@@ -84,6 +84,28 @@ public class MaterialService(
         return tiers.Count == 0 ? null : (int)tiers.Max();
     }
 
+    /// <summary>
+    /// How much faster an equipped tool gathers within a tier (§4.3, Stage 11).
+    ///
+    /// <para>A walk cannot block on a gather timer, so speed shows up as <b>more units per
+    /// cell</b> — the same trick §4.1a uses to express <c>BaseGatherSeconds</c> on foot.
+    /// This is what makes a better tool worth crafting once you already have one that
+    /// reaches your tier.</para>
+    /// </summary>
+    private async Task<double> EquippedGatherSpeed(int playerId, CancellationToken ct)
+    {
+        var values = await db.PlayerItems
+            .Include(pi => pi.Item)
+            .Where(pi => pi.PlayerId == playerId && pi.IsEquipped && pi.Quantity > 0)
+            .Select(pi => new { pi.Item.Modifier, pi.Item.ModifierValue,
+                                pi.Item.SecondaryModifier, pi.Item.SecondaryModifierValue })
+            .ToListAsync(ct);
+
+        return values.Sum(i =>
+            (i.Modifier == ItemModifier.GatherSpeedPercent ? i.ModifierValue : 0)
+            + (i.SecondaryModifier == ItemModifier.GatherSpeedPercent ? i.SecondaryModifierValue : 0));
+    }
+
     public async Task<List<MaterialGainDto>> AwardCellDrops(
         int playerId, IReadOnlyList<GridCell> cells, CancellationToken ct)
     {
@@ -102,6 +124,7 @@ public class MaterialService(
             .ToDictionaryAsync(s => s.SkillType, s => s.Level, ct);
 
         var toolTier = await EquippedToolTier(playerId, ct);
+        var gatherSpeed = await EquippedGatherSpeed(playerId, ct);
 
         var totals = new Dictionary<int, int>();
 
@@ -116,7 +139,15 @@ public class MaterialService(
                 multiplier, toolTier);
 
             foreach (var drop in drops)
-                totals[drop.MaterialId] = totals.GetValueOrDefault(drop.MaterialId) + drop.Quantity;
+            {
+                // A faster tool yields more per cell. Floored at the base quantity so a
+                // rounding-down can never make a tool worse than none.
+                var quantity = gatherSpeed > 0
+                    ? Math.Max(drop.Quantity, (int)Math.Round(drop.Quantity * (1 + gatherSpeed)))
+                    : drop.Quantity;
+
+                totals[drop.MaterialId] = totals.GetValueOrDefault(drop.MaterialId) + quantity;
+            }
         }
 
         return await GrantMaterials(playerId, totals, ct);

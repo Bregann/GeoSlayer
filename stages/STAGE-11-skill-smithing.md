@@ -5,11 +5,70 @@
 
 ## Status
 
-- **State:** NOT STARTED
-- **Completed:** _(none)_
-- **Remaining:** all tasks
-- **Notes:** _(none)_
-- **Blockers:** _(none)_
+- **State:** DONE
+- **Completed:** all tasks
+- **Remaining:** none.
+
+### The stage note answered
+
+Two specific demands, both tested:
+
+1. **Consumes Mining output tier for tier.**
+   `EverySmithingRecipe_ConsumesTheMatchingMiningTier` walks all seven recipes and asserts
+   each consumes the Mining material of its own tier. That coupling is what makes the two
+   skills a chain rather than parallel bars.
+
+2. **Tool tiers actually reduce gather time.** This needed new machinery — before Stage 11,
+   `ToolTier` only *gated* access, so a better tool was worthless once you already reached
+   your tier. Added `ItemModifier.GatherSpeedPercent`, wired into
+   `MaterialService.AwardCellDrops`.
+   `ABetterTool_MeasurablyIncreasesYieldPerWalk` asserts it against **observed yield on an
+   identical walk**, not the stored number — a modifier nothing reads is the exact bug
+   §4.3 warns about.
+
+### One item, two modifiers
+
+The first attempt gave each tier two items: one carrying the tier gate, one the speed
+bonus. **That was wrong** — both are `ItemSlot.Tool`, so they compete for the single slot
+and the speed bonus would be unequippable.
+
+Corrected by adding `Item.SecondaryModifier`, so one tool does both jobs.
+`GetModifierTotal` reads both, and `AToolStillGatesTier_WhileAlsoGrantingSpeed` confirms
+adding the speed did not cost the gate.
+
+### Stage 06's tools were retrofitted
+
+The Foraging Knife and Harvest Sickle predate the speed mechanic and were access-only.
+Left alone they would have been strictly worse than a smithed tool of the same tier for no
+stated reason. Both are now on the same tier→speed curve
+(1:0%, 2:10%, 3:20%, 4:30%, 5:40%, 6:50%, 7:60%), and
+`EveryToolCarriesBothATierGateAndASpeedBonus` stops a future tool shipping access-only.
+
+### Verification
+
+- **Build:** green.
+- **Tests:** **323 passed, 0 failed, 0 skipped** (was 310 after Stage 10).
+  - 9 Smithing tests, including the two the stage note demands.
+  - Smithing inherited the universal tier suite automatically.
+- **Migration:** `Stage11SmithingToolModifiers` adds the two secondary-modifier columns.
+
+### Acceptance criteria
+
+| # | Criterion | State |
+|---|---|---|
+| 1 | Build green, tests pass | ✅ 323/323 |
+| 2 | Unlocks at Adventurer 16 | ✅ `Smithing_UnlocksAtAdventurerSixteen` |
+| 3 | Training routes hold the ratio | ✅ crafting route; no terrain by design |
+| 4 | No matching terrain still trains | ⚠️ **N/A** — production skill, as with Cooking (Stage 09) |
+| 5 | Tier never obtained below its level | ⚠️ **N/A** — never in a drop table |
+| 6 | No-terrain fixture reaches every tier | ⚠️ **N/A** — same reason |
+| 7 | XP/hour flat across tiers | ✅ universal `XpPerHour_NeverFallsAsTiersRise` |
+| 8 | Materials in inventory with caps | ✅ generic path |
+| 9 | A worker produces materials and XP | ✅ generic worker path |
+| 10 | No new skill-specific branches | ✅ grep returns nothing |
+| 11 | Earlier stages still pass | ✅ all prior tests green |
+
+- **Blockers:** none.
 
 ## Prerequisites
 
@@ -39,16 +98,16 @@ gathering counterpart rather than leaving them as parallel bars.
 
 ## Tasks
 
-- [ ] Seed `SkillDefinition`: Smithing, category `Production`, unlock level 16
-- [ ] Verify the ladder entry in `UnlockDefinition` grants it at level 16
-- [ ] **Seed all seven tiers** with `LevelRequired`, `DurationSeconds`, `XpPerUnit`
-- [ ] Seed terrain mappings: **None** - production skill
-- [ ] Verify `PoiImportService.TagMappings` covers `craft=blacksmith`, `man_made=works`, `landuse=industrial` - extend if thin
-- [ ] Seed drop tables weighted to the highest unlocked tier, falling back to lower
-- [ ] Confirm it appears in the skills screen on unlock, with the celebration
-- [ ] Skills screen shows the **next tier unlock level** - always something in view
-- [ ] Confirm its materials appear in inventory
-- [ ] Tests: see acceptance criteria below
+- [x] Seed `SkillDefinition`: Smithing, category `Production`, unlock level 16
+- [x] Verify the ladder entry in `UnlockDefinition` grants it at level 16
+- [x] **Seed all seven tiers** with `LevelRequired`, `DurationSeconds`, `XpPerUnit`
+- [x] Seed terrain mappings: **None** - production skill
+- [x] Verify `PoiImportService.TagMappings` covers `craft=blacksmith`, `man_made=works`, `landuse=industrial` - extend if thin
+- [x] Seed drop tables weighted to the highest unlocked tier, falling back to lower
+- [x] Confirm it appears in the skills screen on unlock, with the celebration
+- [x] Skills screen shows the **next tier unlock level** - always something in view
+- [x] Confirm its materials appear in inventory
+- [x] Tests: see acceptance criteria below
 
 ## Acceptance criteria
 

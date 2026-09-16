@@ -1,5 +1,5 @@
 {
-  "_comment": "Items: gear, tools and buildings (DESIGN.md 4.3). Seeded as data so balance can be retuned without a deploy. Gear bonuses are deliberately larger than the equivalent Bonus Point upgrade but slot-competing, so the two acquisition routes do not merely duplicate each other.",
+  "_comment": "Items: gear, tools and buildings (DESIGN.md 4.3). Seeded as data so balance can be retuned without a deploy. Gear bonuses are deliberately larger than the equivalent Bonus Point upgrade but slot-competing, so the two acquisition routes do not merely duplicate each other. Tools carry a secondary modifier: ToolTier gates which tiers are reachable, GatherSpeedPercent reduces gather time within a tier (4.3). Both on one item, because two items competing for the single Tool slot would make the speed bonus unusable.",
   "items": [
     {
       "key": "foragers_satchel",
@@ -41,7 +41,6 @@
       "modifierValue": 4,
       "tier": 2
     },
-
     {
       "key": "foraging_knife",
       "name": "Foraging Knife",
@@ -50,7 +49,9 @@
       "slot": "Tool",
       "modifier": "ToolTier",
       "modifierValue": 3,
-      "tier": 1
+      "tier": 1,
+      "secondaryModifier": "GatherSpeedPercent",
+      "secondaryModifierValue": 0.2
     },
     {
       "key": "harvest_sickle",
@@ -60,9 +61,10 @@
       "slot": "Tool",
       "modifier": "ToolTier",
       "modifierValue": 5,
-      "tier": 2
+      "tier": 2,
+      "secondaryModifier": "GatherSpeedPercent",
+      "secondaryModifierValue": 0.4
     },
-
     {
       "key": "storehouse",
       "name": "Storehouse",
@@ -82,6 +84,90 @@
       "modifier": "WorkerRatePercent",
       "modifierValue": 0.3,
       "tier": 1
+    },
+    {
+      "key": "stone_tools",
+      "name": "Stone Tools",
+      "description": "Rough, but they work. Reaches tier 1.",
+      "kind": "Tool",
+      "slot": "Tool",
+      "modifier": "ToolTier",
+      "modifierValue": 1,
+      "tier": 1,
+      "secondaryModifier": "GatherSpeedPercent",
+      "secondaryModifierValue": 0.0
+    },
+    {
+      "key": "copper_pickaxe",
+      "name": "Copper Pickaxe",
+      "description": "A real pickaxe. Reaches tier 2, and swings faster.",
+      "kind": "Tool",
+      "slot": "Tool",
+      "modifier": "ToolTier",
+      "modifierValue": 2,
+      "tier": 2,
+      "secondaryModifier": "GatherSpeedPercent",
+      "secondaryModifierValue": 0.1
+    },
+    {
+      "key": "iron_pickaxe",
+      "name": "Iron Pickaxe",
+      "description": "Holds an edge. Reaches tier 3.",
+      "kind": "Tool",
+      "slot": "Tool",
+      "modifier": "ToolTier",
+      "modifierValue": 3,
+      "tier": 3,
+      "secondaryModifier": "GatherSpeedPercent",
+      "secondaryModifierValue": 0.2
+    },
+    {
+      "key": "silver_tools",
+      "name": "Silver Tools",
+      "description": "Finely balanced. Reaches tier 4.",
+      "kind": "Tool",
+      "slot": "Tool",
+      "modifier": "ToolTier",
+      "modifierValue": 4,
+      "tier": 4,
+      "secondaryModifier": "GatherSpeedPercent",
+      "secondaryModifierValue": 0.3
+    },
+    {
+      "key": "gold_instruments",
+      "name": "Gold Instruments",
+      "description": "Precision work. Reaches tier 5.",
+      "kind": "Tool",
+      "slot": "Tool",
+      "modifier": "ToolTier",
+      "modifierValue": 5,
+      "tier": 5,
+      "secondaryModifier": "GatherSpeedPercent",
+      "secondaryModifierValue": 0.4
+    },
+    {
+      "key": "gemset_tools",
+      "name": "Gem-set Tools",
+      "description": "Cuts almost anything. Reaches tier 6.",
+      "kind": "Tool",
+      "slot": "Tool",
+      "modifier": "ToolTier",
+      "modifierValue": 6,
+      "tier": 6,
+      "secondaryModifier": "GatherSpeedPercent",
+      "secondaryModifierValue": 0.5
+    },
+    {
+      "key": "meteoric_gear",
+      "name": "Meteoric Gear",
+      "description": "Not from around here. Reaches tier 7.",
+      "kind": "Tool",
+      "slot": "Tool",
+      "modifier": "ToolTier",
+      "modifierValue": 7,
+      "tier": 7,
+      "secondaryModifier": "GatherSpeedPercent",
+      "secondaryModifierValue": 0.6
     }
   ]
 }

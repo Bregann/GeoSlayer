@@ -422,12 +422,22 @@ public class CraftingService(
     public async Task<double> GetModifierTotal(
         int playerId, ItemModifier modifier, CancellationToken ct)
     {
-        return await db.PlayerItems
+        // Secondary modifiers count as well (Stage 11): a tool carries both its tier gate
+        // and its speed bonus, and ignoring the second would make the speed invisible.
+        var equipped = await db.PlayerItems
             .Include(pi => pi.Item)
-            .Where(pi => pi.PlayerId == playerId
-                      && pi.IsEquipped
-                      && pi.Quantity > 0
-                      && pi.Item.Modifier == modifier)
-            .SumAsync(pi => pi.Item.ModifierValue, ct);
+            .Where(pi => pi.PlayerId == playerId && pi.IsEquipped && pi.Quantity > 0)
+            .Select(pi => new
+            {
+                pi.Item.Modifier,
+                pi.Item.ModifierValue,
+                pi.Item.SecondaryModifier,
+                pi.Item.SecondaryModifierValue,
+            })
+            .ToListAsync(ct);
+
+        return equipped.Sum(i =>
+            (i.Modifier == modifier ? i.ModifierValue : 0)
+            + (i.SecondaryModifier == modifier ? i.SecondaryModifierValue : 0));
     }
 }

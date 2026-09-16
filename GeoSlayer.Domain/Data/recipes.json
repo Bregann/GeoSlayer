@@ -13,8 +13,14 @@
       "outputMaterial": "dried_rations",
       "outputQuantity": 2,
       "inputs": [
-        { "material": "wild_grass", "quantity": 3 },
-        { "material": "minnow", "quantity": 2 }
+        {
+          "material": "wild_grass",
+          "quantity": 3
+        },
+        {
+          "material": "minnow",
+          "quantity": 2
+        }
       ]
     },
     {
@@ -28,8 +34,14 @@
       "outputMaterial": "travellers_stew",
       "outputQuantity": 2,
       "inputs": [
-        { "material": "common_herbs", "quantity": 3 },
-        { "material": "sardine", "quantity": 2 }
+        {
+          "material": "common_herbs",
+          "quantity": 3
+        },
+        {
+          "material": "sardine",
+          "quantity": 2
+        }
       ]
     },
     {
@@ -43,8 +55,14 @@
       "outputMaterial": "hearty_pie",
       "outputQuantity": 2,
       "inputs": [
-        { "material": "berries", "quantity": 3 },
-        { "material": "trout", "quantity": 2 }
+        {
+          "material": "berries",
+          "quantity": 3
+        },
+        {
+          "material": "trout",
+          "quantity": 2
+        }
       ]
     },
     {
@@ -58,8 +76,14 @@
       "outputMaterial": "spiced_roast",
       "outputQuantity": 2,
       "inputs": [
-        { "material": "root_vegetables", "quantity": 3 },
-        { "material": "salmon", "quantity": 2 }
+        {
+          "material": "root_vegetables",
+          "quantity": 3
+        },
+        {
+          "material": "salmon",
+          "quantity": 2
+        }
       ]
     },
     {
@@ -73,8 +97,14 @@
       "outputMaterial": "feast_platter",
       "outputQuantity": 2,
       "inputs": [
-        { "material": "rare_fungi", "quantity": 3 },
-        { "material": "pike", "quantity": 2 }
+        {
+          "material": "rare_fungi",
+          "quantity": 3
+        },
+        {
+          "material": "pike",
+          "quantity": 2
+        }
       ]
     },
     {
@@ -88,8 +118,14 @@
       "outputMaterial": "preserved_banquet",
       "outputQuantity": 2,
       "inputs": [
-        { "material": "nightbloom", "quantity": 3 },
-        { "material": "sturgeon", "quantity": 2 }
+        {
+          "material": "nightbloom",
+          "quantity": 3
+        },
+        {
+          "material": "sturgeon",
+          "quantity": 2
+        }
       ]
     },
     {
@@ -103,8 +139,14 @@
       "outputMaterial": "ambrosia",
       "outputQuantity": 2,
       "inputs": [
-        { "material": "everleaf", "quantity": 3 },
-        { "material": "moonfish", "quantity": 2 }
+        {
+          "material": "everleaf",
+          "quantity": 3
+        },
+        {
+          "material": "moonfish",
+          "quantity": 2
+        }
       ]
     },
     {
@@ -118,7 +160,10 @@
       "outputMaterial": "fibre",
       "outputQuantity": 2,
       "inputs": [
-        { "material": "wild_grass", "quantity": 5 }
+        {
+          "material": "wild_grass",
+          "quantity": 5
+        }
       ]
     },
     {
@@ -132,8 +177,14 @@
       "outputMaterial": "fibre",
       "outputQuantity": 4,
       "inputs": [
-        { "material": "common_herbs", "quantity": 4 },
-        { "material": "fibre", "quantity": 2 }
+        {
+          "material": "common_herbs",
+          "quantity": 4
+        },
+        {
+          "material": "fibre",
+          "quantity": 2
+        }
       ]
     },
     {
@@ -146,8 +197,14 @@
       "xpReward": 200,
       "outputItem": "foragers_satchel",
       "inputs": [
-        { "material": "fibre", "quantity": 10 },
-        { "material": "common_herbs", "quantity": 6 }
+        {
+          "material": "fibre",
+          "quantity": 10
+        },
+        {
+          "material": "common_herbs",
+          "quantity": 6
+        }
       ]
     },
     {
@@ -160,8 +217,14 @@
       "xpReward": 120,
       "outputItem": "foraging_knife",
       "inputs": [
-        { "material": "scrap", "quantity": 8 },
-        { "material": "wild_grass", "quantity": 10 }
+        {
+          "material": "scrap",
+          "quantity": 8
+        },
+        {
+          "material": "wild_grass",
+          "quantity": 10
+        }
       ]
     },
     {
@@ -174,8 +237,14 @@
       "xpReward": 400,
       "outputItem": "surveyors_lens",
       "inputs": [
-        { "material": "scrap", "quantity": 15 },
-        { "material": "berries", "quantity": 5 }
+        {
+          "material": "scrap",
+          "quantity": 15
+        },
+        {
+          "material": "berries",
+          "quantity": 5
+        }
       ]
     },
     {
@@ -188,8 +257,14 @@
       "xpReward": 300,
       "outputItem": "travellers_boots",
       "inputs": [
-        { "material": "fibre", "quantity": 12 },
-        { "material": "salvage", "quantity": 6 }
+        {
+          "material": "fibre",
+          "quantity": 12
+        },
+        {
+          "material": "salvage",
+          "quantity": 6
+        }
       ]
     },
     {
@@ -202,8 +277,14 @@
       "xpReward": 500,
       "outputItem": "storehouse",
       "inputs": [
-        { "material": "timber_rough", "quantity": 20 },
-        { "material": "scrap", "quantity": 12 }
+        {
+          "material": "timber_rough",
+          "quantity": 20
+        },
+        {
+          "material": "scrap",
+          "quantity": 12
+        }
       ]
     },
     {
@@ -216,8 +297,14 @@
       "xpReward": 700,
       "outputItem": "workers_lodge",
       "inputs": [
-        { "material": "timber_rough", "quantity": 30 },
-        { "material": "fibre", "quantity": 15 }
+        {
+          "material": "timber_rough",
+          "quantity": 30
+        },
+        {
+          "material": "fibre",
+          "quantity": 15
+        }
       ]
     },
     {
@@ -230,8 +317,133 @@
       "xpReward": 900,
       "outputItem": "hearthstone_charm",
       "inputs": [
-        { "material": "blessed_water", "quantity": 1 },
-        { "material": "timber_rough", "quantity": 10 }
+        {
+          "material": "blessed_water",
+          "quantity": 1
+        },
+        {
+          "material": "timber_rough",
+          "quantity": 10
+        }
+      ]
+    },
+    {
+      "key": "smith_stone_tools",
+      "name": "Stone Tools",
+      "description": "Knapped from what was lying about.",
+      "skill": "Smithing",
+      "levelRequired": 1,
+      "durationSeconds": 60,
+      "xpReward": 10,
+      "outputItem": "stone_tools",
+      "outputQuantity": 1,
+      "inputs": [
+        {
+          "material": "stone_rough",
+          "quantity": 6
+        }
+      ]
+    },
+    {
+      "key": "smith_copper_pickaxe",
+      "name": "Copper Pickaxe",
+      "description": "Soft metal, but a real tool.",
+      "skill": "Smithing",
+      "levelRequired": 10,
+      "durationSeconds": 180,
+      "xpReward": 24,
+      "outputItem": "copper_pickaxe",
+      "outputQuantity": 1,
+      "inputs": [
+        {
+          "material": "ore_copper",
+          "quantity": 6
+        }
+      ]
+    },
+    {
+      "key": "smith_iron_pickaxe",
+      "name": "Iron Pickaxe",
+      "description": "Holds an edge through a day's work.",
+      "skill": "Smithing",
+      "levelRequired": 20,
+      "durationSeconds": 420,
+      "xpReward": 50,
+      "outputItem": "iron_pickaxe",
+      "outputQuantity": 1,
+      "inputs": [
+        {
+          "material": "ore_iron",
+          "quantity": 6
+        }
+      ]
+    },
+    {
+      "key": "smith_silver_tools",
+      "name": "Silver Tools",
+      "description": "Light and precise.",
+      "skill": "Smithing",
+      "levelRequired": 35,
+      "durationSeconds": 900,
+      "xpReward": 95,
+      "outputItem": "silver_tools",
+      "outputQuantity": 1,
+      "inputs": [
+        {
+          "material": "ore_silver",
+          "quantity": 5
+        }
+      ]
+    },
+    {
+      "key": "smith_gold_instruments",
+      "name": "Gold Instruments",
+      "description": "More precise than practical, but it works.",
+      "skill": "Smithing",
+      "levelRequired": 50,
+      "durationSeconds": 1800,
+      "xpReward": 165,
+      "outputItem": "gold_instruments",
+      "outputQuantity": 1,
+      "inputs": [
+        {
+          "material": "ore_gold",
+          "quantity": 5
+        }
+      ]
+    },
+    {
+      "key": "smith_gemset_tools",
+      "name": "Gem-set Tools",
+      "description": "The edge never dulls.",
+      "skill": "Smithing",
+      "levelRequired": 70,
+      "durationSeconds": 3000,
+      "xpReward": 290,
+      "outputItem": "gemset_tools",
+      "outputQuantity": 1,
+      "inputs": [
+        {
+          "material": "gemstone",
+          "quantity": 4
+        }
+      ]
+    },
+    {
+      "key": "smith_meteoric_gear",
+      "name": "Meteoric Gear",
+      "description": "Whatever it is, it cuts stone like turf.",
+      "skill": "Smithing",
+      "levelRequired": 90,
+      "durationSeconds": 5400,
+      "xpReward": 460,
+      "outputItem": "meteoric_gear",
+      "outputQuantity": 1,
+      "inputs": [
+        {
+          "material": "meteoric_ore",
+          "quantity": 4
+        }
       ]
     }
   ]

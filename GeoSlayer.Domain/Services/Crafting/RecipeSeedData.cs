@@ -35,6 +35,8 @@ public static class RecipeSeedData
         public ItemSlot Slot { get; set; }
         public ItemModifier Modifier { get; set; }
         public double ModifierValue { get; set; }
+        public ItemModifier? SecondaryModifier { get; set; }
+        public double SecondaryModifierValue { get; set; }
         public int Tier { get; set; } = 1;
     }
 

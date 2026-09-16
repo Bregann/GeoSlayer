@@ -1,6 +1,6 @@
 # Build status
 
-**Current stage: `STAGE-11-skill-smithing.md`**
+**Current stage: `STAGE-12-museum.md`**
 
 Single source of truth for where the build is. Update this when a stage completes.
 
@@ -16,7 +16,7 @@ Single source of truth for where the build is. Update this when a stage complete
 | 08 | Woodcutting | DONE |
 | 09 | Cooking | DONE |
 | 10 | Mining | DONE |
-| 11 | Smithing | NOT STARTED |
+| 11 | Smithing | DONE |
 | 12 | Museum | NOT STARTED |
 | 13 | Clue scrolls | NOT STARTED |
 | 14 | Retention systems | NOT STARTED |
@@ -251,3 +251,14 @@ Worth a human eye:
 - **Whether under-4× actually feels acceptable in play.** It is the right shape
   numerically, but a player who knows a quarry-dweller mines twice as fast may still feel
   it. That is a judgement only real play answers, and the multipliers are seeded.
+
+### From Stage 11
+
+Nothing outstanding on the backend. The gathering/production loop is now closed: Mining
+produces ore, Smithing turns it into tools, and the tools make Mining faster.
+
+Needs an app toolchain when one exists:
+
+- **Tools show only their primary modifier.** `PlayerItemDto.ModifierText` renders the tier
+  gate but not the speed bonus, so the equipment screen currently undersells every tool.
+  The data is there (`SecondaryModifier`); the DTO and `ModifierText` need to carry both.

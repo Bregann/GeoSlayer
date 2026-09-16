@@ -271,6 +271,8 @@ namespace GeoSlayer.Tests.Infrastructure
                     Slot = definition.Slot,
                     Modifier = definition.Modifier,
                     ModifierValue = definition.ModifierValue,
+                    SecondaryModifier = definition.SecondaryModifier,
+                    SecondaryModifierValue = definition.SecondaryModifierValue,
                     Tier = definition.Tier,
                 });
             }

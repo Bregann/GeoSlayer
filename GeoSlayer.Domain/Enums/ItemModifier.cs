@@ -29,4 +29,13 @@ public enum ItemModifier
 
     /// <summary>Highest gathering tier this tool permits (§4.3 tools gate access).</summary>
     ToolTier,
+
+    /// <summary>
+    /// Fractional reduction in gather time within a tier (§4.3).
+    ///
+    /// <para>This is what makes a better tool worth crafting once you already have one
+    /// that reaches your tier — access alone would make every tool above your level
+    /// pointless. 0.2 means 20% faster, which shows up as more units per cell.</para>
+    /// </summary>
+    GatherSpeedPercent,
 }

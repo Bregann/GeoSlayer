@@ -63,6 +63,15 @@ public static class SkillSeedData
         },
         new()
         {
+            SkillType = SkillType.Smithing,
+            Name = "Smithing",
+            Description = "Working ore into tools. Consumes what Mining produces tier for tier, and gives back the tools that make mining faster — the loop that makes both worth levelling.",
+            Icon = "🔨",
+            UnlockLevel = 16,
+            Category = SkillCategory.Production,
+        },
+        new()
+        {
             SkillType = SkillType.Mining,
             Name = "Mining",
             Description = "Working stone and ore. Quarries and industry are best — and this is the skill that proves geography never locks you out, because most players have neither.",
@@ -280,6 +289,20 @@ public static class SkillSeedData
             ("meteoric_ore", "Meteoric Ore"),
         ]);
 
+    /// <summary>Smithing's ladder (Stage 11) — a production skill, like Cooking.</summary>
+    public static IReadOnlyList<Material> SmithingMaterials { get; } = BuildLadder(
+        SkillType.Smithing,
+        MaterialCategory.Forged,
+        [
+            ("stone_tools",       "Stone Tools"),
+            ("copper_pickaxe",    "Copper Pickaxe"),
+            ("iron_pickaxe",      "Iron Pickaxe"),
+            ("silver_tools",      "Silver Tools"),
+            ("gold_instruments",  "Gold Instruments"),
+            ("gemset_tools",      "Gem-set Tools"),
+            ("meteoric_gear",     "Meteoric Gear"),
+        ]);
+
     /// <summary>
     /// Skills whose materials are <b>produced, not gathered</b>, so they are excluded
     /// from terrain drop tables. A cooked pie must not be found lying in a field.
@@ -293,7 +316,7 @@ public static class SkillSeedData
     /// <summary>Every gathering skill's ladder, so seeders iterate rather than enumerate.</summary>
     public static IReadOnlyList<Material> AllSkillMaterials { get; } =
         [.. ForagingMaterials, .. FishingMaterials, .. WoodcuttingMaterials,
-         .. CookingMaterials, .. MiningMaterials];
+         .. CookingMaterials, .. MiningMaterials, .. SmithingMaterials];
 
     /// <summary>
     /// Drop entries for the Foraging ladder, by terrain.

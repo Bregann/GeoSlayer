@@ -35,6 +35,9 @@ public enum MaterialCategory
     /// <summary>What is dug out of the ground — the Mining ladder (Stage 10).</summary>
     Mined,
 
+    /// <summary>Worked metal — the Smithing ladder (Stage 11).</summary>
+    Forged,
+
     /// <summary>
     /// The small reserved set of named materials from the rarest POIs (§7.4).
     ///

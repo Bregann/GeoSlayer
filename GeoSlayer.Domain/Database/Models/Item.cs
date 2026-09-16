@@ -39,5 +39,17 @@ public class Item
     /// </summary>
     public double ModifierValue { get; set; }
 
+    /// <summary>
+    /// A second effect on the same item, if any (Stage 11).
+    ///
+    /// <para>Tools need two: <see cref="ItemModifier.ToolTier"/> gates which tiers are
+    /// reachable, and <see cref="ItemModifier.GatherSpeedPercent"/> reduces gather time
+    /// within a tier. Two separate items would compete for the single Tool slot, which
+    /// would make the speed bonus unequippable.</para>
+    /// </summary>
+    public ItemModifier? SecondaryModifier { get; set; }
+
+    public double SecondaryModifierValue { get; set; }
+
     public int Tier { get; set; } = 1;
 }
