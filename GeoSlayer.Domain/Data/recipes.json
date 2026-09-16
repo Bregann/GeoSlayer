@@ -2,6 +2,112 @@
   "_comment": "Recipes (DESIGN.md 4.2). Seeded from JSON rather than hardcoded C# because balance is retuned constantly and must not need a redeploy. DurationSeconds are deliberately real minutes-to-hours: crafting is time-gated, not tap-gated.",
   "recipes": [
     {
+      "_comment": "Cooking (Stage 09). Higher tiers consume higher-tier gathering inputs, which is what chains Cooking to Fishing/Foraging rather than leaving them as parallel bars (4.1a). Craft times and XP come from the stage table.",
+      "key": "dried_rations",
+      "name": "Dried Rations",
+      "description": "Whatever you had, dried. Workers will eat it.",
+      "skill": "Cooking",
+      "levelRequired": 1,
+      "durationSeconds": 30,
+      "xpReward": 8,
+      "outputMaterial": "dried_rations",
+      "outputQuantity": 2,
+      "inputs": [
+        { "material": "wild_grass", "quantity": 3 },
+        { "material": "minnow", "quantity": 2 }
+      ]
+    },
+    {
+      "key": "travellers_stew",
+      "name": "Traveller's Stew",
+      "description": "Hot, and worth the wait.",
+      "skill": "Cooking",
+      "levelRequired": 10,
+      "durationSeconds": 90,
+      "xpReward": 20,
+      "outputMaterial": "travellers_stew",
+      "outputQuantity": 2,
+      "inputs": [
+        { "material": "common_herbs", "quantity": 3 },
+        { "material": "sardine", "quantity": 2 }
+      ]
+    },
+    {
+      "key": "hearty_pie",
+      "name": "Hearty Pie",
+      "description": "Keeps a worker going for most of a day.",
+      "skill": "Cooking",
+      "levelRequired": 20,
+      "durationSeconds": 240,
+      "xpReward": 42,
+      "outputMaterial": "hearty_pie",
+      "outputQuantity": 2,
+      "inputs": [
+        { "material": "berries", "quantity": 3 },
+        { "material": "trout", "quantity": 2 }
+      ]
+    },
+    {
+      "key": "spiced_roast",
+      "name": "Spiced Roast",
+      "description": "The kind of meal people walk a long way for.",
+      "skill": "Cooking",
+      "levelRequired": 35,
+      "durationSeconds": 600,
+      "xpReward": 80,
+      "outputMaterial": "spiced_roast",
+      "outputQuantity": 2,
+      "inputs": [
+        { "material": "root_vegetables", "quantity": 3 },
+        { "material": "salmon", "quantity": 2 }
+      ]
+    },
+    {
+      "key": "feast_platter",
+      "name": "Feast Platter",
+      "description": "Enough for a whole crew.",
+      "skill": "Cooking",
+      "levelRequired": 50,
+      "durationSeconds": 1200,
+      "xpReward": 140,
+      "outputMaterial": "feast_platter",
+      "outputQuantity": 2,
+      "inputs": [
+        { "material": "rare_fungi", "quantity": 3 },
+        { "material": "pike", "quantity": 2 }
+      ]
+    },
+    {
+      "key": "preserved_banquet",
+      "name": "Preserved Banquet",
+      "description": "Keeps for months. Built for long absences.",
+      "skill": "Cooking",
+      "levelRequired": 70,
+      "durationSeconds": 2400,
+      "xpReward": 250,
+      "outputMaterial": "preserved_banquet",
+      "outputQuantity": 2,
+      "inputs": [
+        { "material": "nightbloom", "quantity": 3 },
+        { "material": "sturgeon", "quantity": 2 }
+      ]
+    },
+    {
+      "key": "ambrosia",
+      "name": "Ambrosia",
+      "description": "Nobody is quite sure what is in it.",
+      "skill": "Cooking",
+      "levelRequired": 90,
+      "durationSeconds": 3600,
+      "xpReward": 400,
+      "outputMaterial": "ambrosia",
+      "outputQuantity": 2,
+      "inputs": [
+        { "material": "everleaf", "quantity": 3 },
+        { "material": "moonfish", "quantity": 2 }
+      ]
+    },
+    {
       "key": "twine",
       "name": "Twine",
       "description": "Grass, twisted. The first thing anyone makes.",

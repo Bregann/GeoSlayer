@@ -1,6 +1,6 @@
 # Build status
 
-**Current stage: `STAGE-09-skill-cooking.md`**
+**Current stage: `STAGE-10-skill-mining.md`**
 
 Single source of truth for where the build is. Update this when a stage completes.
 
@@ -14,7 +14,7 @@ Single source of truth for where the build is. Update this when a stage complete
 | 06 | Crafting | DONE |
 | 07 | Fishing | DONE |
 | 08 | Woodcutting | DONE |
-| 09 | Cooking | NOT STARTED |
+| 09 | Cooking | DONE |
 | 10 | Mining | NOT STARTED |
 | 11 | Smithing | NOT STARTED |
 | 12 | Museum | NOT STARTED |
@@ -159,13 +159,9 @@ Needs a working app toolchain:
   nothing accrued.
 **Two deferrals carried out of Stage 05, both deliberate:**
 
-- **Worker upkeep is not implemented.** §5.2 wants workers to consume food/coin as the
-  material sink against infinite stockpiling. There is no food until Cooking (Stage 09)
-  and no coin until Trading, so charging the sink now would strand workers with no way to
-  refill — which breaks §7.4's "never punish you for sleeping" harder than the missing
-  sink does. **Stage 06 did not resolve this** — its recipes produce gear, tools and
-  buildings, not consumable food. Upkeep needs something edible, so this moves to
-  **Stage 09 (Cooking)**.
+- ~~**Worker upkeep is not implemented.**~~ **Resolved in Stage 09.** Cooking supplies
+  food, so upkeep is now live: 1 unit per worker-hour, cheapest food first, and unfed
+  workers keep what they earned (§7.4 outranks the sink).
 - **Claims are not drawn on the map.** `ClaimDto` carries a bounding box for exactly this,
   and the claim/eligibility endpoints exist, but the map outline and the claim-from-map
   action were not built. API-only.
@@ -223,3 +219,22 @@ materials keep colliding.** Fishing hit it, Woodcutting hit it. Any skill whose 
 were sketched into `MaterialSeedData` during Stage 03 needs its own `MaterialCategory` and
 the placeholders reassigned. `SkillLaddersDoNotShareAMaterialCategory` catches it, so it
 fails loudly rather than producing a subtly wrong drop table — but expect it.
+
+### From Stage 09
+
+Nothing outstanding on the backend. No app work was needed — Cooking appears in the
+generic skills screen and its recipes in the generic crafting screen.
+
+Needs an app toolchain when one exists:
+
+- **Surface `workersWentUnfed`.** The sync response now carries it, and it is the nudge
+  that tells a player to cook. Nothing renders it yet, so an unfed worker is currently
+  silent — the one piece of upkeep that is server-only.
+
+Worth a human eye:
+
+- **Whether upkeep feels like a sink or a tax.** 1 food/worker-hour against ~2 material
+  units/hour produced means a worker nets positive, which is the intent. But a player who
+  forgets to cook for a week returns to a stalled larder, and whether that reads as "I
+  should cook more" or "this is a chore" is a judgement only play answers. All constants
+  are in `OfflineAccrual`.

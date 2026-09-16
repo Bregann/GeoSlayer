@@ -16,9 +16,24 @@ namespace GeoSlayer.Tests.Services.Skills;
 [TestFixture]
 public class GatheringSkillLadderTests
 {
-    /// <summary>Every skill with a seeded tier ladder.</summary>
+    /// <summary>
+    /// Every skill with a seeded tier ladder — <b>gathering and production alike</b>.
+    ///
+    /// The tier rules (levels, rates, XP/hour, absolute gating) apply to both. Only the
+    /// terrain rules are gathering-specific, and those use
+    /// <see cref="GatheringSkills"/> instead.
+    /// </summary>
     private static IEnumerable<SkillType> LadderSkills =>
         SkillSeedData.AllSkillMaterials.Select(m => m.SkillType!.Value).Distinct();
+
+    /// <summary>
+    /// Skills trained by walking. Production skills (Cooking) train through the craft
+    /// queue and deliberately have no terrain mapping, so the terrain rules do not apply
+    /// to them — asserting otherwise would demand a mapping the design says must not
+    /// exist.
+    /// </summary>
+    private static IEnumerable<SkillType> GatheringSkills =>
+        LadderSkills.Where(s => !SkillSeedData.ProductionSkills.Contains(s));
 
     private static List<Material> Ladder(SkillType skill) =>
         SkillSeedData.AllSkillMaterials
@@ -130,7 +145,7 @@ public class GatheringSkillLadderTests
 
     // ── Criterion 5: gating is absolute ─────────────────────────────
 
-    [TestCaseSource(nameof(LadderSkills))]
+    [TestCaseSource(nameof(GatheringSkills))]
     public void EveryTier_IsUnreachableOneLevelBelowItsGate(SkillType skill)
     {
         var (entries, byKey) = BuildTable();
@@ -162,7 +177,7 @@ public class GatheringSkillLadderTests
 
     // ── Criterion 6: the geography-lockout regression test ──────────
 
-    [TestCaseSource(nameof(LadderSkills))]
+    [TestCaseSource(nameof(GatheringSkills))]
     public void WithNoMatchingTerrain_EveryUnlockedTierIsStillReachable(SkillType skill)
     {
         var (entries, _) = BuildTable();
@@ -192,12 +207,12 @@ public class GatheringSkillLadderTests
         }
     }
 
-    [TestCaseSource(nameof(LadderSkills))]
-    public void EverySkillHasAnOpenTerrainMapping(SkillType skill)
+    [TestCaseSource(nameof(GatheringSkills))]
+    public void EveryGatheringSkillHasAnOpenTerrainMapping(SkillType skill)
     {
         // The Open row is the base rate, and the single thing standing between the design
-        // and a geographic lockout. A skill seeded without one silently trains nothing on
-        // unclassified ground.
+        // and a geographic lockout. A gathering skill seeded without one silently trains
+        // nothing on unclassified ground.
         var hasOpen = SkillSeedData.TerrainMappings
             .Any(m => m.SkillType == skill && m.Terrain == TerrainType.Open);
 
@@ -205,8 +220,8 @@ public class GatheringSkillLadderTests
             $"{skill} has no Open mapping — it would train nothing on unclassified ground");
     }
 
-    [TestCaseSource(nameof(LadderSkills))]
-    public void EveryTerrain_TrainsEverySkillSomething(SkillType skill)
+    [TestCaseSource(nameof(GatheringSkills))]
+    public void EveryTerrain_TrainsEveryGatheringSkillSomething(SkillType skill)
     {
         var (entries, _) = BuildTable();
         var levels = new Dictionary<SkillType, int> { [skill] = 90 };
@@ -251,5 +266,52 @@ public class GatheringSkillLadderTests
             Assert.That(group.Skills, Has.Count.EqualTo(1),
                 $"category {group.Key} is shared by {string.Join(", ", group.Skills)}");
         }
+    }
+
+    // ── Production skills (Stage 09) ────────────────────────────────
+
+    [Test]
+    public void ProductionSkills_HaveNoTerrainMapping()
+    {
+        // The inverse of the gathering rule, and just as load-bearing: a production skill
+        // with a terrain mapping would train by walking, which is not what it is for.
+        foreach (var skill in SkillSeedData.ProductionSkills)
+        {
+            var mappings = SkillSeedData.TerrainMappings.Where(m => m.SkillType == skill);
+
+            Assert.That(mappings, Is.Empty,
+                $"{skill} is a production skill and must not train from terrain");
+        }
+    }
+
+    [Test]
+    public void ProductionMaterials_NeverAppearInDropTables()
+    {
+        // Cooked food is made, never found. A pie dropping out of a hedge would also
+        // bypass the craft queue the skill exists to drive.
+        var productionKeys = SkillSeedData.AllSkillMaterials
+            .Where(m => m.SkillType is not null && SkillSeedData.ProductionSkills.Contains(m.SkillType.Value))
+            .Select(m => m.Key)
+            .ToHashSet();
+
+        Assert.That(productionKeys, Is.Not.Empty, "fixture assumption: a production skill exists");
+
+        var dropped = SkillSeedData.DropEntries()
+            .Select(e => e.MaterialKey)
+            .Where(productionKeys.Contains)
+            .Distinct()
+            .ToList();
+
+        Assert.That(dropped, Is.Empty,
+            $"production materials in drop tables: {string.Join(", ", dropped)}");
+    }
+
+    [TestCaseSource(nameof(LadderSkills))]
+    public void EverySkillIncludingProduction_FollowsTheTierLadder(SkillType skill)
+    {
+        // The tier rules are universal — only the terrain rules are gathering-specific.
+        var levels = Ladder(skill).Select(m => m.LevelRequired).ToList();
+
+        Assert.That(levels, Is.EqualTo(new[] { 1, 10, 20, 35, 50, 70, 90 }));
     }
 }

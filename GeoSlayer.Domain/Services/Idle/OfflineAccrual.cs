@@ -41,6 +41,24 @@ public static class OfflineAccrual
     /// <summary>Each tier adds this much to the rate multiplier.</summary>
     public const double PerTierBonus = 0.5;
 
+    /// <summary>
+    /// Food units one worker consumes per hour (DESIGN.md §5.2, deferred from Stage 05
+    /// until Cooking existed to supply it).
+    ///
+    /// <para>Deliberately low relative to output: upkeep is a material <i>sink</i> against
+    /// infinite stockpiling, not a tax that makes workers not worth running. At 4 units
+    /// per 4-hour cycle against ~8 material units produced, a worker still nets
+    /// positive.</para>
+    /// </summary>
+    public const double FoodPerHour = 1.0;
+
+    /// <summary>
+    /// Food needed for an accrual window. Rounded up, so a partial hour still costs
+    /// something and the sink cannot be dodged by syncing constantly.
+    /// </summary>
+    public static int FoodRequired(TimeSpan elapsed) =>
+        elapsed <= TimeSpan.Zero ? 0 : (int)Math.Ceiling(elapsed.TotalHours * FoodPerHour);
+
     /// <summary>What one worker accrued over an elapsed period.</summary>
     public readonly record struct Accrual(
         TimeSpan Elapsed,

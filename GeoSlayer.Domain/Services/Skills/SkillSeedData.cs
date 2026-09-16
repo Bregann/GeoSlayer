@@ -63,6 +63,15 @@ public static class SkillSeedData
         },
         new()
         {
+            SkillType = SkillType.Cooking,
+            Name = "Cooking",
+            Description = "Turning what you gathered into what your workers eat. Trained at the fire, not on the road — the first skill that consumes rather than collects.",
+            Icon = "🍳",
+            UnlockLevel = 8,
+            Category = SkillCategory.Production,
+        },
+        new()
+        {
             SkillType = SkillType.Woodcutting,
             Name = "Woodcutting",
             Description = "Felling and splitting. Woodland is best, and a woodland cell trains this alongside Foraging — the same ground, two different harvests.",
@@ -211,9 +220,40 @@ public static class SkillSeedData
             ("elderwood", "Elderwood"),
         ]);
 
+    /// <summary>
+    /// Cooking's ladder (Stage 09) — the first <b>production</b> skill.
+    ///
+    /// <para>Deliberately has <b>no terrain mapping</b>: production skills train through
+    /// the craft queue, not by walking. That is a different code path from gathering, and
+    /// the reason these materials are excluded from <see cref="DropEntries"/> — cooked
+    /// food is made, never found on the ground.</para>
+    /// </summary>
+    public static IReadOnlyList<Material> CookingMaterials { get; } = BuildLadder(
+        SkillType.Cooking,
+        MaterialCategory.Cooked,
+        [
+            ("dried_rations",      "Dried Rations"),
+            ("travellers_stew",    "Traveller's Stew"),
+            ("hearty_pie",         "Hearty Pie"),
+            ("spiced_roast",       "Spiced Roast"),
+            ("feast_platter",      "Feast Platter"),
+            ("preserved_banquet",  "Preserved Banquet"),
+            ("ambrosia",           "Ambrosia"),
+        ]);
+
+    /// <summary>
+    /// Skills whose materials are <b>produced, not gathered</b>, so they are excluded
+    /// from terrain drop tables. A cooked pie must not be found lying in a field.
+    /// </summary>
+    public static IReadOnlySet<SkillType> ProductionSkills { get; } =
+        Definitions
+            .Where(d => d.Category == SkillCategory.Production)
+            .Select(d => d.SkillType)
+            .ToHashSet();
+
     /// <summary>Every gathering skill's ladder, so seeders iterate rather than enumerate.</summary>
     public static IReadOnlyList<Material> AllSkillMaterials { get; } =
-        [.. ForagingMaterials, .. FishingMaterials, .. WoodcuttingMaterials];
+        [.. ForagingMaterials, .. FishingMaterials, .. WoodcuttingMaterials, .. CookingMaterials];
 
     /// <summary>
     /// Drop entries for the Foraging ladder, by terrain.
@@ -227,6 +267,10 @@ public static class SkillSeedData
         // skill above is genuinely all that adding a skill requires.
         foreach (var group in AllSkillMaterials.GroupBy(m => m.SkillType))
         {
+            // Production materials are crafted, never found. Excluding them here is what
+            // keeps a cooked pie from dropping out of a hedge.
+            if (group.Key is not null && ProductionSkills.Contains(group.Key.Value)) continue;
+
             var terrains = TerrainMappings
                 .Where(m => m.SkillType == group.Key)
                 .Select(m => m.Terrain)

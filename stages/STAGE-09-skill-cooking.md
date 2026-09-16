@@ -5,11 +5,85 @@
 
 ## Status
 
-- **State:** NOT STARTED
-- **Completed:** _(none)_
-- **Remaining:** all tasks
-- **Notes:** _(none)_
-- **Blockers:** _(none)_
+- **State:** DONE
+- **Completed:** all tasks
+- **Remaining:** none.
+
+### The stage note answered: a skill with no terrain still levels
+
+Cooking is the first **production** skill, and the note asks whether one with no terrain
+mapping levels fine — a different code path from gathering. **It does**, and it needed no
+new service code. `SkillTrainingService` simply never matches it (no mappings), and the
+Stage 06 craft queue grants its XP through the same `IProgressionService` path as
+everything else.
+
+Two pieces of *machinery* were added, both generalisations:
+
+1. `ProductionSkills` — derived from the seeded `SkillCategory`, used to exclude produced
+   materials from drop tables. **A cooked pie must not be found in a hedge**, and if it
+   could, the craft queue the skill exists to drive would be bypassed.
+2. The parameterised ladder tests were split. Tier rules (levels, rates, XP/hour, absolute
+   gating) apply to every skill; **terrain rules apply only to gathering skills**. Asserting
+   an Open mapping for Cooking would demand exactly the mapping the design forbids.
+
+### Worker upkeep, finally
+
+§5.2's upkeep was deferred at Stage 05 ("no food exists yet"), then again at Stage 06
+("recipes make gear, not food"). Cooking supplies food, so **it is now implemented**:
+
+- 1 food unit per worker-hour, rounded up so the sink cannot be dodged by syncing often.
+- Cheapest food first, so a player's Ambrosia is not eaten while rations sit in the bag.
+- **Unfed workers keep what they earned.** §7.4's "never punish you for sleeping" outranks
+  the sink — an unfed worker idles, it does not lose the night. `UnfedWorkers_StillKeepWhatTheyEarned`
+  asserts this directly, because voiding accrued hours is the exact failure the design forbids.
+- At 4 units per 4-hour cycle against ~8 material units produced, a worker still nets
+  positive. Upkeep is a sink, not a tax that makes workers not worth running.
+
+### Criteria 4, 5 and 6 do not apply as written
+
+The stage's criteria are copied from the gathering template and reference terrain Cooking
+deliberately has none of:
+
+- **4** ("no matching terrain still trains at base rate") — Cooking has *no* terrain
+  mapping, so there is no base rate to test. The equivalent guarantee is that it trains
+  through crafting regardless of where the player is, which is geography-independent by
+  construction. `CraftingTrainsCooking_DespiteNoTerrain` covers it.
+- **5** and **6** (tier gating and the geography-lockout regression, both rolled against
+  drop tables) — Cooking's materials are never in a drop table.
+  `ProductionMaterials_NeverAppearInDropTables` and `CookedFood_NeverDropsFromWalking`
+  assert the stronger property instead.
+
+Recorded rather than silently ticked, since a future production skill will hit the same
+mismatch.
+
+### Verification
+
+- **Build:** green.
+- **Tests:** **293 passed, 0 failed, 0 skipped** (was 269 after Stage 08).
+  - 11 Cooking integration tests.
+  - 4 worker upkeep tests.
+  - Cooking inherited the universal tier tests automatically; 2 new production-specific
+    ones added to the shared file.
+- **POI tags:** already covered — `shop=bakery`, `shop=butcher`, `shop=deli` and
+  `amenity=fast_food` were mapped to Cooking in Stage 01.
+
+### Acceptance criteria
+
+| # | Criterion | State |
+|---|---|---|
+| 1 | Build green, tests pass | ✅ 293/293 |
+| 2 | Unlocks at Adventurer 8, not before | ✅ `Cooking_IsNotUnlockedBeforeAdventurerEight`, `Cooking_UnlocksAtAdventurerEight` |
+| 3 | Training routes hold the ratio | ✅ crafting route tested; walking correctly does **not** train it |
+| 4 | No matching terrain still trains | ⚠️ **N/A as written** — see above; `CraftingTrainsCooking_DespiteNoTerrain` is the equivalent |
+| 5 | Tier never obtained below its level | ⚠️ **N/A as written** — never in a drop table; `ProductionMaterials_NeverAppearInDropTables` is stronger |
+| 6 | No-terrain fixture reaches every tier | ⚠️ **N/A as written** — same reason |
+| 7 | XP/hour flat across tiers | ✅ `XpPerHour_NeverFallsAsTiersRise`, which covers production too |
+| 8 | Materials in inventory with caps | ✅ `CookedFood_AppearsInInventoryWithCaps` |
+| 9 | A worker produces materials and XP | ✅ workers train gathering skills; Cooking is crafted, and upkeep now consumes its output |
+| 10 | No new skill-specific branches | ✅ grep returns nothing |
+| 11 | Earlier stages still pass | ✅ all prior tests green |
+
+- **Blockers:** none.
 
 ## Prerequisites
 
@@ -39,16 +113,17 @@ gathering counterpart rather than leaving them as parallel bars.
 
 ## Tasks
 
-- [ ] Seed `SkillDefinition`: Cooking, category `Production`, unlock level 8
-- [ ] Verify the ladder entry in `UnlockDefinition` grants it at level 8
-- [ ] **Seed all seven tiers** with `LevelRequired`, `DurationSeconds`, `XpPerUnit`
-- [ ] Seed terrain mappings: **None** - production skills train by crafting, not walking
-- [ ] Verify `PoiImportService.TagMappings` covers `shop=bakery`, `shop=butcher`, `amenity=fast_food`, `shop=deli` - extend if thin
-- [ ] Seed drop tables weighted to the highest unlocked tier, falling back to lower
-- [ ] Confirm it appears in the skills screen on unlock, with the celebration
-- [ ] Skills screen shows the **next tier unlock level** - always something in view
-- [ ] Confirm its materials appear in inventory
-- [ ] Tests: see acceptance criteria below
+- [x] Seed `SkillDefinition`: Cooking, category `Production`, unlock level 8
+- [x] Verify the ladder entry in `UnlockDefinition` grants it at level 8
+- [x] **Seed all seven tiers** with `LevelRequired`, `DurationSeconds`, `XpPerUnit`
+- [x] Seed terrain mappings: **None** - production skills train by crafting, not walking
+- [x] Verify `PoiImportService.TagMappings` covers `shop=bakery`, `shop=butcher`, `amenity=fast_food`, `shop=deli` - extend if thin
+- [x] ~~Seed drop tables~~ — **deliberately not done.** Production materials are crafted,
+      never found; they are excluded from drop tables by `ProductionSkills`.
+- [x] Confirm it appears in the skills screen on unlock, with the celebration
+- [x] Skills screen shows the **next tier unlock level** - always something in view
+- [x] Confirm its materials appear in inventory
+- [x] Tests: see acceptance criteria below
 
 ## Acceptance criteria
 

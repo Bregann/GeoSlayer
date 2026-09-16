@@ -469,6 +469,117 @@ public class WorkerServiceIntegrationTests : DatabaseIntegrationTestBase
             "a full inventory must not stop the worker");
     }
 
+    // ── Worker upkeep (§5.2, deferred from Stage 05 to Stage 09) ────
+
+    [Test]
+    public async Task Workers_ConsumeFoodAsUpkeep()
+    {
+        var (_, worker) = await StationedWorker(170);
+        await GiveFood("dried_rations", 20);
+        await BackdateCollection(worker.Id, TimeSpan.FromHours(3));
+
+        var before = await FoodHeld("dried_rations");
+        var result = await _sut.CollectOfflineAccrual(_player.Id, Ct);
+        var after = await FoodHeld("dried_rations");
+
+        // FoodRequired rounds up, and the elapsed window is a few microseconds over 3h
+        // because assignment stamps LastCollectedAtUtc before the test backdates it. So
+        // 4 is correct, not 3 — assert the rule rather than a figure that depends on
+        // sub-second timing.
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.UpkeepConsumed.FoodRequired, Is.EqualTo(4),
+                "3h a fraction over, rounded up");
+            Assert.That(result.UpkeepConsumed.FoodConsumed, Is.EqualTo(result.UpkeepConsumed.FoodRequired));
+            Assert.That(after, Is.EqualTo(before - result.UpkeepConsumed.FoodConsumed));
+            Assert.That(result.WorkersWentUnfed, Is.False);
+        });
+    }
+
+    [Test]
+    public async Task UnfedWorkers_StillKeepWhatTheyEarned()
+    {
+        // §7.4 outranks the sink: an unfed worker idles, it does not lose the night.
+        // Voiding hours already accrued would be exactly the "punished for sleeping"
+        // failure the design forbids.
+        var (_, worker) = await StationedWorker(180);
+        await BackdateCollection(worker.Id, TimeSpan.FromHours(3));
+
+        var result = await _sut.CollectOfflineAccrual(_player.Id, Ct);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.WorkersWentUnfed, Is.True, "there is no food");
+            Assert.That(result.Skills.Sum(s => s.XpEarned), Is.GreaterThan(0),
+                "but the XP already earned must stand");
+            Assert.That(result.HasAccrual, Is.True);
+        });
+    }
+
+    [Test]
+    public async Task UpkeepEatsTheCheapestFoodFirst()
+    {
+        // A player's Ambrosia should not be eaten while rations sit in the bag.
+        var (_, worker) = await StationedWorker(190);
+        await GiveFood("dried_rations", 10);
+        await GiveFood("hearty_pie", 10);
+
+        await BackdateCollection(worker.Id, TimeSpan.FromHours(2));
+        await _sut.CollectOfflineAccrual(_player.Id, Ct);
+
+        // Rounded up to 3 for a window a fraction over 2h.
+        Assert.Multiple(async () =>
+        {
+            Assert.That(await FoodHeld("dried_rations"), Is.EqualTo(7), "tier 1 eaten first");
+            Assert.That(await FoodHeld("hearty_pie"), Is.EqualTo(10), "tier 3 untouched");
+        });
+    }
+
+    [Test]
+    public async Task PartialFood_FeedsWhatItCanAndFlagsTheShortfall()
+    {
+        var (_, worker) = await StationedWorker(200);
+        await GiveFood("dried_rations", 1);
+        await BackdateCollection(worker.Id, TimeSpan.FromHours(4));
+
+        var result = await _sut.CollectOfflineAccrual(_player.Id, Ct);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.UpkeepConsumed.FoodRequired, Is.GreaterThanOrEqualTo(4));
+            Assert.That(result.UpkeepConsumed.FoodConsumed, Is.EqualTo(1), "only one unit was held");
+            Assert.That(result.WorkersWentUnfed, Is.True, "so the app can nudge the player to cook");
+        });
+    }
+
+    /// <summary>Give the player a cooked material, upserting like the other helpers.</summary>
+    private async Task GiveFood(string key, int quantity)
+    {
+        var material = await DbContext.Materials.FirstAsync(m => m.Key == key);
+
+        var row = await DbContext.PlayerMaterials
+            .FirstOrDefaultAsync(pm => pm.PlayerId == _player.Id && pm.MaterialId == material.Id);
+
+        if (row is null)
+        {
+            row = new PlayerMaterial { PlayerId = _player.Id, MaterialId = material.Id };
+            DbContext.PlayerMaterials.Add(row);
+        }
+
+        row.Quantity += quantity;
+        await DbContext.SaveChangesAsync();
+    }
+
+    private async Task<long> FoodHeld(string key)
+    {
+        var material = await DbContext.Materials.FirstAsync(m => m.Key == key);
+
+        return await DbContext.PlayerMaterials
+            .Where(pm => pm.PlayerId == _player.Id && pm.MaterialId == material.Id)
+            .Select(pm => pm.Quantity)
+            .FirstOrDefaultAsync();
+    }
+
     // ── Criterion 8: no ticking job ─────────────────────────────────
 
     [Test]

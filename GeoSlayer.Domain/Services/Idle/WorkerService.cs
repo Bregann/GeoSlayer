@@ -167,9 +167,70 @@ public class WorkerService(
             result.Unlocks.AddRange(grant.Unlocks);
         }
 
+        // Upkeep (§5.2), deferred from Stage 05 until Cooking existed to supply food.
+        // Unfed workers idle — they do not die and nothing accrued is lost, because
+        // §7.4's "never punish you for sleeping" outranks the sink.
+        result.UpkeepConsumed = await ConsumeUpkeep(playerId, snapshots, ct);
+        result.WorkersWentUnfed = result.UpkeepConsumed.Unfed;
+
         result.Materials = await AwardWorkerMaterials(playerId, snapshots, ct);
 
         result.HasAccrual = result.Skills.Count > 0 || result.Materials.Count > 0;
+
+        return result;
+    }
+
+    /// <summary>
+    /// Consume food for the hours worked (§5.2).
+    ///
+    /// <para>Feeds workers in order and stops when the larder runs out; the unfed ones
+    /// simply produced nothing extra. Crucially this never throws and never rolls back
+    /// what was already earned — an unfed worker idles, it does not lose the night.</para>
+    /// </summary>
+    private async Task<UpkeepDto> ConsumeUpkeep(
+        int playerId,
+        List<(Worker Worker, SkillType Skill, OfflineAccrual.Accrual Accrual)> snapshots,
+        CancellationToken ct)
+    {
+        var required = snapshots.Sum(s => OfflineAccrual.FoodRequired(s.Accrual.Elapsed));
+
+        var result = new UpkeepDto { FoodRequired = required };
+
+        if (required <= 0) return result;
+
+        // Cheapest food first, so a player's Ambrosia is not eaten while rations sit
+        // in the bag.
+        var food = await db.PlayerMaterials
+            .Include(pm => pm.Material)
+            .Where(pm => pm.PlayerId == playerId
+                      && pm.Quantity > 0
+                      && pm.Material.Category == MaterialCategory.Cooked)
+            .OrderBy(pm => pm.Material.Tier)
+            .ToListAsync(ct);
+
+        var remaining = required;
+
+        foreach (var row in food)
+        {
+            if (remaining <= 0) break;
+
+            var taken = (int)Math.Min(remaining, row.Quantity);
+
+            row.Quantity -= taken;
+            remaining -= taken;
+
+            result.Consumed.Add(new UpkeepLineDto
+            {
+                MaterialId = row.MaterialId,
+                Name = row.Material.Name,
+                Quantity = taken,
+            });
+        }
+
+        result.FoodConsumed = required - remaining;
+        result.Unfed = remaining > 0;
+
+        if (result.Consumed.Count > 0) await db.SaveChangesAsync(ct);
 
         return result;
     }

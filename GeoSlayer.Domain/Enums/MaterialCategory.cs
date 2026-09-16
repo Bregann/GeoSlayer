@@ -29,6 +29,9 @@ public enum MaterialCategory
     /// <summary>What is cut from trees — the Woodcutting ladder (Stage 08).</summary>
     Logged,
 
+    /// <summary>Prepared food — the Cooking ladder (Stage 09). Feeds workers.</summary>
+    Cooked,
+
     /// <summary>
     /// The small reserved set of named materials from the rarest POIs (§7.4).
     ///

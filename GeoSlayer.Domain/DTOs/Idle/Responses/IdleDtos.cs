@@ -106,6 +106,37 @@ public class OfflineAccrualDto
 
     public long AdventurerXpEarned { get; set; }
     public int BonusPointsGranted { get; set; }
+
+    /// <summary>Food eaten while you were away (§5.2).</summary>
+    public UpkeepDto UpkeepConsumed { get; set; } = new();
+
+    /// <summary>True when workers ran out of food — a nudge to cook, not a penalty.</summary>
+    public bool WorkersWentUnfed { get; set; }
+}
+
+/// <summary>One food material eaten as upkeep.</summary>
+public class UpkeepLineDto
+{
+    public int MaterialId { get; set; }
+    public string Name { get; set; } = null!;
+    public int Quantity { get; set; }
+}
+
+/// <summary>
+/// Worker upkeep for an accrual window (DESIGN.md §5.2).
+///
+/// Unfed workers idle — nothing already earned is lost, because §7.4's "never punish you
+/// for sleeping" outranks the material sink.
+/// </summary>
+public class UpkeepDto
+{
+    public int FoodRequired { get; set; }
+    public int FoodConsumed { get; set; }
+
+    /// <summary>True when the larder ran out. The app should nudge the player to cook.</summary>
+    public bool Unfed { get; set; }
+
+    public List<UpkeepLineDto> Consumed { get; set; } = [];
 }
 
 public class SkillAccrualDto
