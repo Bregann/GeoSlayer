@@ -77,10 +77,14 @@ public static class MaterialSeedData
         Tiered("timber_oak",    "Oak Timber",    MaterialCategory.Woodland, 2, 10, 5,  SkillType.Woodcutting),
         Tiered("timber_yew",    "Yew Timber",    MaterialCategory.Woodland, 3, 20, 9,  SkillType.Woodcutting),
 
-        // ── Water (Fishing) ──────────────────────────────────────────
-        Tiered("reeds",         "Reeds",         MaterialCategory.Water, 1, 1,  3,  SkillType.Fishing),
-        Tiered("fish_river",    "River Fish",    MaterialCategory.Water, 2, 10, 5,  SkillType.Fishing),
-        Tiered("fish_deep",     "Deep Fish",     MaterialCategory.Water, 3, 20, 9,  SkillType.Fishing),
+        // ── Water ────────────────────────────────────────────────────
+        // Fishing's own ladder lives in SkillSeedData (Stage 07). The three placeholder
+        // fish that sat here were removed rather than kept: they shared Fishing's tiers
+        // and levels, so both ladders would have competed for the same tier band and the
+        // "highest unlocked tier wins" rule would have picked between them arbitrarily.
+        // Reeds survives as a non-Fishing water material so the terrain still has a pool
+        // of its own.
+        Tiered("reeds",         "Reeds",         MaterialCategory.Water, 1, 1,  3,  SkillType.Foraging),
 
         // ── Farmland (Farming) ───────────────────────────────────────
         Tiered("fibre",         "Plant Fibre",   MaterialCategory.Farmland, 1, 1,  3,  SkillType.Farming),
@@ -104,9 +108,11 @@ public static class MaterialSeedData
         Tiered("ore_silver",    "Silver Ore",    MaterialCategory.Rocky, 4, 35, 15, SkillType.Mining),
         Tiered("ore_gold",      "Gold Ore",      MaterialCategory.Rocky, 5, 50, 24, SkillType.Mining),
 
-        // ── Coastal (Fishing) ────────────────────────────────────────
-        Tiered("driftwood",     "Driftwood",     MaterialCategory.Coastal, 1, 1,  3,  SkillType.Fishing),
-        Tiered("shellfish",     "Shellfish",     MaterialCategory.Coastal, 2, 10, 5,  SkillType.Fishing),
+        // ── Coastal ──────────────────────────────────────────────────
+        // Likewise reassigned to Foraging: beachcombing is foraging, and leaving them on
+        // Fishing would collide with its Stage 07 ladder.
+        Tiered("driftwood",     "Driftwood",     MaterialCategory.Coastal, 1, 1,  3,  SkillType.Foraging),
+        Tiered("shellfish",     "Shellfish",     MaterialCategory.Coastal, 2, 10, 5,  SkillType.Foraging),
 
         // ── Unique named materials (§7.4: reserve for the rarest) ────
         // Three of a ≤15 budget. The rest arrive with the POI systems that justify them,

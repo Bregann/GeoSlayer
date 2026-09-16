@@ -127,7 +127,7 @@ namespace GeoSlayer.Domain.Helpers
         {
             var have = (await context.Materials.Select(m => m.Key).ToListAsync()).ToHashSet();
 
-            foreach (var material in MaterialSeedData.Materials.Concat(SkillSeedData.ForagingMaterials))
+            foreach (var material in MaterialSeedData.Materials.Concat(SkillSeedData.AllSkillMaterials))
             {
                 if (!have.Add(material.Key)) continue;
 

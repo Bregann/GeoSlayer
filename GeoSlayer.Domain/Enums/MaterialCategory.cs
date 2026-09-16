@@ -23,6 +23,9 @@ public enum MaterialCategory
     /// <summary>What grows wild — the Foraging ladder (Stage 04).</summary>
     Foraged,
 
+    /// <summary>What is pulled from the water — the Fishing ladder (Stage 07).</summary>
+    Caught,
+
     /// <summary>
     /// The small reserved set of named materials from the rarest POIs (§7.4).
     ///

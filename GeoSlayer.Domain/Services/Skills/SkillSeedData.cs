@@ -52,6 +52,15 @@ public static class SkillSeedData
             UnlockLevel = 1,
             Category = SkillCategory.Gathering,
         },
+        new()
+        {
+            SkillType = SkillType.Fishing,
+            Name = "Fishing",
+            Description = "Working the water. Rivers and coastline are best — but a landlocked angler still lands every fish, just slower.",
+            Icon = "🎣",
+            UnlockLevel = 3,
+            Category = SkillCategory.Gathering,
+        },
     };
 
     /// <summary>
@@ -76,49 +85,52 @@ public static class SkillSeedData
         new() { SkillType = SkillType.Foraging, Terrain = TerrainType.Urban,      XpPerCell = 1.0, YieldMultiplier = 1.0 },
         new() { SkillType = SkillType.Foraging, Terrain = TerrainType.Industrial, XpPerCell = 1.0, YieldMultiplier = 1.0 },
         new() { SkillType = SkillType.Foraging, Terrain = TerrainType.Rocky,      XpPerCell = 1.0, YieldMultiplier = 1.0 },
+
+        // ── Fishing (Stage 07) ────────────────────────────────────────────────────────
+        // Water and coastline are best; everything else still trains at base rate. The
+        // Open row is what guarantees a landlocked player is never locked out (§5.2).
+        new() { SkillType = SkillType.Fishing, Terrain = TerrainType.Open,       XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Fishing, Terrain = TerrainType.Water,      XpPerCell = 3.0, YieldMultiplier = 2.0 },
+        new() { SkillType = SkillType.Fishing, Terrain = TerrainType.Coastal,    XpPerCell = 3.0, YieldMultiplier = 2.0 },
+        new() { SkillType = SkillType.Fishing, Terrain = TerrainType.Farmland,   XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Fishing, Terrain = TerrainType.Woodland,   XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Fishing, Terrain = TerrainType.Urban,      XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Fishing, Terrain = TerrainType.Industrial, XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Fishing, Terrain = TerrainType.Rocky,      XpPerCell = 1.0, YieldMultiplier = 1.0 },
     };
 
     /// <summary>
-    /// Foraging's seven material tiers — the first full ladder in the game and the
-    /// reference every later skill copies (Stage 04 task 3).
+    /// Builds a skill's seven-tier ladder from its material names.
+    ///
+    /// <para>Shared by every gathering skill: the tier shape (levels, gather seconds,
+    /// XP) comes from <see cref="StandardLadder"/>, so a new skill supplies only names.
+    /// This is what makes adding a skill seed data rather than code.</para>
     /// </summary>
-    public static IReadOnlyList<Material> ForagingMaterials { get; } = BuildForagingLadder();
-
-    private static List<Material> BuildForagingLadder()
+    public static List<Material> BuildLadder(
+        SkillType skill,
+        MaterialCategory category,
+        (string Key, string Name)[] tiers)
     {
-        var names = new[]
+        if (tiers.Length != StandardLadder.Length)
         {
-            "Wild Grass",
-            "Common Herbs",
-            "Berries",
-            "Root Vegetables",
-            "Rare Fungi",
-            "Nightbloom",
-            "Everleaf",
-        };
-
-        var keys = new[]
-        {
-            "wild_grass",
-            "common_herbs",
-            "berries",
-            "root_vegetables",
-            "rare_fungi",
-            "nightbloom",
-            "everleaf",
-        };
+            throw new ArgumentException(
+                $"{skill} supplied {tiers.Length} tiers; the standard ladder has {StandardLadder.Length}.",
+                nameof(tiers));
+        }
 
         var materials = new List<Material>();
 
         foreach (var (tier, level, seconds, xp) in StandardLadder)
         {
+            var (key, name) = tiers[tier - 1];
+
             materials.Add(new Material
             {
-                Key = keys[tier - 1],
-                Name = names[tier - 1],
-                Category = MaterialCategory.Foraged,
+                Key = key,
+                Name = name,
+                Category = category,
                 Tier = tier,
-                SkillType = SkillType.Foraging,
+                SkillType = skill,
                 LevelRequired = level,
                 BaseGatherSeconds = seconds,
                 XpPerUnit = xp,
@@ -133,6 +145,41 @@ public static class SkillSeedData
         return materials;
     }
 
+    /// <summary>Foraging's ladder — the Stage 04 reference every later skill copies.</summary>
+    public static IReadOnlyList<Material> ForagingMaterials { get; } = BuildLadder(
+        SkillType.Foraging,
+        MaterialCategory.Foraged,
+        [
+            ("wild_grass",      "Wild Grass"),
+            ("common_herbs",    "Common Herbs"),
+            ("berries",         "Berries"),
+            ("root_vegetables", "Root Vegetables"),
+            ("rare_fungi",      "Rare Fungi"),
+            ("nightbloom",      "Nightbloom"),
+            ("everleaf",        "Everleaf"),
+        ]);
+
+    /// <summary>
+    /// Fishing's ladder (Stage 07). Added as pure seed data — no C# beyond this list,
+    /// which is what Stage 07 exists to prove about the Stage 04 machinery.
+    /// </summary>
+    public static IReadOnlyList<Material> FishingMaterials { get; } = BuildLadder(
+        SkillType.Fishing,
+        MaterialCategory.Caught,
+        [
+            ("minnow",    "Minnow"),
+            ("sardine",   "Sardine"),
+            ("trout",     "Trout"),
+            ("salmon",    "Salmon"),
+            ("pike",      "Pike"),
+            ("sturgeon",  "Sturgeon"),
+            ("moonfish",  "Moonfish"),
+        ]);
+
+    /// <summary>Every gathering skill's ladder, so seeders iterate rather than enumerate.</summary>
+    public static IReadOnlyList<Material> AllSkillMaterials { get; } =
+        [.. ForagingMaterials, .. FishingMaterials];
+
     /// <summary>
     /// Drop entries for the Foraging ladder, by terrain.
     ///
@@ -141,14 +188,19 @@ public static class SkillSeedData
     /// </summary>
     public static IEnumerable<(TerrainType Terrain, string MaterialKey, int Weight, int Min, int Max)> DropEntries()
     {
-        var foragingTerrains = TerrainMappings
-            .Where(m => m.SkillType == SkillType.Foraging)
-            .Select(m => m.Terrain)
-            .Distinct();
-
-        foreach (var terrain in foragingTerrains)
+        // Driven off the mappings and ladders rather than listed per skill, so adding a
+        // skill above is genuinely all that adding a skill requires.
+        foreach (var group in AllSkillMaterials.GroupBy(m => m.SkillType))
         {
-            foreach (var material in ForagingMaterials)
+            var terrains = TerrainMappings
+                .Where(m => m.SkillType == group.Key)
+                .Select(m => m.Terrain)
+                .Distinct()
+                .ToList();
+
+            foreach (var terrain in terrains)
+            {
+            foreach (var material in group)
             {
                 // Lower tiers are commoner within a terrain. Tier selection in DropRoller
                 // still prefers the highest unlocked band, so this only shapes the
@@ -158,6 +210,7 @@ public static class SkillSeedData
                 var max = material.Tier <= 2 ? 3 : material.Tier <= 4 ? 2 : 1;
 
                 yield return (terrain, material.Key, weight, 1, max);
+            }
             }
         }
     }

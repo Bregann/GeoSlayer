@@ -49,6 +49,38 @@ a skill without one silently trains nothing on unclassified ground.
 to 7. That is intended — §4.1a requires only that advancing is never a *punishment*. Test
 it as monotonic non-decreasing, not as flat.
 
+## What Stage 07 (Fishing) proved
+
+Fishing was the first skill added purely from seed data, and **it worked** — no new service
+code, and the `== SkillType.X` grep still returns nothing. Adding a gathering skill is now:
+
+```csharp
+// 1. SkillSeedData.Definitions — one row
+new() { SkillType = SkillType.Woodcutting, Name = "Woodcutting", …, UnlockLevel = 5, … }
+
+// 2. SkillSeedData.TerrainMappings — one Open row (MANDATORY) plus the good terrains
+new() { SkillType = SkillType.Woodcutting, Terrain = TerrainType.Open,     XpPerCell = 1.0, … }
+new() { SkillType = SkillType.Woodcutting, Terrain = TerrainType.Woodland, XpPerCell = 3.0, … }
+
+// 3. A ladder, and add it to AllSkillMaterials
+public static IReadOnlyList<Material> WoodcuttingMaterials { get; } = BuildLadder(
+    SkillType.Woodcutting, MaterialCategory.Logged, [ ("key", "Name"), … seven … ]);
+```
+
+**Then write no tests.** `GatheringSkillLadderTests` is parameterised over every seeded
+ladder, so a new skill automatically inherits tier gating, the geography-lockout
+regression test, XP/hour, and the Open-mapping check. Add an integration file only for
+something genuinely skill-specific.
+
+**Two rules that will bite:**
+
+- **Every skill needs its own `MaterialCategory`.** Two ladders in one category compete for
+  the same tier band and the roll picks between them arbitrarily. Stage 03's placeholder
+  fish collided with Fishing's real ladder exactly this way.
+  `SkillLaddersDoNotShareAMaterialCategory` now catches it.
+- **Check `PoiImportService.TagMappings` for tags already claimed.** First match wins, so
+  appending a duplicate is dead code that reads as though it works.
+
 ## The pattern
 
 ### 1. Seed data — the bulk of the work

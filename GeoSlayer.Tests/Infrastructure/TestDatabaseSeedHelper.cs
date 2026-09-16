@@ -191,7 +191,7 @@ namespace GeoSlayer.Tests.Infrastructure
                 });
             }
 
-            foreach (var material in SkillSeedData.ForagingMaterials)
+            foreach (var material in SkillSeedData.AllSkillMaterials)
             {
                 context.Materials.Add(new Material
                 {

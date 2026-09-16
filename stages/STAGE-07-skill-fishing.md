@@ -5,11 +5,69 @@
 
 ## Status
 
-- **State:** NOT STARTED
-- **Completed:** _(none)_
-- **Remaining:** all tasks
-- **Notes:** _(none)_
-- **Blockers:** _(none)_
+- **State:** DONE
+- **Completed:** all tasks
+- **Remaining:** none.
+
+### The stage note answered: the abstraction held
+
+Stage 07 exists to test whether Stage 04's machinery was built too narrowly. **It was not.**
+Fishing needed **no new service code** — the grep for `== SkillType.X` in
+`GeoSlayer.Domain/Services` still returns nothing. Adding it was:
+
+- one `SkillDefinition` row,
+- eight `SkillTerrainMapping` rows,
+- a seven-name tier ladder.
+
+Two pieces of *machinery* changed, both generalisations rather than Fishing-specific work:
+
+1. `BuildForagingLadder()` became `BuildLadder(skill, category, names)`. The tier shape
+   was already shared; only the names differ per skill, so hardcoding one skill's name
+   list in a private method was the narrowness.
+2. `DropEntries()` iterated Foraging's materials explicitly. It now groups every seeded
+   ladder by skill, so a skill added to the seed list is automatically in the drop tables.
+
+### A collision the stage exposed
+
+Stage 03 had seeded five placeholder Fishing materials (`reeds`, `fish_river`, `fish_deep`,
+`driftwood`, `shellfish`) in the `Water` and `Coastal` **terrain** categories, at tiers 1–3
+with levels 1/10/20 — exactly colliding with Fishing's real ladder. Two ladders in one
+category compete for the same tier band, and "highest unlocked tier wins" would have picked
+between them arbitrarily.
+
+Resolved by giving Fishing its own `Caught` category and **reassigning the placeholders to
+Foraging**, which is the better fit anyway (beachcombing is foraging). A new test,
+`SkillLaddersDoNotShareAMaterialCategory`, makes this class of mistake fail loudly for
+every future skill.
+
+### Verification
+
+- **Build:** green.
+- **Tests:** **253 passed, 0 failed, 0 skipped** (was 227 after Stage 06).
+  - **16 parameterised ladder tests** (`GatheringSkillLadderTests`) that run against
+    *every* seeded skill via `TestCaseSource`. Woodcutting and Mining will inherit the
+    whole regression suite — including the geography-lockout test — without a new file.
+  - 10 Fishing integration tests for unlock timing, the three routes, and workers.
+- **POI tags:** already covered — `leisure=fishing`, `man_made=pier`, `natural=water` and
+  `harbour=*` were all mapped to Fishing in Stage 01. No extension needed.
+
+### Acceptance criteria
+
+| # | Criterion | State |
+|---|---|---|
+| 1 | Build green, tests pass | ✅ 253/253 |
+| 2 | Unlocks at Adventurer 3, not before | ✅ `Fishing_IsNotUnlockedAtLevelOne`, `Fishing_UnlocksAtAdventurerLevelThree` |
+| 3 | Three routes hold the POI ≫ walk > idle ratio | ✅ walk and worker tested here; POI and idle rates unchanged from Stages 04–05 |
+| 4 | No matching terrain still trains — never zero | ✅ `WalkingInland_StillTrainsFishingAtBaseRate` |
+| 5 | A tier is never obtained below its level | ✅ `EveryTier_IsUnreachableOneLevelBelowItsGate`, across 6 terrains |
+| 6 | No-terrain fixture reaches every unlocked tier | ✅ `WithNoMatchingTerrain_EveryUnlockedTierIsStillReachable` |
+| 7 | XP/hour flat across tiers | ✅ `XpPerHour_NeverFallsAsTiersRise` — monotonic, as reinterpreted in Stage 04 |
+| 8 | Materials in inventory, respecting caps | ✅ `FishMaterialsAppearInInventoryWithCaps` |
+| 9 | A worker produces materials and XP | ✅ `AWorkerCanBeAssignedToFishing_AndProduces` |
+| 10 | No new skill-specific branches | ✅ grep returns nothing across `Domain/Services` |
+| 11 | Earlier stages still pass | ✅ all prior tests green |
+
+- **Blockers:** none.
 
 ## Prerequisites
 
@@ -40,16 +98,16 @@ terrain.
 
 ## Tasks
 
-- [ ] Seed `SkillDefinition`: Fishing, category `Gathering`, unlock level 3
-- [ ] Verify the ladder entry in `UnlockDefinition` grants it at level 3
-- [ ] **Seed all seven tiers** with `LevelRequired`, `BaseGatherSeconds`, `XpPerUnit`
-- [ ] Seed terrain mappings: `Water` and `Coastal` best; everything else base rate
-- [ ] Verify `PoiImportService.TagMappings` covers `leisure=fishing`, `man_made=pier`, `natural=water`, `harbour=*` - extend if thin
-- [ ] Seed drop tables weighted to the highest unlocked tier, falling back to lower
-- [ ] Confirm it appears in the skills screen on unlock, with the celebration
-- [ ] Skills screen shows the **next tier unlock level** - always something in view
-- [ ] Confirm its materials appear in inventory
-- [ ] Tests: see acceptance criteria below
+- [x] Seed `SkillDefinition`: Fishing, category `Gathering`, unlock level 3
+- [x] Verify the ladder entry in `UnlockDefinition` grants it at level 3
+- [x] **Seed all seven tiers** with `LevelRequired`, `BaseGatherSeconds`, `XpPerUnit`
+- [x] Seed terrain mappings: `Water` and `Coastal` best; everything else base rate
+- [x] Verify `PoiImportService.TagMappings` covers `leisure=fishing`, `man_made=pier`, `natural=water`, `harbour=*` - extend if thin
+- [x] Seed drop tables weighted to the highest unlocked tier, falling back to lower
+- [x] Confirm it appears in the skills screen on unlock, with the celebration
+- [x] Skills screen shows the **next tier unlock level** - always something in view
+- [x] Confirm its materials appear in inventory
+- [x] Tests: see acceptance criteria below
 
 ## Acceptance criteria
 

@@ -1,6 +1,6 @@
 # Build status
 
-**Current stage: `STAGE-07-skill-fishing.md`**
+**Current stage: `STAGE-08-skill-woodcutting.md`**
 
 Single source of truth for where the build is. Update this when a stage completes.
 
@@ -12,7 +12,7 @@ Single source of truth for where the build is. Update this when a stage complete
 | 04 | Foraging | DONE |
 | 05 | Workers & idle | DONE |
 | 06 | Crafting | DONE |
-| 07 | Fishing | NOT STARTED |
+| 07 | Fishing | DONE |
 | 08 | Woodcutting | NOT STARTED |
 | 09 | Cooking | NOT STARTED |
 | 10 | Mining | NOT STARTED |
@@ -201,3 +201,15 @@ Carried forward, deliberately:
   one-shot jobs at the known completion timestamp; that is notification plumbing, best
   done once for crafts, workers-at-cap and clue scrolls together — **Stage 14
   (Retention)** is the right home.
+
+### From Stage 07
+
+Nothing outstanding. Fishing needed no app work — the skills screen, inventory and worker
+screens are generic and picked it up automatically, which is the point of Stage 04's
+machinery.
+
+Worth a human eye eventually:
+
+- **Whether a landlocked player actually finds Fishing playable.** Base rate is 1 XP/cell
+  against 3 on water, so it is 3× slower rather than blocked — that ratio is the whole
+  geography compromise and it is the thing most likely to feel wrong in practice.
