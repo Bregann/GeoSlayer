@@ -2,8 +2,11 @@ using GeoSlayer.Domain.Database.Context;
 using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.Enums;
 using GeoSlayer.Domain.Interfaces.Helpers;
+using GeoSlayer.Domain.Interfaces.Api;
+using GeoSlayer.Domain.Services.Materials;
 using GeoSlayer.Domain.Services.Progression;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Moq;
 
 namespace GeoSlayer.Tests.Infrastructure
@@ -88,6 +91,72 @@ namespace GeoSlayer.Tests.Infrastructure
             }
 
             await context.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// Seeds the material pools and terrain drop tables (§4.1, §4.1a, §7.4).
+        /// </summary>
+        public static async Task SeedMaterialDefinitions(AppDbContext context)
+        {
+            foreach (var material in MaterialSeedData.Materials)
+            {
+                context.Materials.Add(new Material
+                {
+                    Key = material.Key,
+                    Name = material.Name,
+                    Tier = material.Tier,
+                    Category = material.Category,
+                    SkillType = material.SkillType,
+                    StackCap = material.StackCap,
+                    IsUnique = material.IsUnique,
+                    LevelRequired = material.LevelRequired,
+                    BaseGatherSeconds = material.BaseGatherSeconds,
+                    XpPerUnit = material.XpPerUnit,
+                    DustPerOverflow = material.DustPerOverflow,
+                });
+            }
+
+            await context.SaveChangesAsync();
+
+            var ids = await context.Materials.ToDictionaryAsync(m => m.Key, m => m.Id);
+
+            var seen = new HashSet<(TerrainType Terrain, int MaterialId)>();
+
+            foreach (var (terrain, key, weight, min, max) in MaterialSeedData.DropEntries())
+            {
+                if (!ids.TryGetValue(key, out var materialId)) continue;
+                if (!seen.Add((terrain, materialId))) continue;
+
+                context.DropTableEntries.Add(new DropTableEntry
+                {
+                    Terrain = terrain,
+                    MaterialId = materialId,
+                    Weight = weight,
+                    MinQuantity = min,
+                    MaxQuantity = max,
+                });
+            }
+
+            await context.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// A <see cref="MaterialService"/> backed by a <b>fake</b> terrain classifier.
+        ///
+        /// Nothing in the suite may reach Overpass: a test that depends on a live third
+        /// party is not a test. <paramref name="terrain"/> is what every cell classifies
+        /// as, so a fixture can pin the geography it needs.
+        /// </summary>
+        public static MaterialService CreateMaterialService(
+            AppDbContext context, TerrainType terrain = TerrainType.Open)
+        {
+            var classifier = new Mock<ITerrainClassifier>();
+
+            classifier
+                .Setup(c => c.Classify(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(terrain);
+
+            return new MaterialService(context, classifier.Object);
         }
 
         /// <summary>

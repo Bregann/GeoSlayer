@@ -1,6 +1,6 @@
 # Build status
 
-**Current stage: `STAGE-03-materials-inventory.md`**
+**Current stage: `STAGE-04-skill-foraging.md`**
 
 Single source of truth for where the build is. Update this when a stage completes.
 
@@ -8,7 +8,7 @@ Single source of truth for where the build is. Update this when a stage complete
 |---|---|---|
 | 01 | Prototype | DONE |
 | 02 | Progression core | DONE |
-| 03 | Materials & inventory | NOT STARTED |
+| 03 | Materials & inventory | DONE |
 | 04 | Foraging | NOT STARTED |
 | 05 | Workers & idle | NOT STARTED |
 | 06 | Crafting | NOT STARTED |
@@ -101,3 +101,25 @@ Worth a human eye when the app lands, since only a real session shows it:
   curves are reasoned from DESIGN.md's ratios, not playtested. §3.1 says levels 1–3 should
   be reachable in the first session or two — that is the thing to check against a real walk,
   and it is a seeded-config change if it is wrong, not a code change.
+
+### From Stage 03
+
+Backend fully tested (29 new tests). The inventory screen's logic is unit-tested via
+`npm test`, but the `.tsx` screen has **never been rendered or typechecked** here.
+
+Needs a working app toolchain:
+
+- Typecheck and launch `app/inventory.tsx`, and confirm the 🎒 button opens it.
+- Confirm the material pickup toast appears on a sync that yields materials, and that it
+  auto-dismisses (3s normally, 6s when a stack overflowed into Dust).
+
+Needs a human with a phone, since only real geography shows it:
+
+- **Terrain classification accuracy.** `PoiTerrainClassifier` infers terrain from the POIs
+  OSM already gave us rather than from landuse polygons, so a cell in the middle of an
+  untagged forest will classify as `Open` and yield base materials instead of timber.
+  Walk a known wood, a known riverside and a plain residential street, and check the
+  materials match. If the resolution proves too coarse, the fix is to extend the Overpass
+  query with landuse/natural polygons — `ITerrainClassifier` exists so that swap is local.
+- **Whether the drop rates feel right.** The weights and quantities are reasoned from
+  §4.1a's ratios, not playtested. All seeded data, so retuning needs no deploy.

@@ -1,6 +1,7 @@
 using GeoSlayer.Domain.Database.Context;
 using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.DTOs.Journey.Requests;
+using GeoSlayer.Domain.DTOs.Materials.Responses;
 using GeoSlayer.Domain.DTOs.Progression.Responses;
 using GeoSlayer.Domain.Enums;
 using GeoSlayer.Domain.Interfaces.Api;
@@ -10,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GeoSlayer.Domain.Services;
 
-public class FogService(AppDbContext db, IProgressionService progression) : IFogService
+public class FogService(AppDbContext db, IProgressionService progression, IMaterialService materials) : IFogService
 {
     /// <summary>
     /// Grid cell size in degrees.  0.0009° ≈ 100 m at the equator, ~64 m at 45° latitude.
@@ -198,6 +199,7 @@ public class FogService(AppDbContext db, IProgressionService progression) : IFog
         var xpEarned = newCells.Count * XpPerCell;
 
         XpGrantResult? grant = null;
+        var materialGains = new List<MaterialGainDto>();
 
         if (newCells.Count > 0)
         {
@@ -214,6 +216,13 @@ public class FogService(AppDbContext db, IProgressionService progression) : IFog
             var milestone = await progression.GrantMilestone(
                 playerId, MilestoneType.NewCell, newCells.Count, ct);
 
+            // Materials for the cells just revealed (Stage 03). Rolled per (player, cell)
+            // so a replayed sync cannot re-roll for a better result.
+            materialGains = await materials.AwardCellDrops(
+                playerId,
+                newCells.Select(c => new GridCell(c.GridLat, c.GridLng)).ToList(),
+                ct);
+
             grant.AdventurerXpEarned += milestone.AdventurerXpEarned;
             grant.AdventurerLevel = milestone.AdventurerLevel;
             grant.AdventurerXp = milestone.AdventurerXp;
@@ -227,6 +236,7 @@ public class FogService(AppDbContext db, IProgressionService progression) : IFog
             NewCells = newCells,
             XpEarned = (int)(grant?.SkillXpEarned ?? 0),
             Grant = grant,
+            Materials = materialGains,
         };
     }
 
@@ -271,4 +281,7 @@ public class FogRevealResult
 
     /// <summary>Full progression outcome — levels, Bonus Points and unlocks (§3.1c).</summary>
     public XpGrantResult? Grant { get; set; }
+
+    /// <summary>Materials picked up, so the app can show the pickups (Stage 03 task 5).</summary>
+    public List<MaterialGainDto> Materials { get; set; } = [];
 }

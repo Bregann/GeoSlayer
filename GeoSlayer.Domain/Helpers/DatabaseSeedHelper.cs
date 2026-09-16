@@ -2,6 +2,7 @@ using GeoSlayer.Domain.Database.Context;
 using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.Enums;
 using GeoSlayer.Domain.Interfaces.Helpers;
+using GeoSlayer.Domain.Services.Materials;
 using GeoSlayer.Domain.Services.Progression;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,7 +18,12 @@ namespace GeoSlayer.Domain.Helpers
             await SeedProgressionSettings(context);
             await SeedUnlockLadder(context);
             await SeedUpgrades(context);
+            await SeedMaterials(context);
 
+            await context.SaveChangesAsync();
+
+            // Drop entries reference material ids, so they need the materials persisted.
+            await SeedDropTables(context);
             await context.SaveChangesAsync();
         }
 
@@ -103,6 +109,64 @@ namespace GeoSlayer.Domain.Helpers
                     EffectPerRank = upgrade.EffectPerRank,
                     MinAdventurerLevel = upgrade.MinAdventurerLevel,
                     Description = upgrade.Description,
+                });
+            }
+        }
+
+        /// <summary>Material pools (§4.1, §4.1a, §7.4). Inserts missing keys only.</summary>
+        private static async Task SeedMaterials(AppDbContext context)
+        {
+            var have = (await context.Materials.Select(m => m.Key).ToListAsync()).ToHashSet();
+
+            foreach (var material in MaterialSeedData.Materials)
+            {
+                if (have.Contains(material.Key)) continue;
+
+                context.Materials.Add(new Material
+                {
+                    Key = material.Key,
+                    Name = material.Name,
+                    Tier = material.Tier,
+                    Category = material.Category,
+                    SkillType = material.SkillType,
+                    StackCap = material.StackCap,
+                    IsUnique = material.IsUnique,
+                    LevelRequired = material.LevelRequired,
+                    BaseGatherSeconds = material.BaseGatherSeconds,
+                    XpPerUnit = material.XpPerUnit,
+                    DustPerOverflow = material.DustPerOverflow,
+                });
+            }
+        }
+
+        /// <summary>
+        /// Terrain drop tables (task 4), derived from the seeded pools rather than listed
+        /// separately so the two cannot drift.
+        /// </summary>
+        private static async Task SeedDropTables(AppDbContext context)
+        {
+            var materialIds = await context.Materials.ToDictionaryAsync(m => m.Key, m => m.Id);
+
+            var have = (await context.DropTableEntries
+                    .Select(e => new { e.Terrain, e.MaterialId })
+                    .ToListAsync())
+                .Select(e => (e.Terrain, e.MaterialId))
+                .ToHashSet();
+
+            foreach (var (terrain, key, weight, min, max) in MaterialSeedData.DropEntries())
+            {
+                if (!materialIds.TryGetValue(key, out var materialId)) continue;
+                if (have.Contains((terrain, materialId))) continue;
+
+                have.Add((terrain, materialId));
+
+                context.DropTableEntries.Add(new DropTableEntry
+                {
+                    Terrain = terrain,
+                    MaterialId = materialId,
+                    Weight = weight,
+                    MinQuantity = min,
+                    MaxQuantity = max,
                 });
             }
         }

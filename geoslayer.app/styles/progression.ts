@@ -298,3 +298,35 @@ export const celebrationStyles = StyleSheet.create({
     fontFamily: 'monospace',
   },
 });
+
+/**
+ * The material pickup toast on the map screen (Stage 03 task 5).
+ *
+ * Sits above the bottom HUD panel rather than centre-screen: a pickup is ambient
+ * feedback, unlike an unlock, and must not cover the map the player is walking with.
+ */
+export const pickupStyles = StyleSheet.create({
+  container: {
+    position: 'absolute',
+    left: 12,
+    right: 12,
+    bottom: 110,
+    backgroundColor: 'rgba(10, 10, 30, 0.94)',
+    borderWidth: 2,
+    borderColor: ACCENT,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    gap: 2,
+  },
+  text: {
+    color: ACCENT,
+    fontSize: 12,
+    fontWeight: 'bold',
+    fontFamily: 'monospace',
+  },
+  overflow: {
+    color: GOLD,
+    fontSize: 10,
+    fontFamily: 'monospace',
+  },
+});

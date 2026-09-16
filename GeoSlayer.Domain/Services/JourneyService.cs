@@ -61,6 +61,7 @@ public class JourneyService(
             Xp = player.AdventurerXp,
             Level = player.AdventurerLevel,
             Unlocks = fogResult.Grant?.Unlocks ?? [],
+            Materials = fogResult.Materials,
             BonusPointsGranted = fogResult.Grant?.BonusPointsGranted ?? 0,
             NearbyPois = nearbyPois,
         };

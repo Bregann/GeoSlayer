@@ -1,3 +1,4 @@
+import type { MaterialGain } from './inventory';
 import type { UnlockEvent } from './progression';
 
 export interface Coord {
@@ -27,6 +28,8 @@ export interface SyncData {
   unlocks: UnlockEvent[];
   /** Bonus Points granted by this sync's level-ups. */
   bonusPointsGranted: number;
+  /** Materials picked up this sync (Stage 03). */
+  materials: MaterialGain[];
   nearbyPois: NearbyPoi[];
 }
 

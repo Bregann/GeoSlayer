@@ -24,9 +24,11 @@ import {
 } from '@/helpers/backgroundLocation';
 import { buildFogGeoJSON, clusterPois, distanceMetres, toBreadcrumbGeoJSON } from '@/helpers/geo';
 import { mapScreenStyles as styles, overviewStyles } from '@/styles/mapScreen';
+import { pickupStyles } from '@/styles/progression';
 import type { CellDto, Coord, NearbyPoi, SyncData } from '@/types/map';
 import type { UnlockEvent } from '@/types/progression';
 import { UnlockCelebration } from '@/components/unlockCelebration';
+import { formatPickups, hasOverflow } from '@/helpers/inventory';
 
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */
@@ -54,6 +56,17 @@ export default function MapScreen() {
   const [selectedPoi, setSelectedPoi] = useState<NearbyPoi | null>(null);
   const [selectedCluster, setSelectedCluster] = useState<NearbyPoi[] | null>(null);
   const [pendingUnlocks, setPendingUnlocks] = useState<UnlockEvent[]>([]);
+  const [pickupText, setPickupText] = useState<string | null>(null);
+  const [pickupOverflow, setPickupOverflow] = useState(false);
+
+  // Pickups fade themselves; requiring a tap to clear ambient feedback would be a chore
+  // on a walk. Overflow lingers longer because it costs the player something.
+  useEffect(() => {
+    if (!pickupText) return;
+
+    const timeout = setTimeout(() => setPickupText(null), pickupOverflow ? 6000 : 3000);
+    return () => clearTimeout(timeout);
+  }, [pickupText, pickupOverflow]);
 
   const { player, updatePlayer } = useAuth();
 
@@ -135,6 +148,16 @@ export default function MapScreen() {
           // Queued rather than replaced: a long background batch can cross more than one.
           if (data.unlocks && data.unlocks.length > 0) {
             setPendingUnlocks((prev) => [...prev, ...data.unlocks]);
+          }
+
+          // Materials picked up this sync. Replaced rather than queued: the newest
+          // pickup is the interesting one, and a backlog of toasts would obscure the map.
+          if (data.materials && data.materials.length > 0) {
+            const text = formatPickups(data.materials);
+            if (text) {
+              setPickupText(text);
+              setPickupOverflow(hasOverflow(data.materials));
+            }
           }
         }
       } catch {
@@ -374,10 +397,24 @@ export default function MapScreen() {
         xp={syncData?.xp ?? player?.xp ?? 0}
         level={syncData?.level ?? player?.level ?? 1}
         cellsRevealed={revealedCells.length}
-        onInventory={() => {}}
+        onInventory={() => router.push('/inventory')}
         onSkills={() => router.push('/skills')}
         onUpgrades={() => router.push('/upgrades')}
       />
+
+      {/* Material pickups from this sync (Stage 03 task 5) */}
+      {pickupText && (
+        <TouchableOpacity
+          style={pickupStyles.container}
+          onPress={() => setPickupText(null)}
+          activeOpacity={0.8}
+        >
+          <Text style={pickupStyles.text}>{pickupText}</Text>
+          {pickupOverflow && (
+            <Text style={pickupStyles.overflow}>Stack full — converted to Dust</Text>
+          )}
+        </TouchableOpacity>
+      )}
 
       {/* Unlock celebration (§3.1c) */}
       <UnlockCelebration

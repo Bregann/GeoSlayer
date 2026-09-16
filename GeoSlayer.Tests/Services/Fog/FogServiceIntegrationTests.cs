@@ -2,6 +2,7 @@ using GeoSlayer.Domain.Enums;
 using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.DTOs.Journey.Requests;
 using GeoSlayer.Domain.Services;
+using GeoSlayer.Domain.Services.Materials;
 using GeoSlayer.Domain.Services.Progression;
 using GeoSlayer.Tests.Infrastructure;
 using Microsoft.EntityFrameworkCore;
@@ -28,6 +29,7 @@ public class FogServiceIntegrationTests : DatabaseIntegrationTestBase
     private const double MetresPerDegreeLat = 111_320.0;
 
     private ProgressionService _progression = null!;
+    private MaterialService _materials = null!;
 
     protected override async Task CustomSetUp()
     {
@@ -40,7 +42,10 @@ public class FogServiceIntegrationTests : DatabaseIntegrationTestBase
         _progression = TestDatabaseSeedHelper.CreateProgressionService(DbContext);
         await _progression.EnsureStartingUnlocks(_player.Id, CancellationToken.None);
 
-        _sut = new FogService(DbContext, _progression);
+        await TestDatabaseSeedHelper.SeedMaterialDefinitions(DbContext);
+        _materials = TestDatabaseSeedHelper.CreateMaterialService(DbContext);
+
+        _sut = new FogService(DbContext, _progression, _materials);
     }
 
     private static double LngOffset(double metres, double atLat) =>

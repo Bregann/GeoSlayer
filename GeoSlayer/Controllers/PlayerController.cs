@@ -1,4 +1,5 @@
 using GeoSlayer.Domain.Database.Context;
+using GeoSlayer.Domain.DTOs.Materials.Responses;
 using GeoSlayer.Domain.DTOs.Progression.Responses;
 using GeoSlayer.Domain.Exceptions;
 using GeoSlayer.Domain.Interfaces.Api;
@@ -21,8 +22,16 @@ namespace GeoSlayer.Controllers;
 public class PlayerController(
     AppDbContext db,
     IProgressionService progression,
+    IMaterialService materials,
     IUserContextHelper userContextHelper) : ControllerBase
 {
+    /// <summary>The caller's materials, grouped by category (Stage 03 task 5).</summary>
+    [HttpGet("inventory")]
+    public async Task<ActionResult<InventoryDto>> GetInventory(CancellationToken ct)
+    {
+        return Ok(await materials.GetInventory(await CurrentPlayerId(ct), ct));
+    }
+
     /// <summary>Unlocked skills plus the locked ladder ahead — the roadmap (§3.1c).</summary>
     [HttpGet("skills")]
     public async Task<ActionResult<PlayerSkillsDto>> GetSkills(CancellationToken ct)

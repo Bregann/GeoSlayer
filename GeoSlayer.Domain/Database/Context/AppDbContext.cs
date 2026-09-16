@@ -16,6 +16,10 @@ namespace GeoSlayer.Domain.Database.Context
         public DbSet<PlayerUpgrade> PlayerUpgrades { get; set; } = null!;
         public DbSet<UnlockDefinition> UnlockDefinitions { get; set; } = null!;
         public DbSet<UpgradeDefinition> UpgradeDefinitions { get; set; } = null!;
+        public DbSet<Material> Materials { get; set; } = null!;
+        public DbSet<PlayerMaterial> PlayerMaterials { get; set; } = null!;
+        public DbSet<CellTerrain> CellTerrains { get; set; } = null!;
+        public DbSet<DropTableEntry> DropTableEntries { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -54,6 +58,30 @@ namespace GeoSlayer.Domain.Database.Context
             {
                 entity.HasIndex(e => e.Key)
                       .IsUnique();
+            });
+
+            modelBuilder.Entity<Material>(entity =>
+            {
+                entity.HasIndex(e => e.Key).IsUnique();
+                entity.HasIndex(e => new { e.Category, e.Tier });
+            });
+
+            modelBuilder.Entity<PlayerMaterial>(entity =>
+            {
+                entity.HasIndex(e => new { e.PlayerId, e.MaterialId }).IsUnique();
+            });
+
+            modelBuilder.Entity<CellTerrain>(entity =>
+            {
+                // Terrain is a property of the world, so one row per cell serves every
+                // player — the unique index is what makes the cache correct under races.
+                entity.HasIndex(e => new { e.GridLat, e.GridLng }).IsUnique();
+            });
+
+            modelBuilder.Entity<DropTableEntry>(entity =>
+            {
+                entity.HasIndex(e => e.Terrain);
+                entity.HasIndex(e => new { e.Terrain, e.MaterialId }).IsUnique();
             });
 
             modelBuilder.Entity<RevealedCell>(entity =>

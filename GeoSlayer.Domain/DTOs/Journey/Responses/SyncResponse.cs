@@ -1,3 +1,4 @@
+using GeoSlayer.Domain.DTOs.Materials.Responses;
 using GeoSlayer.Domain.DTOs.Progression.Responses;
 using GeoSlayer.Domain.Services;
 
@@ -13,6 +14,9 @@ public class SyncResponse
 
     /// <summary>Bonus Points granted by this sync's level-ups.</summary>
     public int BonusPointsGranted { get; set; }
+
+    /// <summary>Materials gained this sync, so the app can show pickups (Stage 03).</summary>
+    public List<MaterialGainDto> Materials { get; set; } = [];
 
     public List<NearbyPoiDto> NearbyPois { get; set; } = [];
 }

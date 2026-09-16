@@ -1,6 +1,7 @@
 using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.DTOs.Journey.Requests;
 using GeoSlayer.Domain.Services;
+using GeoSlayer.Domain.Services.Materials;
 using GeoSlayer.Domain.Services.Progression;
 using GeoSlayer.Tests.Infrastructure;
 using Microsoft.EntityFrameworkCore;
@@ -24,13 +25,17 @@ public class RevealRadiusUpgradeTests : DatabaseIntegrationTestBase
     private static CancellationToken Ct => CancellationToken.None;
 
     private ProgressionService _progression = null!;
+    private MaterialService _materials = null!;
     private FogService _fog = null!;
 
     protected override async Task CustomSetUp()
     {
         await TestDatabaseSeedHelper.SeedProgressionDefinitions(DbContext);
         _progression = TestDatabaseSeedHelper.CreateProgressionService(DbContext);
-        _fog = new FogService(DbContext, _progression);
+        await TestDatabaseSeedHelper.SeedMaterialDefinitions(DbContext);
+        _materials = TestDatabaseSeedHelper.CreateMaterialService(DbContext);
+
+        _fog = new FogService(DbContext, _progression, _materials);
     }
 
     /// <summary>A fresh player with their starting unlocks, so each run is independent.</summary>
