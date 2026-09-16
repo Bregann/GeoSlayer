@@ -43,7 +43,7 @@ every future skill.
 ### Verification
 
 - **Build:** green.
-- **Tests:** **253 passed, 0 failed, 0 skipped** (was 227 after Stage 06).
+- **Tests:** **255 passed, 0 failed, 0 skipped** (was 227 after Stage 06).
   - **16 parameterised ladder tests** (`GatheringSkillLadderTests`) that run against
     *every* seeded skill via `TestCaseSource`. Woodcutting and Mining will inherit the
     whole regression suite — including the geography-lockout test — without a new file.
@@ -105,7 +105,10 @@ terrain.
 - [x] Verify `PoiImportService.TagMappings` covers `leisure=fishing`, `man_made=pier`, `natural=water`, `harbour=*` - extend if thin
 - [x] Seed drop tables weighted to the highest unlocked tier, falling back to lower
 - [x] Confirm it appears in the skills screen on unlock, with the celebration
-- [x] Skills screen shows the **next tier unlock level** - always something in view
+- [x] Skills screen shows the **next tier unlock level** - always something in view.
+      *(Was ticked prematurely and not actually implemented; built afterwards —
+      `SkillDto.NextTierName`/`NextTierLevel`, rendered as "Next: Berries at level 20".
+      Driven off the seeded ladder, so it costs nothing to add a skill.)*
 - [x] Confirm its materials appear in inventory
 - [x] Tests: see acceptance criteria below
 

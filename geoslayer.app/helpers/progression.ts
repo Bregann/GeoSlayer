@@ -167,3 +167,19 @@ export function nextUnlockSummary(skills: PlayerSkills): string | null {
 
   return `${names} at level ${next.level} (${levels} level${levels === 1 ? '' : 's'} away)`;
 }
+
+/**
+ * What a skill unlocks next, for the skills screen.
+ *
+ * SKILL-TEMPLATE.md asks for the next tier to always be in view — a bar with no stated
+ * destination is just a number going up.
+ */
+export function nextTierLabel(skill: Skill): string | null {
+  if (!skill.nextTierName || skill.nextTierLevel === null) return null;
+
+  const levels = skill.nextTierLevel - skill.level;
+
+  return levels <= 0
+    ? `${skill.nextTierName} available now`
+    : `${skill.nextTierName} at level ${skill.nextTierLevel}`;
+}

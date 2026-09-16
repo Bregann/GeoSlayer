@@ -6,6 +6,7 @@ import { authApiClient } from '@/helpers/apiClient';
 import {
   groupLockedByLevel,
   levelProgressPercent,
+  nextTierLabel,
   nextUnlockSummary,
   skillIcon,
   sortSkillsByLevel,
@@ -120,6 +121,10 @@ export default function SkillsScreen() {
                 {skill.xp.toLocaleString()} XP ·{' '}
                 {xpRemaining(skill.xp, skill.xpForNextLevel).toLocaleString()} to next
               </Text>
+
+              {nextTierLabel(skill) && (
+                <Text style={styles.effectText}>Next: {nextTierLabel(skill)}</Text>
+              )}
             </View>
           ))}
 

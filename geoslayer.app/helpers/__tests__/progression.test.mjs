@@ -52,6 +52,7 @@ const exported = [
   'formatEffect',
   'currentEffectLabel',
   'nextUnlockSummary',
+  'nextTierLabel',
 ];
 
 const module = await import(
@@ -70,6 +71,7 @@ const {
   formatEffect,
   currentEffectLabel,
   nextUnlockSummary,
+  nextTierLabel,
 } = module;
 
 let failures = 0;
@@ -334,6 +336,29 @@ check('a purchased rank shows its total effect', () => {
     currentEffectLabel(upgrade({ key: 'scholar', rank: 2, currentEffect: 0.1 })),
     '+10% skill XP',
   );
+});
+
+// ── Next tier in view (SKILL-TEMPLATE.md) ────────────────────────
+
+function skill(over = {}) {
+  return {
+    skillType: 15, name: 'Foraging', xp: 100, level: 5,
+    xpForCurrentLevel: 83, xpForNextLevel: 174,
+    nextTierName: 'Berries', nextTierLevel: 20,
+    ...over,
+  };
+}
+
+check('the next tier names itself and its level', () => {
+  assert.equal(nextTierLabel(skill()), 'Berries at level 20');
+});
+
+check('a reached tier says it is available', () => {
+  assert.equal(nextTierLabel(skill({ level: 20 })), 'Berries available now');
+});
+
+check('a maxed skill has no next tier', () => {
+  assert.equal(nextTierLabel(skill({ nextTierName: null, nextTierLevel: null })), null);
 });
 
 console.log(

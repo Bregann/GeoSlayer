@@ -348,6 +348,41 @@ public class ProgressionServiceIntegrationTests : DatabaseIntegrationTestBase
     }
 
     [Test]
+    public async Task GetSkills_ShowsTheNextMaterialTier()
+    {
+        // SKILL-TEMPLATE.md: always something in view. A progress bar with no stated
+        // destination is just a number going up.
+        await TestDatabaseSeedHelper.SeedMaterialDefinitions(DbContext);
+
+        var dto = await _sut.GetSkills(_player.Id, Ct);
+        var foraging = dto.Unlocked.First(s => s.SkillType == SkillType.Foraging);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(foraging.NextTierName, Is.Not.Null);
+            Assert.That(foraging.NextTierLevel, Is.GreaterThan(foraging.Level));
+        });
+    }
+
+    [Test]
+    public async Task GetSkills_HasNoNextTierOnceEveryTierIsUnlocked()
+    {
+        await TestDatabaseSeedHelper.SeedMaterialDefinitions(DbContext);
+
+        // Above the top tier's level 90 requirement.
+        var row = await DbContext.PlayerSkills
+            .FirstAsync(s => s.PlayerId == _player.Id && s.SkillType == SkillType.Foraging);
+
+        row.Level = 99;
+        await DbContext.SaveChangesAsync();
+
+        var dto = await _sut.GetSkills(_player.Id, Ct);
+        var foraging = dto.Unlocked.First(s => s.SkillType == SkillType.Foraging);
+
+        Assert.That(foraging.NextTierName, Is.Null);
+    }
+
+    [Test]
     public async Task GetUpgrades_MarksLevelGatedUpgradesUnavailable()
     {
         var dto = await _sut.GetUpgrades(_player.Id, Ct);

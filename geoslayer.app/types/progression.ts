@@ -22,6 +22,9 @@ export interface Skill {
   level: number;
   xpForCurrentLevel: number;
   xpForNextLevel: number;
+  /** The next material tier, so there is always something in view. */
+  nextTierName: string | null;
+  nextTierLevel: number | null;
 }
 
 /** A skill or system not yet reached — shown greyed with its unlock level. */

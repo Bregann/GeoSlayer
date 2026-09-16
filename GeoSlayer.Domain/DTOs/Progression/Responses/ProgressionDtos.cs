@@ -46,6 +46,15 @@ public class SkillDto
     /// <summary>Cumulative XP at the start of the current level, for the progress bar.</summary>
     public long XpForCurrentLevel { get; set; }
     public long XpForNextLevel { get; set; }
+
+    /// <summary>
+    /// The next material tier this skill unlocks, so there is always something in view
+    /// (SKILL-TEMPLATE.md). Null once every tier is unlocked.
+    /// </summary>
+    public string? NextTierName { get; set; }
+
+    /// <summary>Skill level at which <see cref="NextTierName"/> becomes obtainable.</summary>
+    public int? NextTierLevel { get; set; }
 }
 
 /// <summary>A skill not yet unlocked, shown greyed with its unlock level (§3.1c).</summary>

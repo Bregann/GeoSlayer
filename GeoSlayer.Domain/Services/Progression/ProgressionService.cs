@@ -232,6 +232,18 @@ public class ProgressionService(
 
         var unlockedTypes = skills.Select(s => s.SkillType.ToString()).ToHashSet();
 
+        // The next material tier per skill, so the screen always has something to show
+        // the player they are working toward. Driven off the seeded ladder, so it costs
+        // nothing to add a skill.
+        var skillTypes = skills.Select(s => s.SkillType).ToList();
+
+        var ladder = await db.Materials
+            .Where(m => m.SkillType != null
+                     && skillTypes.Contains(m.SkillType!.Value)
+                     && !m.IsUnique)
+            .Select(m => new { Skill = m.SkillType!.Value, m.Name, m.LevelRequired })
+            .ToListAsync(ct);
+
         // The road ahead: every rung above the current level, plus any level-1 rung not
         // yet taken.  Shown greyed with its unlock level — the ladder is a roadmap (§3.1c).
         var locked = await db.UnlockDefinitions
@@ -247,14 +259,24 @@ public class ProgressionService(
             AdventurerXp = player.AdventurerXp,
             AdventurerXpForCurrentLevel = XpCurve.XpForLevel(player.AdventurerLevel),
             AdventurerXpForNextLevel = XpCurve.XpForLevel(player.AdventurerLevel + 1),
-            Unlocked = skills.Select(s => new SkillDto
+            Unlocked = skills.Select(s =>
             {
-                SkillType = s.SkillType,
-                Name = s.SkillType.ToString(),
-                Xp = s.Xp,
-                Level = s.Level,
-                XpForCurrentLevel = XpCurve.XpForLevel(s.Level),
-                XpForNextLevel = XpCurve.XpForLevel(s.Level + 1),
+                var next = ladder
+                    .Where(m => m.Skill == s.SkillType && m.LevelRequired > s.Level)
+                    .OrderBy(m => m.LevelRequired)
+                    .FirstOrDefault();
+
+                return new SkillDto
+                {
+                    SkillType = s.SkillType,
+                    Name = s.SkillType.ToString(),
+                    Xp = s.Xp,
+                    Level = s.Level,
+                    XpForCurrentLevel = XpCurve.XpForLevel(s.Level),
+                    XpForNextLevel = XpCurve.XpForLevel(s.Level + 1),
+                    NextTierName = next?.Name,
+                    NextTierLevel = next?.LevelRequired,
+                };
             }).ToList(),
             Locked = locked.Select(u => new LockedSkillDto
             {
