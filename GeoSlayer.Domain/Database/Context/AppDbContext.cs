@@ -33,6 +33,8 @@ namespace GeoSlayer.Domain.Database.Context
         public DbSet<MuseumEntryDefinition> MuseumEntryDefinitions { get; set; } = null!;
         public DbSet<PlayerMuseumEntry> PlayerMuseumEntries { get; set; } = null!;
         public DbSet<GeoRegion> GeoRegions { get; set; } = null!;
+        public DbSet<PlayerClueScroll> PlayerClueScrolls { get; set; } = null!;
+        public DbSet<ClueStep> ClueSteps { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -186,6 +188,16 @@ namespace GeoSlayer.Domain.Database.Context
                 // Shared across players: one lookup per cell, ever.
                 entity.HasIndex(e => new { e.CellLat, e.CellLng }).IsUnique();
                 entity.HasIndex(e => e.RegionKey);
+            });
+
+            modelBuilder.Entity<PlayerClueScroll>(entity =>
+            {
+                entity.HasIndex(e => new { e.PlayerId, e.Tier, e.CompletedUtc });
+            });
+
+            modelBuilder.Entity<ClueStep>(entity =>
+            {
+                entity.HasIndex(e => new { e.ScrollId, e.StepIndex }).IsUnique();
             });
 
             modelBuilder.Entity<RevealedCell>(entity =>

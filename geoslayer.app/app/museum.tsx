@@ -64,6 +64,13 @@ export default function MuseumScreen() {
           </TouchableOpacity>
         </View>
 
+        <TouchableOpacity
+          style={progressionStyles.backButton}
+          onPress={() => router.push('/clues')}
+        >
+          <Text style={progressionStyles.backText}>📜 CLUE SCROLLS →</Text>
+        </TouchableOpacity>
+
         {data && (
           <>
             <Text style={progressionStyles.xpText}>

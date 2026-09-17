@@ -1,6 +1,6 @@
 # Build status
 
-**Current stage: `STAGE-13-clue-scrolls.md`**
+**Current stage: `STAGE-14-retention.md`**
 
 Single source of truth for where the build is. Update this when a stage completes.
 
@@ -18,7 +18,7 @@ Single source of truth for where the build is. Update this when a stage complete
 | 10 | Mining | DONE |
 | 11 | Smithing | DONE |
 | 12 | Museum | DONE |
-| 13 | Clue scrolls | NOT STARTED |
+| 13 | Clue scrolls | DONE |
 | 14 | Retention systems | NOT STARTED |
 | 15 | Remaining skills | NOT STARTED |
 
@@ -284,3 +284,33 @@ Worth a human eye:
   which will sometimes read oddly — "you have been to Tesco Express" is technically true
   and tonally wrong. The fix is a better resolver behind the same interface, but whether
   it matters depends on how it reads in a real neighbourhood.
+
+### From Stage 13
+
+**Criterion 5 is not met.** Cryptic clue generation is deferred, and this is the first
+acceptance criterion in the project left genuinely unsatisfied rather than reinterpreted.
+
+- `ClueStepType` defines all seven types and `ClueRiddleText.Cryptic` is written and
+  tested, but nothing generates a Cryptic step. Task 3's hard requirement is that a
+  generated riddle resolve to **exactly one** POI in the radius — otherwise it is
+  unsolvable — and that validation needs arbitrary OSM tags (`building:levels`) that
+  `PointOfInterest` does not store. It keeps a name, a skill and a location.
+- **The fix is an importer change**: store raw tags on import, then generate and validate
+  against them. That belongs with a stage that touches `PoiImportService`.
+- Shipping Cryptic without the uniqueness check would be worse than not shipping it — an
+  ambiguous riddle is a clue the player cannot solve, which is exactly what the one-skip
+  rule exists to rescue them from.
+
+Needs an app toolchain when one exists:
+
+- Typecheck and launch `app/clues.tsx`.
+- **Map integration for coordinate steps is not built.** The screen states the radius in
+  text and the API sends the centre, but the map draws no search circle. The data is all
+  there — `SearchLat`/`SearchLng`/`SearchRadius` on the step DTO.
+
+Needs a human with a phone (carried from the stage file):
+
+- **Walk a generated clue end to end** and confirm the riddle is solvable by someone who
+  did not write the generator. Category steps say things like "Stand somewhere where the
+  faithful gather" — whether that reads as evocative or as vague is the whole question,
+  and no test can answer it.

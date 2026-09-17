@@ -1,5 +1,6 @@
 using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.Enums;
+using GeoSlayer.Domain.Services.Clues;
 using GeoSlayer.Domain.Services.Crafting;
 using GeoSlayer.Domain.Services.Materials;
 using GeoSlayer.Domain.Services.Skills;
@@ -163,6 +164,24 @@ public static class MuseumSeedData
                 Description = feat.Description,
                 Rarity = MuseumRarity.Uncommon,
                 UnlockCondition = feat.Description,
+                SortOrder = order++,
+            };
+        }
+
+        // ── Relics: the clue reward tables (§5B.4) ────────────────────────────────────
+        // Clues generate Relics; Relics fill the Museum; the Museum gives Relics a reason
+        // to exist. Deriving the plinths from the reward table is what keeps the two in
+        // step.
+        foreach (var (tier, key, name) in ClueService.AllRelics())
+        {
+            yield return new MuseumEntryDefinition
+            {
+                Key = key,
+                Wing = MuseumWing.Relics,
+                Name = name,
+                Description = $"Recovered at the end of a {tier} scroll.",
+                Rarity = tier >= ClueTier.Pilgrim ? MuseumRarity.Legendary : MuseumRarity.Rare,
+                UnlockCondition = $"Complete a {tier} clue scroll",
                 SortOrder = order++,
             };
         }
