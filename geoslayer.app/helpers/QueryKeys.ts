@@ -29,6 +29,9 @@ export enum QueryKeys {
   // ── Clues ──
   Clues = 'clues',
 
+  // ── Combat ──
+  Encounters = 'encounters',
+
   // ── Retention ──
   Expeditions = 'expeditions',
   ExpeditionDestinations = 'expeditionDestinations',

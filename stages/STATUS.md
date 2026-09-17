@@ -1,7 +1,7 @@
 # Build status
 
-**All 15 originally planned stages are `DONE`.** Stage 16 (Combat encounters) was added
-after the scope question was decided — see `DESIGN.md` §5C.
+**All 16 stages are `DONE`.** Stage 16 (Combat encounters) was added after the scope
+question was decided — see `DESIGN.md` §5C.
 
 Single source of truth for where the build is. Update this when a stage completes.
 
@@ -22,7 +22,7 @@ Single source of truth for where the build is. Update this when a stage complete
 | 13 | Clue scrolls | DONE |
 | 14 | Retention systems | DONE |
 | 15 | Remaining skills | DONE |
-| 16 | Combat encounters | NOT STARTED |
+| 16 | Combat encounters | DONE |
 
 States: `NOT STARTED` → `IN PROGRESS` → `DONE` (or `BLOCKED`, with a reason).
 
@@ -31,10 +31,10 @@ States: `NOT STARTED` → `IN PROGRESS` → `DONE` (or `BLOCKED`, with a reason)
 Stage 15's definition of done asks that `DESIGN.md` §9's open questions be recorded here
 rather than decided by an agent. **None of these should be settled without you.**
 
-- ~~**Combat scope.**~~ **DECIDED:** encounters. Some spawn at random POIs, some are fixed
-  training grounds at historic sites. Written up as `DESIGN.md` §5C and scoped as
-  `STAGE-16-combat-encounters.md`. The geography rule is preserved — historic POIs are a
-  boost, never the only venue.
+- ~~**Combat scope.**~~ **DECIDED and BUILT** (Stage 16). Roaming encounters spawn at any
+  POI; training grounds are fixed to historic ground and permanent. Both pay identically at
+  the same tier — the advantage of historic ground is availability alone, which is what
+  keeps a castle a boost rather than a requirement.
 - **Multiplayer.** Nothing in the build assumes other players exist. §9 lists it as open;
   the Museum's shareable profile (§5A.1) is the only hook that points that way.
 - **Monetisation.** Untouched, deliberately. It shapes the whole design and is not an
@@ -434,6 +434,10 @@ trade-off, but it means route changes must be verified by curling endpoints.
 
 - **Stage 13 criterion 5** — Cryptic clue generation. Needs raw OSM tags stored on import;
   `PointOfInterest` keeps only a name, skill and location. An importer change.
+- **Stage 16 — gear does not affect combat resolution.** `WinChance` reads Combat level
+  alone; the stage asked for level *and* equipped gear. Needs a combat modifier on `Item`.
+- **Stage 16 — encounters are not drawn on the map.** They have their own screen. The DTO
+  already carries coordinates, so this is a map layer rather than API work.
 
 ### 5. Systems described but not built
 

@@ -41,6 +41,8 @@ namespace GeoSlayer.Domain.Database.Context
         public DbSet<PatrolWaypoint> PatrolWaypoints { get; set; } = null!;
         public DbSet<DistrictDefinition> DistrictDefinitions { get; set; } = null!;
         public DbSet<ResourceSurge> ResourceSurges { get; set; } = null!;
+        public DbSet<EncounterDefinition> EncounterDefinitions { get; set; } = null!;
+        public DbSet<PlayerEncounter> PlayerEncounters { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -240,6 +242,33 @@ namespace GeoSlayer.Domain.Database.Context
                 // One active surge per region cell — shared across players, since a surge
                 // is a property of a place.
                 entity.HasIndex(e => new { e.CellLat, e.CellLng, e.EndsUtc });
+            });
+
+            modelBuilder.Entity<EncounterDefinition>(entity =>
+            {
+                entity.HasIndex(e => e.Key).IsUnique();
+            });
+
+            modelBuilder.Entity<PlayerEncounter>(entity =>
+            {
+                // One encounter per definition per POI per player: the spawner is
+                // deterministic and re-runs on every sync, so this is what stops a
+                // repeated sync stacking duplicates of the same fight.
+                entity.HasIndex(e => new { e.PlayerId, e.PoiId, e.DefinitionKey })
+                      .IsUnique();
+
+                // The open-encounters query: mine, unresolved.
+                entity.HasIndex(e => new { e.PlayerId, e.ResolvedUtc });
+
+                entity.HasOne(e => e.Player)
+                      .WithMany()
+                      .HasForeignKey(e => e.PlayerId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Poi)
+                      .WithMany()
+                      .HasForeignKey(e => e.PoiId)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
 
             modelBuilder.Entity<RevealedCell>(entity =>

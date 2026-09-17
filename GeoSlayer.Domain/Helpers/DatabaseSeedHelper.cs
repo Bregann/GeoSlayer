@@ -39,6 +39,7 @@ namespace GeoSlayer.Domain.Helpers
 
             await SeedMuseumEntries(context);
             await SeedDistricts(context);
+            await SeedEncounters(context);
             await context.SaveChangesAsync();
         }
 
@@ -401,6 +402,31 @@ namespace GeoSlayer.Domain.Helpers
                     RequiredTerrains = district.RequiredTerrains,
                     MinimumClaims = district.MinimumClaims,
                     OutputBonus = district.OutputBonus,
+                });
+            }
+        }
+
+        /// <summary>Encounter definitions (§5C.1). Seed data, like every other ladder.</summary>
+        private static async Task SeedEncounters(AppDbContext context)
+        {
+            var have = (await context.EncounterDefinitions.Select(d => d.Key).ToListAsync())
+                .ToHashSet();
+
+            foreach (var encounter in Services.Combat.EncounterSeedData.Encounters)
+            {
+                if (!have.Add(encounter.Key))
+                {
+                    continue;
+                }
+
+                context.EncounterDefinitions.Add(new EncounterDefinition
+                {
+                    Key = encounter.Key,
+                    Name = encounter.Name,
+                    Description = encounter.Description,
+                    MinCombatLevel = encounter.MinCombatLevel,
+                    Tier = encounter.Tier,
+                    IsTrainingGround = encounter.IsTrainingGround,
                 });
             }
         }

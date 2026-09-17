@@ -24,6 +24,7 @@ interface HudProps {
   onUpgrades?: () => void;
   onCrafting?: () => void;
   onMuseum?: () => void;
+  onEncounters?: () => void;
 }
 
 export function Hud({
@@ -38,6 +39,7 @@ export function Hud({
   onUpgrades,
   onCrafting,
   onMuseum,
+  onEncounters,
 }: HudProps) {
   // Prefer the server's own level bounds; fall back to the client curve copy. `xp` is
   // cumulative lifetime XP either way, so progress comes from the curve rather than a
@@ -105,6 +107,10 @@ export function Hud({
 
           <TouchableOpacity style={styles.menuButton} onPress={onMuseum}>
             <Text style={styles.menuIcon}>🏛️</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.menuButton} onPress={onEncounters}>
+            <Text style={styles.menuIcon}>⚔️</Text>
           </TouchableOpacity>
         </View>
       </View>

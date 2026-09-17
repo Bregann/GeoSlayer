@@ -4,6 +4,7 @@ using GeoSlayer.Domain.Enums;
 using GeoSlayer.Domain.Interfaces.Api.Materials;
 using GeoSlayer.Domain.Interfaces.Api.Museum;
 using GeoSlayer.Domain.Interfaces.Helpers;
+using GeoSlayer.Domain.Services.Combat;
 using GeoSlayer.Domain.Services.Crafting;
 using GeoSlayer.Domain.Services.Materials;
 using GeoSlayer.Domain.Services.Museum;
@@ -303,6 +304,32 @@ namespace GeoSlayer.Tests.Infrastructure
             MaterialService materials,
             ProgressionService progression) =>
             new(context, materials, progression);
+
+        /// <summary>A real <see cref="EncounterService"/> over the test database.</summary>
+        public static EncounterService CreateEncounterService(
+            AppDbContext context,
+            MaterialService materials,
+            ProgressionService progression) =>
+            new(context, materials, progression, CreateMuseumService(context));
+
+        /// <summary>Seeds encounter definitions (§5C.1).</summary>
+        public static async Task SeedEncounterDefinitions(AppDbContext context)
+        {
+            foreach (var encounter in EncounterSeedData.Encounters)
+            {
+                context.EncounterDefinitions.Add(new EncounterDefinition
+                {
+                    Key = encounter.Key,
+                    Name = encounter.Name,
+                    Description = encounter.Description,
+                    MinCombatLevel = encounter.MinCombatLevel,
+                    Tier = encounter.Tier,
+                    IsTrainingGround = encounter.IsTrainingGround,
+                });
+            }
+
+            await context.SaveChangesAsync();
+        }
 
         /// <summary>Seeds District definitions (§5.5).</summary>
         public static async Task SeedDistrictDefinitions(AppDbContext context)

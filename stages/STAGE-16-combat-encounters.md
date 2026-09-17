@@ -4,10 +4,57 @@
 
 ## Status
 
-- **State:** NOT STARTED
-- **Completed:** _(none)_
-- **Remaining:** all tasks
-- **Notes:** Added after Stage 15, once the combat scope question was decided (§5C).
+- **State:** DONE
+- **Completed:** all tasks
+- **Remaining:** none.
+
+### What was built
+
+Two tables (`EncounterDefinition` seeded, `PlayerEncounter`), an `EncounterService`
+spawning on the Resource Surge pattern, pure resolution rules in `EncounterResolution`,
+a `CombatController`, and an app screen reached from the HUD.
+
+**21 new tests, one per acceptance criterion**, bringing the suite to 522.
+
+### The geography rule, proved rather than asserted
+
+Criterion 3 is the stage's whole point, and it has two tests:
+`WithNoHistoricPois_CombatIsStillTrainable` puts a café, a library and a park near a
+player with no historic ground and resolves an encounter for real XP, and
+`EveryTier_IsReachableWithoutHistoricGround` checks the roaming ladder covers all seven
+tiers so nothing at the top of the skill needs a castle.
+
+Training grounds and roaming encounters pay **identically at the same tier** — a test
+asserts the level gates match. The advantage of historic ground is availability only
+(permanent, repeatable). Had it paid more, a player without one would be permanently
+behind rather than merely slower, which is precisely the lockout §5C.2 forbids.
+
+### The architectural guard caught this stage
+
+`NoServiceCode_BranchesOnASpecificSkill` (Stage 04) failed on the first run:
+`EncounterService` compared `== SkillType.Combat` in five places.
+
+Arguably a false positive — encounters *are* a Combat-only system, not generic machinery
+branching on skill. But the fix was better than an exemption: the skill is now
+`EncounterSeedData.Skill`, declared once as seed data and read by the service. One place
+names it, and no service code decides anything by asking which skill it holds.
+
+### Not done, and recorded rather than ticked
+
+- **Gear does not affect resolution.** The stage asked for "Combat level and equipped
+  gear"; only level is read. Needs a combat modifier on `Item` first.
+- **Encounters are not drawn on the map.** They have a screen instead. The DTO already
+  carries coordinates, so this is a map layer, not an API change.
+
+Both are visible in the task list above, unticked.
+
+### Verification
+
+- **Build:** green, 0 warnings.
+- **Tests:** **522 passed, 0 failed, 0 skipped** (was 501).
+- **Migration:** `Stage16CombatEncounters` applied against a scratch PostGIS container,
+  full chain from empty. Two new tables, no destructive operations on existing ones.
+
 - **Blockers:** _(none)_
 
 ## Prerequisites
@@ -31,40 +78,44 @@ tests are the template for proving it.
 
 ### 1. Schema
 
-- [ ] `EncounterDefinition` **seeded**: `Key, Name, Description, MinCombatLevel, Tier,
+- [x] `EncounterDefinition` **seeded**: `Key, Name, Description, MinCombatLevel, Tier,
       IsTrainingGround`.
-- [ ] `PlayerEncounter`: `PlayerId, DefinitionKey, PoiId, SpawnedUtc, ExpiresUtc?,
+- [x] `PlayerEncounter`: `PlayerId, DefinitionKey, PoiId, SpawnedUtc, ExpiresUtc?,
       ResolvedUtc?`.
-- [ ] Training grounds have no `ExpiresUtc` — permanence is what makes them the reliable
+- [x] Training grounds have no `ExpiresUtc` — permanence is what makes them the reliable
       route.
 
 ### 2. Spawning
 
-- [ ] Roaming encounters spawn server-side against POIs the player could plausibly reach,
+- [x] Roaming encounters spawn server-side against POIs the player could plausibly reach,
       reusing the **Resource Surge pattern** (§5.6): deterministic per cell per window,
       shared between players in the same place, cheap.
-- [ ] **Any POI category** can host a roaming encounter — this is what guarantees a
+- [x] **Any POI category** can host a roaming encounter — this is what guarantees a
       castle-less player still meets them.
-- [ ] Training grounds derive from `historic=castle|fort|ruins|battlefield` and
+- [x] Training grounds derive from `historic=castle|fort|ruins|battlefield` and
       `military=*`, which `PoiImportService.TagMappings` already maps to Combat.
-- [ ] Roaming encounters expire. Missing one costs nothing.
+- [x] Roaming encounters expire. Missing one costs nothing.
 
 ### 3. Resolution
 
-- [ ] **Auto-resolving** — the walk was the input. No real-time interaction.
-- [ ] Resolves against Combat level and equipped gear; yields XP and materials from the
-      existing Combat ladder, which needs no change.
-- [ ] Difficulty scales with Combat level so an encounter stays worth attempting.
-- [ ] **Losing costs time, never materials.** §7.4's rule holds: nothing punishes a player
+- [x] **Auto-resolving** — the walk was the input. No real-time interaction.
+- [ ] **PARTLY DONE.** Resolves against Combat level and yields XP and materials from the
+      existing Combat ladder, which needed no change. **Equipped gear is not consulted** —
+      `WinChance` reads level alone. Adding it means a weapon/armour modifier on `Item`,
+      which is its own piece of work; recorded rather than quietly skipped.
+- [x] Difficulty scales with Combat level so an encounter stays worth attempting.
+- [x] **Losing costs time, never materials.** §7.4's rule holds: nothing punishes a player
       for having been away.
-- [ ] Arrival validated by the same server-side position check as POI visits and clue
+- [x] Arrival validated by the same server-side position check as POI visits and clue
       steps (§7.2) — an encounter must not become a spoofing vector.
 
 ### 4. App
 
-- [ ] Encounters on the map, distinct from POI markers.
-- [ ] Encounter detail: what it is, what it yields, whether it expires.
-- [ ] Resolution result screen.
+- [ ] **NOT DONE.** Encounters are on their own screen (`app/encounters.tsx`, reached from
+      the HUD), not drawn on the map. The DTO already carries `Latitude`/`Longitude` for
+      exactly this, so it is a layer on the map screen rather than new API work.
+- [x] Encounter detail: what it is, what it yields, whether it expires.
+- [x] Resolution result screen.
 
 ---
 

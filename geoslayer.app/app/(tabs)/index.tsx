@@ -465,6 +465,7 @@ export default function MapScreen() {
         onUpgrades={() => router.push('/upgrades')}
         onCrafting={() => router.push('/crafting')}
         onMuseum={() => router.push('/museum')}
+        onEncounters={() => router.push('/encounters')}
       />
 
       {/* Uncharted Transit summary. Without this the hatched cells are unexplained,
