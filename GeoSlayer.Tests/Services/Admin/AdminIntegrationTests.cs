@@ -36,6 +36,7 @@ namespace GeoSlayer.Tests.Services.Admin
             await TestDatabaseSeedHelper.SeedMaterialDefinitions(DbContext);
             await TestDatabaseSeedHelper.SeedSkillDefinitions(DbContext);
             await TestDatabaseSeedHelper.SeedEncounterDefinitions(DbContext);
+            await TestDatabaseSeedHelper.SeedProgressionDefinitions(DbContext);
 
             _sut = new AdminService(DbContext);
         }
@@ -766,6 +767,161 @@ namespace GeoSlayer.Tests.Services.Admin
                 .ToList();
 
             Assert.That(forEncounter, Does.Contain("Created").And.Contains("Deleted"));
+        }
+
+        // ── Progression (task 8) ────────────────────────────────────────
+
+        [Test]
+        public async Task TheSeededProgression_LoadsWithNoLadderWarnings()
+        {
+            var progression = await _sut.GetProgression(Ct);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(progression.Unlocks, Is.Not.Empty);
+                Assert.That(progression.Upgrades, Is.Not.Empty);
+                Assert.That(progression.LadderWarnings, Is.Empty);
+            });
+        }
+
+        [Test]
+        public async Task AnUpgrade_ReportsWhatItCostsToMax()
+        {
+            // The number a curve makes hard to eyeball, and the one that decides whether an
+            // upgrade is worth buying at all.
+            var saved = await _sut.SaveUpgrade(_admin.Id, new SaveUpgradeRequest
+            {
+                Key = "test_upgrade",
+                Name = "Test Upgrade",
+                Category = "Exploration",
+                MaxRank = 3,
+                CostCurve = "2,5,9",
+                EffectPerRank = 1,
+            }, Ct);
+
+            Assert.That(saved.TotalCost, Is.EqualTo(16));
+        }
+
+        [Test]
+        public async Task AMalformedCostCurve_IsRejectedAndNotStored()
+        {
+            // The crash this validator exists for: UpgradeDefinition.Costs parses with
+            // int.Parse on every upgrades-screen load, so a stored typo takes that screen
+            // down for every player, not just the admin who made it.
+            Assert.That(
+                async () => await _sut.SaveUpgrade(_admin.Id, new SaveUpgradeRequest
+                {
+                    Key = "broken_curve",
+                    Name = "Broken",
+                    MaxRank = 3,
+                    CostCurve = "1,two,3",
+                }, Ct),
+                Throws.TypeOf<BadRequestException>());
+
+            Assert.That(
+                await DbContext.UpgradeDefinitions.AnyAsync(u => u.Key == "broken_curve"),
+                Is.False);
+        }
+
+        [Test]
+        public async Task ACurveThatDoesNotMatchMaxRank_IsRejected()
+        {
+            Assert.That(
+                async () => await _sut.SaveUpgrade(_admin.Id, new SaveUpgradeRequest
+                {
+                    Key = "mismatched",
+                    Name = "Mismatched",
+                    MaxRank = 5,
+                    CostCurve = "1,2",
+                }, Ct),
+                Throws.TypeOf<BadRequestException>());
+        }
+
+        [Test]
+        public async Task AnUpgradePlayersHaveBought_CannotBeDeleted()
+        {
+            // Deleting it would take what they paid for without refunding the Bonus Points.
+            var upgrade = await _sut.SaveUpgrade(_admin.Id, new SaveUpgradeRequest
+            {
+                Key = "purchased_upgrade",
+                Name = "Purchased",
+                MaxRank = 2,
+                CostCurve = "1,2",
+                EffectPerRank = 1,
+            }, Ct);
+
+            var player = await DbContext.Players.FirstAsync();
+
+            DbContext.PlayerUpgrades.Add(new PlayerUpgrade
+            {
+                PlayerId = player.Id,
+                UpgradeKey = upgrade.Key,
+                Rank = 1,
+            });
+            await DbContext.SaveChangesAsync();
+
+            Assert.That(
+                async () => await _sut.DeleteUpgrade(_admin.Id, upgrade.Id, Ct),
+                Throws.TypeOf<BadRequestException>());
+        }
+
+        [Test]
+        public async Task AnUnboughtUpgradeCanBeDeleted()
+        {
+            var upgrade = await _sut.SaveUpgrade(_admin.Id, new SaveUpgradeRequest
+            {
+                Key = "unbought_upgrade",
+                Name = "Unbought",
+                MaxRank = 1,
+                CostCurve = "3",
+                EffectPerRank = 1,
+            }, Ct);
+
+            await _sut.DeleteUpgrade(_admin.Id, upgrade.Id, Ct);
+
+            Assert.That(
+                await DbContext.UpgradeDefinitions.AnyAsync(u => u.Id == upgrade.Id),
+                Is.False);
+        }
+
+        [Test]
+        public async Task TheSamePayloadAtTwoLevels_IsRejected()
+        {
+            // ApplyUnlocks skips what is already owned, so the second rung silently never
+            // fires — the kind of dead configuration that is very hard to notice.
+            var existing = await DbContext.UnlockDefinitions.AsNoTracking().FirstAsync();
+
+            Assert.That(
+                async () => await _sut.SaveUnlock(_admin.Id, new SaveUnlockRequest
+                {
+                    AdventurerLevel = existing.AdventurerLevel + 25,
+                    UnlockType = existing.UnlockType,
+                    Payload = existing.Payload,
+                    DisplayName = "Duplicate rung",
+                }, Ct),
+                Throws.TypeOf<BadRequestException>());
+        }
+
+        [Test]
+        public async Task ProgressionMutations_AreAudited()
+        {
+            var upgrade = await _sut.SaveUpgrade(_admin.Id, new SaveUpgradeRequest
+            {
+                Key = "audited_upgrade",
+                Name = "Audited",
+                MaxRank = 1,
+                CostCurve = "1",
+                EffectPerRank = 1,
+            }, Ct);
+
+            await _sut.DeleteUpgrade(_admin.Id, upgrade.Id, Ct);
+
+            var actions = (await _sut.GetAuditTrail(50, Ct))
+                .Where(e => e.EntityType == "Upgrade")
+                .Select(e => e.Action)
+                .ToList();
+
+            Assert.That(actions, Does.Contain("Created").And.Contains("Deleted"));
         }
 
         // ── Audit trail (task 9) ────────────────────────────────────────

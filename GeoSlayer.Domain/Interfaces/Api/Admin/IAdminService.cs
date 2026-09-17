@@ -80,6 +80,29 @@ namespace GeoSlayer.Domain.Interfaces.Api.Admin
         /// <summary>Delete an encounter definition, if the set survives without it.</summary>
         Task DeleteEncounter(string adminUserId, int encounterId, CancellationToken ct);
 
+        /// <summary>The unlock ladder and upgrade tree, with any ladder warnings.</summary>
+        Task<AdminProgressionDto> GetProgression(CancellationToken ct);
+
+        /// <summary>
+        /// Create or update a Bonus Point upgrade.
+        ///
+        /// <para>The cost curve is validated before it is stored —
+        /// <c>UpgradeDefinition.Costs</c> parses it with <c>int.Parse</c> on every
+        /// upgrades-screen load, so a malformed value crashes that screen for everyone.</para>
+        /// </summary>
+        Task<AdminUpgradeDto> SaveUpgrade(
+            string adminUserId, SaveUpgradeRequest request, CancellationToken ct);
+
+        /// <summary>Delete an upgrade, refusing when players have already bought ranks.</summary>
+        Task DeleteUpgrade(string adminUserId, int upgradeId, CancellationToken ct);
+
+        /// <summary>Create or update one rung of the unlock ladder.</summary>
+        Task<AdminUnlockDto> SaveUnlock(
+            string adminUserId, SaveUnlockRequest request, CancellationToken ct);
+
+        /// <summary>Delete an unlock rung.</summary>
+        Task DeleteUnlock(string adminUserId, int unlockId, CancellationToken ct);
+
         /// <summary>The audit trail, newest first.</summary>
         Task<List<AdminAuditDto>> GetAuditTrail(int limit, CancellationToken ct);
     }

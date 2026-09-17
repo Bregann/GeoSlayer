@@ -665,6 +665,219 @@ namespace GeoSlayer.Domain.Services.Admin
                 $"{(live == 1 ? "" : "s")} referenced it", ct);
         }
 
+        // ── Progression (task 8) ────────────────────────────────────────
+
+        public async Task<AdminProgressionDto> GetProgression(CancellationToken ct)
+        {
+            var unlocks = await db.UnlockDefinitions
+                .OrderBy(u => u.AdventurerLevel)
+                .ThenBy(u => u.Payload)
+                .ToListAsync(ct);
+
+            var upgrades = await db.UpgradeDefinitions
+                .OrderBy(u => u.Category)
+                .ThenBy(u => u.Name)
+                .ToListAsync(ct);
+
+            return new AdminProgressionDto
+            {
+                Unlocks = [.. unlocks.Select(ToDto)],
+                Upgrades = [.. upgrades.Select(ToDto)],
+                LadderWarnings = [.. ProgressionValidation.WarnUnlocks(unlocks)],
+            };
+        }
+
+        private static AdminUnlockDto ToDto(UnlockDefinition unlock) => new()
+        {
+            Id = unlock.Id,
+            AdventurerLevel = unlock.AdventurerLevel,
+            UnlockType = unlock.UnlockType,
+            Payload = unlock.Payload,
+            DisplayName = unlock.DisplayName,
+        };
+
+        private static AdminUpgradeDto ToDto(UpgradeDefinition upgrade) => new()
+        {
+            Id = upgrade.Id,
+            Key = upgrade.Key,
+            Name = upgrade.Name,
+            Category = upgrade.Category,
+            Description = upgrade.Description,
+            MaxRank = upgrade.MaxRank,
+            CostCurve = upgrade.CostCurve,
+            EffectPerRank = upgrade.EffectPerRank,
+            MinAdventurerLevel = upgrade.MinAdventurerLevel,
+
+            // Summed here rather than left to the reader: the total cost of maxing an
+            // upgrade is the number that actually decides whether it is worth buying, and
+            // it is the one thing a curve makes hard to eyeball.
+            TotalCost = SafeTotalCost(upgrade),
+        };
+
+        /// <summary>
+        /// Total Bonus Points to max an upgrade, tolerating a malformed curve.
+        ///
+        /// <para>Validation stops new bad curves, but a row seeded or migrated before this
+        /// existed could still be unparseable — and a listing that throws would make the
+        /// offending row impossible to find and fix through the interface.</para>
+        /// </summary>
+        private static int SafeTotalCost(UpgradeDefinition upgrade)
+        {
+            var total = 0;
+
+            foreach (var part in upgrade.CostCurve
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                if (int.TryParse(part, out var cost))
+                {
+                    total += cost;
+                }
+            }
+
+            return total;
+        }
+
+        public async Task<AdminUpgradeDto> SaveUpgrade(
+            string adminUserId, SaveUpgradeRequest request, CancellationToken ct)
+        {
+            var isNew = request.Id is null;
+
+            var upgrade = isNew
+                ? new UpgradeDefinition
+                {
+                    Key = request.Key,
+                    Name = request.Name,
+                    Category = request.Category,
+                    Description = request.Description,
+                    CostCurve = request.CostCurve,
+                }
+                : await db.UpgradeDefinitions.FirstOrDefaultAsync(u => u.Id == request.Id, ct)
+                  ?? throw new NotFoundException($"Upgrade {request.Id} not found.");
+
+            upgrade.Key = request.Key;
+            upgrade.Name = request.Name;
+            upgrade.Category = request.Category;
+            upgrade.Description = request.Description;
+            upgrade.MaxRank = request.MaxRank;
+            upgrade.CostCurve = request.CostCurve;
+            upgrade.EffectPerRank = request.EffectPerRank;
+            upgrade.MinAdventurerLevel = request.MinAdventurerLevel;
+
+            var others = await db.UpgradeDefinitions
+                .Where(u => u.Id != (request.Id ?? 0))
+                .AsNoTracking()
+                .ToListAsync(ct);
+
+            var rejection = ProgressionValidation.RejectUpgrade(upgrade, others);
+
+            if (rejection is not null)
+            {
+                db.ChangeTracker.Clear();
+
+                throw new BadRequestException(rejection);
+            }
+
+            if (isNew)
+            {
+                db.UpgradeDefinitions.Add(upgrade);
+            }
+
+            await db.SaveChangesAsync(ct);
+
+            await Audit(adminUserId, "Upgrade", upgrade.Id.ToString(),
+                isNew ? "Created" : "Updated",
+                $"{upgrade.Key}: {upgrade.MaxRank} ranks at {upgrade.CostCurve}", ct);
+
+            return ToDto(upgrade);
+        }
+
+        public async Task DeleteUpgrade(string adminUserId, int upgradeId, CancellationToken ct)
+        {
+            var upgrade = await db.UpgradeDefinitions
+                .FirstOrDefaultAsync(u => u.Id == upgradeId, ct)
+                ?? throw new NotFoundException($"Upgrade {upgradeId} not found.");
+
+            // Refused rather than cascaded: players spent Bonus Points on these ranks, and
+            // deleting the definition would take the purchase without refunding it.
+            var bought = await db.PlayerUpgrades
+                .CountAsync(p => p.UpgradeKey == upgrade.Key && p.Rank > 0, ct);
+
+            if (bought > 0)
+            {
+                throw new BadRequestException(
+                    $"{bought} player{(bought == 1 ? " has" : "s have")} bought ranks in " +
+                    $"'{upgrade.Key}'. Deleting it would take what they paid for without a refund.");
+            }
+
+            db.UpgradeDefinitions.Remove(upgrade);
+            await db.SaveChangesAsync(ct);
+
+            await Audit(adminUserId, "Upgrade", upgradeId.ToString(), "Deleted",
+                $"{upgrade.Key} ({upgrade.Name})", ct);
+        }
+
+        public async Task<AdminUnlockDto> SaveUnlock(
+            string adminUserId, SaveUnlockRequest request, CancellationToken ct)
+        {
+            var isNew = request.Id is null;
+
+            var unlock = isNew
+                ? new UnlockDefinition { Payload = request.Payload, DisplayName = request.DisplayName }
+                : await db.UnlockDefinitions.FirstOrDefaultAsync(u => u.Id == request.Id, ct)
+                  ?? throw new NotFoundException($"Unlock {request.Id} not found.");
+
+            unlock.AdventurerLevel = request.AdventurerLevel;
+            unlock.UnlockType = request.UnlockType;
+            unlock.Payload = request.Payload;
+            unlock.DisplayName = request.DisplayName;
+
+            var others = await db.UnlockDefinitions
+                .Where(u => u.Id != (request.Id ?? 0))
+                .AsNoTracking()
+                .ToListAsync(ct);
+
+            var rejection = ProgressionValidation.RejectUnlock(unlock, others);
+
+            if (rejection is not null)
+            {
+                db.ChangeTracker.Clear();
+
+                throw new BadRequestException(rejection);
+            }
+
+            if (isNew)
+            {
+                db.UnlockDefinitions.Add(unlock);
+            }
+
+            await db.SaveChangesAsync(ct);
+
+            await Audit(adminUserId, "Unlock", unlock.Id.ToString(),
+                isNew ? "Created" : "Updated",
+                $"{unlock.Payload} at Adventurer {unlock.AdventurerLevel}", ct);
+
+            return ToDto(unlock);
+        }
+
+        public async Task DeleteUnlock(string adminUserId, int unlockId, CancellationToken ct)
+        {
+            var unlock = await db.UnlockDefinitions.FirstOrDefaultAsync(u => u.Id == unlockId, ct)
+                ?? throw new NotFoundException($"Unlock {unlockId} not found.");
+
+            db.UnlockDefinitions.Remove(unlock);
+            await db.SaveChangesAsync(ct);
+
+            // Not refused: players who already unlocked it keep their PlayerSkill row — the
+            // row existing *is* the unlock (§3.1), so removing the rung only stops future
+            // players reaching it. Worth recording how many that affects.
+            var alreadyHave = await db.PlayerSkills
+                .CountAsync(s => s.SkillType.ToString() == unlock.Payload, ct);
+
+            await Audit(adminUserId, "Unlock", unlockId.ToString(), "Deleted",
+                $"{unlock.Payload} at Adventurer {unlock.AdventurerLevel}; " +
+                $"{alreadyHave} player{(alreadyHave == 1 ? "" : "s")} already had it", ct);
+        }
+
         // ── Audit (task 9) ──────────────────────────────────────────────
 
         public async Task<List<AdminAuditDto>> GetAuditTrail(int limit, CancellationToken ct)

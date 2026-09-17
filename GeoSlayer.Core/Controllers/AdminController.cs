@@ -173,6 +173,44 @@ namespace GeoSlayer.Core.Controllers
             return Ok();
         }
 
+        /// <summary>The unlock ladder and upgrade tree.</summary>
+        [HttpGet]
+        public async Task<ActionResult<AdminProgressionDto>> GetProgression(CancellationToken ct) =>
+            Ok(await admin.GetProgression(ct));
+
+        /// <summary>
+        /// Create or update a Bonus Point upgrade.
+        ///
+        /// <para>The cost curve is validated before storage — it is parsed with
+        /// <c>int.Parse</c> on every upgrades-screen load.</para>
+        /// </summary>
+        [HttpPost]
+        public async Task<ActionResult<AdminUpgradeDto>> SaveUpgrade(
+            [FromBody] SaveUpgradeRequest request, CancellationToken ct) =>
+            Ok(await admin.SaveUpgrade(CurrentUserId(), request, ct));
+
+        /// <summary>Delete an upgrade.</summary>
+        [HttpDelete]
+        public async Task<ActionResult> DeleteUpgrade([FromQuery] int upgradeId, CancellationToken ct)
+        {
+            await admin.DeleteUpgrade(CurrentUserId(), upgradeId, ct);
+            return Ok();
+        }
+
+        /// <summary>Create or update one rung of the unlock ladder.</summary>
+        [HttpPost]
+        public async Task<ActionResult<AdminUnlockDto>> SaveUnlock(
+            [FromBody] SaveUnlockRequest request, CancellationToken ct) =>
+            Ok(await admin.SaveUnlock(CurrentUserId(), request, ct));
+
+        /// <summary>Delete an unlock rung.</summary>
+        [HttpDelete]
+        public async Task<ActionResult> DeleteUnlock([FromQuery] int unlockId, CancellationToken ct)
+        {
+            await admin.DeleteUnlock(CurrentUserId(), unlockId, ct);
+            return Ok();
+        }
+
         /// <summary>The audit trail, newest first.</summary>
         [HttpGet]
         public async Task<ActionResult<List<AdminAuditDto>>> GetAuditTrail(
