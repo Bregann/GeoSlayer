@@ -3,6 +3,7 @@
 import {
   Alert,
   Badge,
+  Button,
   Card,
   Group,
   Loader,
@@ -13,11 +14,12 @@ import {
   TextInput,
   Title,
 } from '@mantine/core'
-import { useDebouncedValue } from '@mantine/hooks'
-import { IconSearch } from '@tabler/icons-react'
+import { useDebouncedValue, useDisclosure } from '@mantine/hooks'
+import { IconPencil, IconSearch } from '@tabler/icons-react'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 
+import { AdjustPlayerModal } from '@/components/players/AdjustPlayerModal'
 import { doQueryGet } from '@/helpers/apiClient'
 import { messageFrom } from '@/helpers/notificationHelper'
 import { QueryKeys } from '@/helpers/QueryKeys'
@@ -38,19 +40,22 @@ function Stat({ label, value }: { label: string; value: string | number }) {
 }
 
 /**
- * Player administration (Stage 18 task 9) — **read-only**.
+ * Player administration (Stage 18 task 9).
  *
- * Deliberately so, for now. Everything else in this interface edits seeded config, where a
- * mistake is retunable; granting coin or items edits player state, where a mistake is in
- * someone's balance. That is a different risk class and it was left for a decision rather
- * than assumed.
+ * **The only screen in this interface that edits player state.** Everywhere else a mistake
+ * is a retunable config value; here it is in someone's balance. Adjustments are uncapped —
+ * an admin is trusted, and the audit trail is the control rather than a limit — but the
+ * reason field is required, because an entry reading "coin +5000" and nothing else cannot
+ * answer the question it exists for.
  *
- * The view on its own answers most support questions — what level are they, what do they
- * hold, when did they last sync — without anyone needing to change anything.
+ * The view came first and earns its place on its own: what level are they, what do they
+ * hold, when did they last sync. Most support questions end there without anyone changing
+ * anything.
  */
 export default function PlayersComponent() {
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState<number | null>(null)
+  const [adjustOpen, { open: openAdjust, close: closeAdjust }] = useDisclosure(false)
 
   // Debounced: the search runs on every keystroke otherwise, and it joins two tables.
   const [debounced] = useDebouncedValue(query, 300)
@@ -77,8 +82,8 @@ export default function PlayersComponent() {
       <Title order={2}>Players</Title>
 
       <Text c="dimmed" size="sm">
-        Read-only. Granting and removing coin or items is not built — that touches player
-        state rather than config, which is a different risk class.
+        The only screen here that edits player state. Adjustments are uncapped — an admin is
+        trusted — but every one is recorded with who, what, when and why.
       </Text>
 
       <TextInput
@@ -136,12 +141,22 @@ export default function PlayersComponent() {
 
       {player.data && (
         <Stack mt="md">
-          <Group>
-            <Title order={3}>{player.data.username}</Title>
-            {player.data.isAdmin && <Badge color="grape">admin</Badge>}
-            <Text c="dimmed" size="sm">
-              {player.data.email}
-            </Text>
+          <Group justify="space-between">
+            <Group>
+              <Title order={3}>{player.data.username}</Title>
+              {player.data.isAdmin && <Badge color="grape">admin</Badge>}
+              <Text c="dimmed" size="sm">
+                {player.data.email}
+              </Text>
+            </Group>
+
+            <Button
+              variant="light"
+              leftSection={<IconPencil size={16} />}
+              onClick={openAdjust}
+            >
+              Adjust
+            </Button>
           </Group>
 
           <SimpleGrid cols={{ base: 2, sm: 4 }}>
@@ -226,6 +241,14 @@ export default function PlayersComponent() {
             </Table>
           )}
         </Stack>
+      )}
+
+      {player.data && (
+        <AdjustPlayerModal
+          opened={adjustOpen}
+          onClose={closeAdjust}
+          player={player.data}
+        />
       )}
     </Stack>
   )

@@ -1284,6 +1284,186 @@ namespace GeoSlayer.Tests.Services.Admin
             Assert.That(actions, Does.Contain("SpriteUploaded").And.Contains("SpriteDeleted"));
         }
 
+        // ── Player adjustments (task 9, write) ──────────────────────────
+
+        [Test]
+        public async Task CoinCanBeGrantedAndRemoved()
+        {
+            var player = await DbContext.Players.FirstAsync();
+
+            var granted = await _sut.AdjustPlayerCoin(_admin.Id, new AdjustPlayerRequest
+            {
+                PlayerId = player.Id,
+                Delta = 500,
+                Reason = "Support ticket 42",
+            }, Ct);
+
+            Assert.That(granted.Coin, Is.EqualTo(500));
+
+            var removed = await _sut.AdjustPlayerCoin(_admin.Id, new AdjustPlayerRequest
+            {
+                PlayerId = player.Id,
+                Delta = -200,
+                Reason = "Reverting an over-grant",
+            }, Ct);
+
+            Assert.That(removed.Coin, Is.EqualTo(300));
+        }
+
+        [Test]
+        public async Task RemovingMoreCoinThanHeld_ClampsAtZero()
+        {
+            // No game rule produces a negative balance and nothing downstream expects one —
+            // EconomyService assumes a purse is empty at worst, not overdrawn.
+            var player = await DbContext.Players.FirstAsync();
+
+            player.Coin = 100;
+            await DbContext.SaveChangesAsync();
+
+            var result = await _sut.AdjustPlayerCoin(_admin.Id, new AdjustPlayerRequest
+            {
+                PlayerId = player.Id,
+                Delta = -999_999,
+                Reason = "Clearing a bad grant",
+            }, Ct);
+
+            Assert.That(result.Coin, Is.Zero);
+        }
+
+        [Test]
+        public async Task AnAdjustmentWithoutAReason_IsRejected()
+        {
+            // The point of an audit entry is answering "why did this happen" months later,
+            // and a bare delta does not.
+            var player = await DbContext.Players.FirstAsync();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(async () => await _sut.AdjustPlayerCoin(_admin.Id, new AdjustPlayerRequest
+                {
+                    PlayerId = player.Id,
+                    Delta = 100,
+                    Reason = "  ",
+                }, Ct), Throws.TypeOf<BadRequestException>());
+
+                Assert.That(async () => await _sut.AdjustPlayerCoin(_admin.Id, new AdjustPlayerRequest
+                {
+                    PlayerId = player.Id,
+                    Delta = 100,
+                    Reason = "",
+                }, Ct), Throws.TypeOf<BadRequestException>());
+            });
+        }
+
+        [Test]
+        public async Task AZeroAdjustment_IsRejected()
+        {
+            var player = await DbContext.Players.FirstAsync();
+
+            Assert.That(
+                async () => await _sut.AdjustPlayerCoin(_admin.Id, new AdjustPlayerRequest
+                {
+                    PlayerId = player.Id,
+                    Delta = 0,
+                    Reason = "Nothing",
+                }, Ct),
+                Throws.TypeOf<BadRequestException>());
+        }
+
+        [Test]
+        public async Task AMaterialCanBeGrantedToSomeoneWhoHasNeverHeldIt()
+        {
+            // The common support case, so the row is created rather than the request refused.
+            var player = await DbContext.Players.FirstAsync();
+            var material = await DbContext.Materials.FirstAsync();
+
+            var result = await _sut.AdjustPlayerMaterial(_admin.Id, new AdjustPlayerMaterialRequest
+            {
+                PlayerId = player.Id,
+                MaterialId = material.Id,
+                Delta = 25,
+                Reason = "Lost to a sync bug",
+            }, Ct);
+
+            Assert.That(result.Materials.Any(m => m.Key == material.Key && m.Quantity == 25),
+                Is.True);
+        }
+
+        [Test]
+        public async Task TakingAnEquippedItemToZero_UnequipsIt()
+        {
+            // Otherwise a modifier keeps being read from something the player no longer
+            // owns — §4.3's rule in reverse.
+            var player = await DbContext.Players.FirstAsync();
+            var item = await _sut.SaveItem(_admin.Id, NewItem("removable"), Ct);
+
+            DbContext.PlayerItems.Add(new PlayerItem
+            {
+                PlayerId = player.Id,
+                ItemId = item.Id,
+                Quantity = 1,
+                IsEquipped = true,
+            });
+            await DbContext.SaveChangesAsync();
+
+            await _sut.AdjustPlayerItem(_admin.Id, new AdjustPlayerItemRequest
+            {
+                PlayerId = player.Id,
+                ItemId = item.Id,
+                Delta = -1,
+                Reason = "Granted in error",
+            }, Ct);
+
+            DbContext.ChangeTracker.Clear();
+
+            var row = await DbContext.PlayerItems
+                .FirstAsync(pi => pi.PlayerId == player.Id && pi.ItemId == item.Id);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(row.Quantity, Is.Zero);
+                Assert.That(row.IsEquipped, Is.False, "an unowned item cannot stay equipped");
+            });
+        }
+
+        [Test]
+        public async Task EveryAdjustment_RecordsBeforeAfterAndReason()
+        {
+            // "What was it, what is it now, and why" — the three things actually asked of an
+            // audit trail after a balance change goes wrong.
+            var player = await DbContext.Players.FirstAsync();
+
+            await _sut.AdjustPlayerCoin(_admin.Id, new AdjustPlayerRequest
+            {
+                PlayerId = player.Id,
+                Delta = 750,
+                Reason = "Compensation for ticket 99",
+            }, Ct);
+
+            var entry = (await _sut.GetAuditTrail(1, Ct)).Single();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(entry.Action, Is.EqualTo("CoinAdjusted"));
+                Assert.That(entry.Detail, Does.Contain("+750"));
+                Assert.That(entry.Detail, Does.Contain("750"), "the resulting balance");
+                Assert.That(entry.Detail, Does.Contain("ticket 99"), "the reason, verbatim");
+            });
+        }
+
+        [Test]
+        public async Task AdjustingAMissingPlayer_IsNotFound()
+        {
+            Assert.That(
+                async () => await _sut.AdjustPlayerCoin(_admin.Id, new AdjustPlayerRequest
+                {
+                    PlayerId = 999_999,
+                    Delta = 100,
+                    Reason = "Testing",
+                }, Ct),
+                Throws.TypeOf<NotFoundException>());
+        }
+
         // ── Audit trail (task 9) ────────────────────────────────────────
 
         [Test]

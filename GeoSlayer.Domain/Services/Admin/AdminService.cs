@@ -1268,6 +1268,139 @@ namespace GeoSlayer.Domain.Services.Admin
                 _ => false,
             };
 
+        // ── Player adjustments (task 9, write) ──────────────────────────
+
+        public async Task<AdminPlayerDto> AdjustPlayerCoin(
+            string adminUserId, AdjustPlayerRequest request, CancellationToken ct)
+        {
+            var player = await LoadPlayerForAdjustment(request, ct);
+
+            var before = player.Coin;
+
+            // Clamped rather than allowed negative. No game rule produces a negative balance
+            // and nothing downstream expects one — EconomyService assumes a purse is empty at
+            // worst, not overdrawn.
+            player.Coin = Math.Max(0, player.Coin + request.Delta);
+
+            await db.SaveChangesAsync(ct);
+
+            await Audit(adminUserId, "Player", request.PlayerId.ToString(), "CoinAdjusted",
+                $"{before} → {player.Coin} ({Signed(request.Delta)}). {request.Reason}", ct);
+
+            return await GetPlayer(request.PlayerId, ct);
+        }
+
+        public async Task<AdminPlayerDto> AdjustPlayerMaterial(
+            string adminUserId, AdjustPlayerMaterialRequest request, CancellationToken ct)
+        {
+            await LoadPlayerForAdjustment(request, ct);
+
+            var material = await db.Materials.FirstOrDefaultAsync(m => m.Id == request.MaterialId, ct)
+                ?? throw new NotFoundException($"Material {request.MaterialId} not found.");
+
+            var row = await db.PlayerMaterials
+                .FirstOrDefaultAsync(pm => pm.PlayerId == request.PlayerId
+                                        && pm.MaterialId == request.MaterialId, ct);
+
+            if (row is null)
+            {
+                // Granting something they have never held is the common support case, so the
+                // row is created rather than the request refused.
+                row = new PlayerMaterial
+                {
+                    PlayerId = request.PlayerId,
+                    MaterialId = request.MaterialId,
+                    Quantity = 0,
+                };
+
+                db.PlayerMaterials.Add(row);
+            }
+
+            var before = row.Quantity;
+            row.Quantity = Math.Max(0, row.Quantity + request.Delta);
+
+            await db.SaveChangesAsync(ct);
+
+            await Audit(adminUserId, "Player", request.PlayerId.ToString(), "MaterialAdjusted",
+                $"{material.Key}: {before} → {row.Quantity} ({Signed(request.Delta)}). "
+                + request.Reason, ct);
+
+            return await GetPlayer(request.PlayerId, ct);
+        }
+
+        public async Task<AdminPlayerDto> AdjustPlayerItem(
+            string adminUserId, AdjustPlayerItemRequest request, CancellationToken ct)
+        {
+            await LoadPlayerForAdjustment(request, ct);
+
+            var item = await db.Items.FirstOrDefaultAsync(i => i.Id == request.ItemId, ct)
+                ?? throw new NotFoundException($"Item {request.ItemId} not found.");
+
+            var row = await db.PlayerItems
+                .FirstOrDefaultAsync(pi => pi.PlayerId == request.PlayerId
+                                        && pi.ItemId == request.ItemId, ct);
+
+            if (row is null)
+            {
+                row = new PlayerItem
+                {
+                    PlayerId = request.PlayerId,
+                    ItemId = request.ItemId,
+                    Quantity = 0,
+                    AcquiredUtc = DateTime.UtcNow,
+                };
+
+                db.PlayerItems.Add(row);
+            }
+
+            var before = row.Quantity;
+            row.Quantity = (int)Math.Max(0, row.Quantity + request.Delta);
+
+            // An equipped item taken to zero would leave a modifier being read from something
+            // the player no longer owns — §4.3's rule in reverse.
+            if (row.Quantity == 0 && row.IsEquipped)
+            {
+                row.IsEquipped = false;
+                row.ClaimId = null;
+            }
+
+            await db.SaveChangesAsync(ct);
+
+            await Audit(adminUserId, "Player", request.PlayerId.ToString(), "ItemAdjusted",
+                $"{item.Key}: {before} → {row.Quantity} ({Signed(request.Delta)}). "
+                + request.Reason, ct);
+
+            return await GetPlayer(request.PlayerId, ct);
+        }
+
+        /// <summary>
+        /// Shared checks for every player adjustment.
+        ///
+        /// <para>The reason is required rather than optional: the point of an audit entry is
+        /// answering "why did this happen" months later, and a bare delta does not.</para>
+        /// </summary>
+        private async Task<Player> LoadPlayerForAdjustment(
+            AdjustPlayerRequest request, CancellationToken ct)
+        {
+            if (string.IsNullOrWhiteSpace(request.Reason))
+            {
+                throw new BadRequestException(
+                    "A reason is required. An audit entry without one cannot answer the "
+                    + "question it exists for.");
+            }
+
+            if (request.Delta == 0)
+            {
+                throw new BadRequestException("That would change nothing.");
+            }
+
+            return await db.Players.FirstOrDefaultAsync(p => p.Id == request.PlayerId, ct)
+                ?? throw new NotFoundException($"Player {request.PlayerId} not found.");
+        }
+
+        /// <summary>"+500" / "-500" — the sign is the whole point when scanning a trail.</summary>
+        private static string Signed(long delta) => delta > 0 ? $"+{delta}" : delta.ToString();
+
         // ── Audit (task 9) ──────────────────────────────────────────────
 
         public async Task<List<AdminAuditDto>> GetAuditTrail(int limit, CancellationToken ct)

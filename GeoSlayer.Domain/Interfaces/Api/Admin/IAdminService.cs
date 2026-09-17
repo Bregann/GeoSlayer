@@ -159,6 +159,24 @@ namespace GeoSlayer.Domain.Interfaces.Api.Admin
         /// <summary>Which owners of a kind have a sprite, for list views.</summary>
         Task<HashSet<int>> GetSpriteOwners(SpriteOwner ownerType, CancellationToken ct);
 
+        /// <summary>
+        /// Add or remove a player's coin (Stage 18 task 9).
+        ///
+        /// <para>Uncapped — an admin is trusted, and the audit trail is the control. Removals
+        /// clamp at zero rather than going negative: no game rule produces a negative
+        /// balance and nothing downstream expects one.</para>
+        /// </summary>
+        Task<AdminPlayerDto> AdjustPlayerCoin(
+            string adminUserId, AdjustPlayerRequest request, CancellationToken ct);
+
+        /// <summary>Add or remove a material from a player's inventory.</summary>
+        Task<AdminPlayerDto> AdjustPlayerMaterial(
+            string adminUserId, AdjustPlayerMaterialRequest request, CancellationToken ct);
+
+        /// <summary>Add or remove an item from a player's inventory.</summary>
+        Task<AdminPlayerDto> AdjustPlayerItem(
+            string adminUserId, AdjustPlayerItemRequest request, CancellationToken ct);
+
         /// <summary>The audit trail, newest first.</summary>
         Task<List<AdminAuditDto>> GetAuditTrail(int limit, CancellationToken ct);
     }

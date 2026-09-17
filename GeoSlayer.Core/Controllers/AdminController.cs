@@ -315,6 +315,30 @@ namespace GeoSlayer.Core.Controllers
             return File(sprite.Value.Data, sprite.Value.ContentType);
         }
 
+        /// <summary>
+        /// Add or remove a player's coin.
+        ///
+        /// <para>Uncapped — an admin is trusted, and the audit trail is the control. A reason
+        /// is required, because an entry without one cannot answer the question it exists
+        /// for.</para>
+        /// </summary>
+        [HttpPost]
+        public async Task<ActionResult<AdminPlayerDto>> AdjustPlayerCoin(
+            [FromBody] AdjustPlayerRequest request, CancellationToken ct) =>
+            Ok(await admin.AdjustPlayerCoin(CurrentUserId(), request, ct));
+
+        /// <summary>Add or remove a material from a player's inventory.</summary>
+        [HttpPost]
+        public async Task<ActionResult<AdminPlayerDto>> AdjustPlayerMaterial(
+            [FromBody] AdjustPlayerMaterialRequest request, CancellationToken ct) =>
+            Ok(await admin.AdjustPlayerMaterial(CurrentUserId(), request, ct));
+
+        /// <summary>Add or remove an item from a player's inventory.</summary>
+        [HttpPost]
+        public async Task<ActionResult<AdminPlayerDto>> AdjustPlayerItem(
+            [FromBody] AdjustPlayerItemRequest request, CancellationToken ct) =>
+            Ok(await admin.AdjustPlayerItem(CurrentUserId(), request, ct));
+
         /// <summary>The audit trail, newest first.</summary>
         [HttpGet]
         public async Task<ActionResult<List<AdminAuditDto>>> GetAuditTrail(

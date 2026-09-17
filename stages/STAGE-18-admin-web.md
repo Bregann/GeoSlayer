@@ -7,11 +7,11 @@
 
 ## Status
 
-- **State:** IN PROGRESS — the spine is complete
-- **Completed:** tasks 1, 2, 3, 4, 6, 7, 8 and the read-only half of 9. Task 5 dropped.
-- **Remaining:** granting and removing player coin and items (the write half of task 9),
-  and edit UIs for progression and Museum, which currently have endpoints but read-only
-  screens.
+- **State:** DONE, bar two edit UIs
+- **Completed:** tasks 1, 2, 3, 4, 6, 7, 8, 9 and the `GameSetting` table. Task 5 dropped.
+- **Remaining:** edit UIs for progression and Museum. Both have full endpoints and
+  validation; only the screens are read-only, which is a presentation gap rather than a
+  missing capability.
 - **Blockers:** _(none)_
 
 ### What was built
@@ -320,19 +320,23 @@ your head to notice a gap.
 ### 9. Player administration
 
 - [x] Find a player; view skills, inventory, coin, claims, workers and Museum finds.
-- [ ] Grant or remove items and coin. **Deliberately not built** — see below.
-- [x] **The audit trail itself is built** — `AdminAuditEntry`, written by every mutation,
-      with a read-only page.
+- [x] Grant or remove coin, materials and items.
+- [x] **The audit trail** — `AdminAuditEntry`, written by every mutation, with a read-only
+      page.
 
-**The read/write split was a decision, not an omission.** Everything else in this stage
-edits seeded config, where a mistake is retunable. Granting coin or items edits *player
-state*, where a mistake is in someone's balance — a different risk class, left for a human
-rather than assumed.
+**Uncapped, fully audited.** An admin is trusted, and the trail is the control rather than
+a limit. Three things are enforced regardless:
 
-The view alone answers most support questions without anyone needing to change anything,
-which is why it was worth building first. Reads are **not** audited, and a test asserts
-that: the trail records changes, and logging every support lookup would bury the entries
-that matter.
+- **A reason is required.** An entry reading "coin +5000" and nothing else cannot answer the
+  question an audit trail exists for. It is recorded verbatim.
+- **Removals clamp at zero.** No game rule produces a negative balance and nothing
+  downstream expects one — `EconomyService` assumes a purse is empty at worst, not overdrawn.
+- **Taking an equipped item to zero unequips it**, or a modifier keeps being read from
+  something the player no longer owns — §4.3's rule in reverse.
+
+The read view was built first and earns its place on its own: most support questions end
+there. Reads are **not** audited, and a test asserts that — the trail records changes, and
+logging every lookup would bury the entries that matter.
 
 ### 10. Tunable numbers — the `GameSetting` table
 
