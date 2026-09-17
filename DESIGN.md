@@ -1217,6 +1217,12 @@ Things I'd want decided before Phase 3, flagged rather than assumed:
    Upkeep (§5.2) is currently paid in food alone. Deciding what coin is *for* before
    adding it is the point: a second currency with no job is worse than none.
 
+   Still open after the pass that closed every other outstanding item. Two shapes worth
+   considering, neither built because both commit the whole economy: coin as **upkeep's
+   second axis** (materials sell at Trading POIs, coin feeds workers alongside food), or
+   coin as the **Dust sink** (§4.1a overflow converts at a poor rate, coin buys stack-cap
+   upgrades). The first gives Trading a job; the second gives overflow one.
+
 ---
 
 ## 10. What this replaces

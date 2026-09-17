@@ -105,7 +105,7 @@ namespace GeoSlayer.Tests.Services.Skills
             var sut = ServiceFor(TerrainType.Woodland);
 
             var results = await sut.TrainFromCells(
-                _player.Id, [new GridCell(10, 10), new GridCell(11, 10)], Ct);
+                _player.Id, [new GridCell(10, 10), new GridCell(11, 10)], 0, Ct);
 
             var foraging = results.FirstOrDefault(r => r.SkillType == SkillType.Foraging);
             var player = await DbContext.Players.FirstAsync(p => p.Id == _player.Id);
@@ -126,7 +126,7 @@ namespace GeoSlayer.Tests.Services.Skills
 
             // 10 cells of woodland = 30 Foraging XP, plus Exploration's 2/cell = 20.
             var cells = Enumerable.Range(0, 10).Select(i => new GridCell(100 + i, 100)).ToList();
-            var results = await sut.TrainFromCells(_player.Id, cells, Ct);
+            var results = await sut.TrainFromCells(_player.Id, cells, 0, Ct);
 
             foreach (var result in results)
             {
@@ -143,7 +143,7 @@ namespace GeoSlayer.Tests.Services.Skills
         {
             var sut = ServiceFor(TerrainType.Urban);
 
-            var results = await sut.TrainFromCells(_player.Id, [new GridCell(20, 20)], Ct);
+            var results = await sut.TrainFromCells(_player.Id, [new GridCell(20, 20)], 0, Ct);
             var foraging = results.FirstOrDefault(r => r.SkillType == SkillType.Foraging);
 
             Assert.Multiple(() =>
@@ -168,7 +168,7 @@ namespace GeoSlayer.Tests.Services.Skills
                 var before = await SkillXp(SkillType.Foraging);
 
                 var sut = ServiceFor(terrain);
-                await sut.TrainFromCells(_player.Id, [new GridCell((int)terrain + 500, 900)], Ct);
+                await sut.TrainFromCells(_player.Id, [new GridCell((int)terrain + 500, 900)], 0, Ct);
 
                 var after = await SkillXp(SkillType.Foraging);
 
@@ -180,10 +180,10 @@ namespace GeoSlayer.Tests.Services.Skills
         public async Task WoodlandOutpacesUrban_ButBothTrain()
         {
             var urban = ServiceFor(TerrainType.Urban);
-            var urbanResult = await urban.TrainFromCells(_player.Id, [new GridCell(30, 30)], Ct);
+            var urbanResult = await urban.TrainFromCells(_player.Id, [new GridCell(30, 30)], 0, Ct);
 
             var woodland = ServiceFor(TerrainType.Woodland);
-            var woodlandResult = await woodland.TrainFromCells(_player.Id, [new GridCell(31, 30)], Ct);
+            var woodlandResult = await woodland.TrainFromCells(_player.Id, [new GridCell(31, 30)], 0, Ct);
 
             var urbanXp = urbanResult.First(r => r.SkillType == SkillType.Foraging).SkillXpEarned;
             var woodlandXp = woodlandResult.First(r => r.SkillType == SkillType.Foraging).SkillXpEarned;
@@ -198,7 +198,7 @@ namespace GeoSlayer.Tests.Services.Skills
             // Mining is not unlocked at Adventurer 1, and has no terrain mapping seeded.
             var sut = ServiceFor(TerrainType.Rocky);
 
-            var results = await sut.TrainFromCells(_player.Id, [new GridCell(40, 40)], Ct);
+            var results = await sut.TrainFromCells(_player.Id, [new GridCell(40, 40)], 0, Ct);
 
             Assert.That(results.Any(r => r.SkillType == SkillType.Mining), Is.False);
         }

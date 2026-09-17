@@ -79,14 +79,15 @@ All eleven, for every one of the nine skills, are covered by the parameterised s
 Four bullets across the nine skills describe *systems* rather than seed data, and none
 were built:
 
-- **Trading's material→coin economy.** The largest gap. Needs a currency, a sink and a
-  price table.
-- **Athletics' distance-walked synergy.**
-- **Banking-driven stack-cap upgrades.**
+- **Trading's material→coin economy.** The largest gap, and **still open deliberately** —
+  `DESIGN.md` §9.5 flags deciding what coin is *for* as a human's call, not an agent's.
+  Needs a currency, a sink and a price table.
+- ~~**Athletics' distance-walked synergy.**~~ **Built** — see above.
+- ~~**Banking-driven stack-cap upgrades.**~~ **Built** — see above.
 - A **Knowledge-specific Museum set bonus** — bonuses are per wing, not per skill.
 
-All four are noted in STATUS.md. The nine skills themselves are complete and tested; these
-are adjacent features the stage listed alongside them.
+All four were noted in STATUS.md; two have since been built. The nine skills themselves are
+complete and tested; these are adjacent features the stage listed alongside them.
 
 - **Blockers:** none.
 
@@ -164,8 +165,14 @@ tiers with `DurationSeconds`.
 ### Athletics — level 36, Social
 - [x] Seed 7 tiers: Worn Laces, Chalk, Resin, Training Weights, Endurance Draught, Champions Sash, Victors Laurel
 - [x] POI tags: `leisure=sports_centre|stadium|fitness_centre|swimming_pool|pitch|track`
-- [ ] **NOT DONE — distance-walked synergy.** Athletics trains from terrain like any other
-      skill; nothing rewards distance specifically. Noted as an idea rather than built.
+- [x] **Distance-walked synergy.** `SkillTrainingService` takes the metres actually walked
+      and pays the skills in `SkillSeedData.DistanceSynergySkills` (12 XP/km, seeded).
+
+      This is the one path where training runs with **zero new cells** — a lap of a route
+      already walked reveals nothing and is still a run, which is the exact case the synergy
+      exists for. Distance is scaled by the same transit grading the cells are, so a bus
+      passenger trains nothing: paying an endurance skill for a commute would make the bus
+      the efficient route, the degeneracy §7.1 exists to prevent.
 
 ### Tavern — level 38, Social
 - [x] Seed 7 tiers: Small Ale, Cider, Stout, Aged Wine, Spirits, Vintage Reserve, Legendary Cask
@@ -177,9 +184,14 @@ tiers with `DurationSeconds`.
 ### Banking — level 40, Social
 - [x] Seed 7 tiers: Copper Coin, Silver Coin, Gold Coin, Promissory Note, Deed, Bearer Bond, Royal Charter
 - [x] POI tags: `amenity=bank|atm|post_office`
-- [ ] **NOT DONE — stack-cap upgrades from Banking.** Stack caps are raised by the
-      Storehouse building (Stage 06) and the Skills Museum wing; Banking level does not
-      affect them. Would need a new modifier source.
+- [x] **Stack-cap upgrades from Banking.** Banking level now feeds
+      `MaterialService.StackCapBonus` (0.5%/level, ~+49.5% at 99), alongside the Storehouse
+      and the Museum wing.
+
+      Deliberately not larger than the Storehouse. Stacking is safe because the cap is a
+      convenience rather than a power curve — §4.1a's overflow rule means a higher cap
+      smooths a chore, it does not multiply income. Which skills do this is
+      `SkillSeedData.StackCapSkills`, so it stays free of a per-skill branch.
 
 ### Combat — level 42, Gathering
 - [x] Seed 7 tiers: Rusted Fragment, Iron Shard, Steel Fitting, Officers Insignia, Warlords Seal, Ancient Blade, Kings Relic

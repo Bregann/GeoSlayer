@@ -168,6 +168,38 @@
       "tier": 7,
       "secondaryModifier": "GatherSpeedPercent",
       "secondaryModifierValue": 0.6
+    },
+    {
+      "key": "padded_jerkin",
+      "name": "Padded Jerkin",
+      "description": "Fights as +3 Combat levels. Competes with other body gear.",
+      "kind": "Gear",
+      "slot": "Body",
+      "modifier": "CombatPowerLevels",
+      "modifierValue": 3,
+      "tier": 2
+    },
+    {
+      "key": "campaigners_helm",
+      "name": "Campaigner's Helm",
+      "description": "Fights as +5 Combat levels. Dented, and still worn.",
+      "kind": "Gear",
+      "slot": "Head",
+      "modifier": "CombatPowerLevels",
+      "modifierValue": 5,
+      "tier": 4
+    },
+    {
+      "key": "warlords_signet",
+      "name": "Warlord's Signet",
+      "description": "Fights as +8 Combat levels, and +10% skill XP. Someone commanded with this.",
+      "kind": "Gear",
+      "slot": "Trinket",
+      "modifier": "CombatPowerLevels",
+      "modifierValue": 8,
+      "tier": 6,
+      "secondaryModifier": "SkillXpPercent",
+      "secondaryModifierValue": 0.1
     }
   ]
 }

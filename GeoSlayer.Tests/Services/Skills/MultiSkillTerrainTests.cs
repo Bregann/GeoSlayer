@@ -70,7 +70,7 @@ namespace GeoSlayer.Tests.Services.Skills
             var materials = TestDatabaseSeedHelper.CreateMaterialService(DbContext, TerrainType.Woodland);
             var training = TestDatabaseSeedHelper.CreateSkillTrainingService(DbContext, _progression, materials);
 
-            var results = await training.TrainFromCells(_player.Id, [new GridCell(10, 10)], Ct);
+            var results = await training.TrainFromCells(_player.Id, [new GridCell(10, 10)], 0, Ct);
 
             Assert.Multiple(() =>
             {
@@ -91,7 +91,7 @@ namespace GeoSlayer.Tests.Services.Skills
             var materials = TestDatabaseSeedHelper.CreateMaterialService(DbContext, TerrainType.Woodland);
             var training = TestDatabaseSeedHelper.CreateSkillTrainingService(DbContext, _progression, materials);
 
-            var results = await training.TrainFromCells(_player.Id, [new GridCell(20, 20)], Ct);
+            var results = await training.TrainFromCells(_player.Id, [new GridCell(20, 20)], 0, Ct);
 
             var foraging = results.First(r => r.SkillType == SkillType.Foraging);
             var woodcutting = results.First(r => r.SkillType == SkillType.Woodcutting);
@@ -110,12 +110,12 @@ namespace GeoSlayer.Tests.Services.Skills
             var materials = TestDatabaseSeedHelper.CreateMaterialService(DbContext, TerrainType.Woodland);
             var training = TestDatabaseSeedHelper.CreateSkillTrainingService(DbContext, _progression, materials);
 
-            var before = await training.TrainFromCells(_player.Id, [new GridCell(30, 30)], Ct);
+            var before = await training.TrainFromCells(_player.Id, [new GridCell(30, 30)], 0, Ct);
             var foragingAlone = before.First(r => r.SkillType == SkillType.Foraging).SkillXpEarned;
 
             await Unlock(SkillType.Woodcutting);
 
-            var after = await training.TrainFromCells(_player.Id, [new GridCell(31, 30)], Ct);
+            var after = await training.TrainFromCells(_player.Id, [new GridCell(31, 30)], 0, Ct);
             var foragingWith = after.First(r => r.SkillType == SkillType.Foraging).SkillXpEarned;
 
             Assert.That(foragingWith, Is.EqualTo(foragingAlone),
@@ -130,7 +130,7 @@ namespace GeoSlayer.Tests.Services.Skills
             var materials = TestDatabaseSeedHelper.CreateMaterialService(DbContext, TerrainType.Woodland);
             var training = TestDatabaseSeedHelper.CreateSkillTrainingService(DbContext, _progression, materials);
 
-            var results = await training.TrainFromCells(_player.Id, [new GridCell(40, 40)], Ct);
+            var results = await training.TrainFromCells(_player.Id, [new GridCell(40, 40)], 0, Ct);
 
             Assert.Multiple(() =>
             {

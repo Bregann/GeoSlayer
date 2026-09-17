@@ -138,7 +138,7 @@ namespace GeoSlayer.Tests.Services.Skills
             var materials = TestDatabaseSeedHelper.CreateMaterialService(DbContext, TerrainType.Urban);
             var training = TestDatabaseSeedHelper.CreateSkillTrainingService(DbContext, _progression, materials);
 
-            var results = await training.TrainFromCells(_player.Id, [new GridCell(10, 10)], Ct);
+            var results = await training.TrainFromCells(_player.Id, [new GridCell(10, 10)], 0, Ct);
             var mining = results.FirstOrDefault(r => r.SkillType == SkillType.Mining);
 
             Assert.Multiple(() =>

@@ -39,5 +39,24 @@ namespace GeoSlayer.Domain.Database.Models
         /// Default is 10; larger/rarer POIs can give more.
         /// </summary>
         public int XpReward { get; set; } = 10;
+
+        /// <summary>
+        /// The raw OSM tags this POI was imported with (Stage 13 task 3).
+        ///
+        /// <para>Stored because Cryptic clue steps need a <i>distinguishing detail</i> —
+        /// "beneath three spires" — and that detail only exists in tags the skill mapping
+        /// throws away. <c>ClueCrypticTags</c> reads it; nothing else should, since a
+        /// system branching on arbitrary OSM tags is a system that breaks when OSM
+        /// changes.</para>
+        ///
+        /// <para>Empty for every POI imported before this column existed. Cryptic generation
+        /// treats that as "no detail available" and falls back to a Category step, so a
+        /// stale POI degrades rather than breaking.</para>
+        /// </summary>
+        /// <remarks>
+        /// Column type and JSON conversion are configured in <c>AppDbContext</c> — Npgsql
+        /// cannot map a dictionary to jsonb without a converter.
+        /// </remarks>
+        public Dictionary<string, string> Tags { get; set; } = [];
     }
 }

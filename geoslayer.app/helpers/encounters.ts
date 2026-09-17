@@ -98,3 +98,56 @@ export function emptyStateMessage(encounters: Encounter[]): string | null {
 
   return 'Nothing about right now. Encounters turn up as you move around — anywhere, not just at old ruins.';
 }
+
+/* ------------------------------------------------------------------ */
+/*  Map presentation                                                   */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Encounters worth drawing on the map.
+ *
+ * Lapsed roaming encounters are dropped rather than greyed out: the map is already the
+ * busiest surface in the app, and a marker for something that has moved on is noise the
+ * player has to learn to ignore.
+ */
+export function mappableEncounters(
+  encounters: Encounter[],
+  now: Date = new Date(),
+): Encounter[] {
+  return encounters.filter((e) => e.isTrainingGround || (minutesRemaining(e, now) ?? 0) > 0);
+}
+
+/**
+ * The marker glyph. A training ground is a fixed place, a roaming encounter is a thing
+ * that turned up — so they must not look identical on the map (§5C.1).
+ */
+export function mapIcon(encounter: Encounter): string {
+  return encounter.isTrainingGround ? '🏰' : '⚔️';
+}
+
+/**
+ * Marker colour, by urgency rather than by tier.
+ *
+ * Tier is already visible in the label, and what a player needs to see at a glance is
+ * what is about to disappear. A training ground is deliberately the muted one: it will
+ * still be there tomorrow.
+ */
+export function mapColor(encounter: Encounter, now: Date = new Date()): string {
+  if (encounter.isTrainingGround) return '#c0a060';
+
+  const minutes = minutesRemaining(encounter, now);
+
+  if (minutes !== null && minutes <= 30) return '#ff4500';
+
+  return '#dc143c';
+}
+
+/**
+ * The one-line label under a map marker.
+ *
+ * Tier and odds, because those are what decide whether the walk is worth it. The name
+ * is on the encounters screen, which is one tap away.
+ */
+export function mapLabel(encounter: Encounter): string {
+  return `T${encounter.tier} · ${winChanceLabel(encounter)}`;
+}

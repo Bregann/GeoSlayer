@@ -31,6 +31,62 @@ namespace GeoSlayer.Domain.Services.Skills
             (7, 90, 60, 240),
         ];
 
+        /// <summary>
+        /// Skills that also train from <b>distance walked</b>, not just ground covered
+        /// (Stage 15 — Athletics' distance synergy).
+        ///
+        /// <para>Every other skill trains per <i>cell</i>, which rewards covering new ground.
+        /// That makes a long run down a road already walked worth nothing, which is exactly
+        /// backwards for a skill about endurance. Distance synergy pays per kilometre
+        /// travelled regardless of novelty, so the skill's own logic matches what it is
+        /// named after.</para>
+        ///
+        /// <para>Declared here rather than compared in service code, for the same reason
+        /// <c>EncounterSeedData.Skill</c> is: <c>NoServiceCode_BranchesOnASpecificSkill</c>
+        /// exists to stop the eleven-fold copy-paste, and a set naming the skills once is the
+        /// shape that guard asks for. A second endurance skill is a row here.</para>
+        /// </summary>
+        public static IReadOnlySet<SkillType> DistanceSynergySkills { get; } =
+            new HashSet<SkillType> { SkillType.Athletics };
+
+        /// <summary>
+        /// XP per kilometre walked, for <see cref="DistanceSynergySkills"/>.
+        ///
+        /// <para>Deliberately modest. A brisk hour covers ~5 km, so this pays ~60 XP against
+        /// the several hundred the same hour earns from cells — a supplement that makes
+        /// re-walked ground worth something, not a route around exploring. §4.1a's rule that
+        /// geography must not disqualify anyone cuts both ways: a treadmill must not out-earn
+        /// a walk either, and distance here is measured from GPS movement, so it cannot be.</para>
+        /// </summary>
+        public const double DistanceSynergyXpPerKilometre = 12.0;
+
+        /// <summary>
+        /// Skills whose <b>level</b> raises per-material stack caps (Stage 15 — Banking-driven
+        /// stack-cap upgrades).
+        ///
+        /// <para>Stack caps were previously raised only by the Storehouse building and the
+        /// Skills Museum wing, so Banking levelled without ever changing anything a player
+        /// could feel — §4.3's "an equipped item that changes no behaviour is a bug" applies
+        /// just as well to a skill. Banking is about what you can keep, so what you can keep
+        /// is what it should move.</para>
+        ///
+        /// <para>Seed data rather than a service branch, for the same reason as
+        /// <see cref="DistanceSynergySkills"/>.</para>
+        /// </summary>
+        public static IReadOnlySet<SkillType> StackCapSkills { get; } =
+            new HashSet<SkillType> { SkillType.Banking };
+
+        /// <summary>
+        /// Stack-cap bonus per level in a <see cref="StackCapSkills"/> skill.
+        ///
+        /// <para>0.005 means level 99 Banking is +49.5% — comparable to the Storehouse, and
+        /// deliberately not larger. Stacking on top of buildings and the Museum wing is fine
+        /// because the cap is a convenience rather than a power curve: §4.1a's overflow rule
+        /// (excess becomes Dust) means a higher cap smooths a chore, it does not multiply
+        /// income.</para>
+        /// </summary>
+        public const double StackCapPerSkillLevel = 0.005;
+
         /// <summary>Skill metadata for the skills screen.</summary>
         public static IReadOnlyList<SkillDefinition> Definitions { get; } = new List<SkillDefinition>
         {

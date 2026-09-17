@@ -1,7 +1,15 @@
 # Build status
 
-**All 16 stages are `DONE`.** Stage 16 (Combat encounters) was added after the scope
-question was decided — see `DESIGN.md` §5C.
+**All 16 stages are `DONE`, and every acceptance criterion in the project is now met.**
+
+Stage 16 (Combat encounters) was added after the scope question was decided — see
+`DESIGN.md` §5C. A follow-up pass since then closed the last three unmet criteria
+(Cryptic clues, combat gear, encounters on the map) and built the two Stage 15 synergies
+that were described but not implemented. **556 tests pass, 0 fail.**
+
+What remains unbuilt is listed under *Systems described but not built* below, and is
+either blocked on a human decision (the coin economy) or on infrastructure that does not
+exist yet (push notifications).
 
 Single source of truth for where the build is. Update this when a stage completes.
 
@@ -43,6 +51,12 @@ rather than decided by an agent. **None of these should be settled without you.*
   and no material→coin sink, and upkeep is paid in food alone. What coin is *for* should be
   decided before it exists — a second currency with no job is worse than none. Recorded as
   `DESIGN.md` §9.5.
+
+  **Re-confirmed as yours, not an agent's**, when the other outstanding work was picked up.
+  Two shapes were sketched as starting points if you want them: coin as upkeep's second
+  axis (materials sell at Trading POIs, coin feeds workers alongside food), or coin as the
+  Dust sink (overflow converts at a poor rate, coin buys stack-cap upgrades). Both commit
+  the economy's shape, which is why neither was built.
 
 ## Blockers
 
@@ -361,6 +375,34 @@ Worth a human eye:
   banked. Too generous and the commute becomes the efficient route; too stingy and the
   bank rots unused. All constants are in `TransitGrading`.
 
+### From the criteria-closing pass
+
+**A re-import is needed before Cryptic clues appear.** `PointOfInterest.Tags` is empty for
+every POI already in the database, and the migration defaults it to `{}`. Cryptic
+generation reads that as "no distinguishing detail" and issues a Category step instead, so
+nothing breaks — but nothing improves either until `PoiImportService` runs again over a
+region. Re-importing backfills tags on existing rows (the update path writes them), so it
+is a re-run rather than a data migration.
+
+Needs a human with a phone:
+
+- **Walk a generated Cryptic clue.** The uniqueness check guarantees the riddle resolves
+  to one POI; it cannot guarantee a human finds that POI *recognisable* from the detail.
+  "Standing three storeys tall" is checkable from the pavement; "kept by [an operator]"
+  may only be on a sign inside. The allow-list in `PoiImportService.CrypticTagKeys` is
+  where to prune if a phrasing reads badly in the field.
+- **Whether encounter markers crowd the map.** Up to three roaming encounters plus training
+  grounds now draw on top of POI markers they share coordinates with. The diamond shape and
+  the layering are meant to keep that legible, but only a real neighbourhood with real POI
+  density shows whether it is.
+- **Whether the distance synergy rate feels right.** 12 XP/km is reasoned to be a
+  supplement rather than a route around exploring, and a test asserts it pays less than
+  covering new ground. Whether a runner doing laps of the same park feels rewarded or
+  short-changed is a judgement only play answers. Seeded in
+  `SkillSeedData.DistanceSynergyXpPerKilometre`.
+- **Whether combat gear is worth the Martial drops it costs.** Three items, at Smithing
+  15/40/75. The +levels values are reasoned from the 55–95% clamp, not playtested.
+
 ---
 
 ## Outstanding work, all stages
@@ -430,20 +472,41 @@ suite because tests construct services directly rather than through DI:
 3.10.2 for two CVEs and Swashbuckle 10.1.7 is incompatible with that version. A deliberate
 trade-off, but it means route changes must be verified by curling endpoints.
 
-### 4. Genuinely unmet acceptance criteria
+### 4. ~~Genuinely unmet acceptance criteria~~ — ALL RESOLVED
 
-- **Stage 13 criterion 5** — Cryptic clue generation. Needs raw OSM tags stored on import;
-  `PointOfInterest` keeps only a name, skill and location. An importer change.
-- **Stage 16 — gear does not affect combat resolution.** `WinChance` reads Combat level
-  alone; the stage asked for level *and* equipped gear. Needs a combat modifier on `Item`.
-- **Stage 16 — encounters are not drawn on the map.** They have their own screen. The DTO
-  already carries coordinates, so this is a map layer rather than API work.
+Every acceptance criterion in the project is now met.
+
+- ~~**Stage 13 criterion 5** — Cryptic clue generation.~~ **Built.** `PointOfInterest` now
+  carries a `Tags` jsonb column, filled at import from an allow-list of street-visible OSM
+  tags. `ClueCrypticTags` turns one into a riddle detail — but only when **no other
+  same-skill POI in the radius shares it**, which is the uniqueness guarantee the criterion
+  demanded and the reason it was deferred. No usable tag means a Category step, so a POI
+  imported before the column existed degrades rather than breaking.
+- ~~**Stage 16 — gear does not affect combat resolution.**~~ **Built.** New
+  `ItemModifier.CombatPowerLevels`, read by `WinChance` and `Resolve`. Expressed in
+  *levels* rather than a win-chance fraction so gear composes with the existing margin
+  rule and stays under the 55–95% clamp — a fully-geared player is favoured, never certain.
+  Three craftable items seeded, consuming Combat's own Martial drops.
+- ~~**Stage 16 — encounters are not drawn on the map.**~~ **Built.** `EncounterMarker`, a
+  diamond rather than a bubble so it does not read as a duplicate of the POI it sits on.
+  Colour carries urgency (amber under 30 minutes, muted for a permanent training ground)
+  rather than tier, since what a player needs to see at a glance is what is about to go.
 
 ### 5. Systems described but not built
 
 - **Trading's material→coin economy** (Stage 15). Needs a currency, sink and price table.
+  **Still open deliberately** — see the open questions above. What coin is *for* is a
+  human's call, and a second currency with no job is worse than none.
 - **Craft-completion notifications** (Stage 06). No push infrastructure exists.
-- **Athletics distance synergy**, **Banking stack-cap upgrades** (Stage 15).
+- ~~**Athletics distance synergy**~~ **Built.** `SkillTrainingService` now takes the
+  distance actually walked, and pays the skills named in
+  `SkillSeedData.DistanceSynergySkills`. This is the one case where training runs with
+  **zero new cells** — a lap of a route already walked reveals nothing and is still a run,
+  which is exactly what the skill is named after. Distance is scaled by the same transit
+  grading the cells are, so a bus ride trains nothing.
+- ~~**Banking stack-cap upgrades**~~ **Built.** Banking level now feeds
+  `MaterialService.StackCapBonus` (0.5% per level, ~+49.5% at 99). Previously Banking
+  levelled without moving anything a player could feel.
 
 ### 6. Needs a human with a phone
 

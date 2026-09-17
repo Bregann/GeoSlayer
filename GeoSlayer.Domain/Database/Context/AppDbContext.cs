@@ -1,5 +1,7 @@
 using GeoSlayer.Domain.Database.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using System.Text.Json;
 
 namespace GeoSlayer.Domain.Database.Context
 {
@@ -292,6 +294,24 @@ namespace GeoSlayer.Domain.Database.Context
 
                 entity.HasIndex(p => new { p.OsmId, p.OsmType })
                       .IsUnique();
+
+                // Serialised explicitly rather than handed to Npgsql as a dictionary.
+                // Mapping Dictionary<string,string> straight onto jsonb needs
+                // EnableDynamicJson, which turns on reflection-based serialisation for every
+                // JSON column in the app — a wide setting to switch on for one column, and
+                // one that trades away trim/AOT safety. A converter keeps it local.
+                var tagsComparer = new ValueComparer<Dictionary<string, string>>(
+                    (a, b) => a!.Count == b!.Count && !a.Except(b).Any(),
+                    v => v.Aggregate(0, (hash, kv) => HashCode.Combine(hash, kv.Key.GetHashCode(), kv.Value.GetHashCode())),
+                    v => new Dictionary<string, string>(v));
+
+                entity.Property(p => p.Tags)
+                      .HasColumnType("jsonb")
+                      .HasConversion(
+                          v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+                          v => JsonSerializer.Deserialize<Dictionary<string, string>>(v, (JsonSerializerOptions?)null)
+                               ?? new Dictionary<string, string>(),
+                          tagsComparer);
             });
         }
     }

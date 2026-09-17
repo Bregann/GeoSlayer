@@ -218,6 +218,10 @@ namespace GeoSlayer.Domain.Services.Journey
                         found.Location = poi.Location;
                         found.Skill = poi.Skill;
                         found.XpReward = poi.XpReward;
+
+                        // Backfills tags on POIs imported before the column existed, which is
+                        // how Cryptic steps reach ground a player already walked.
+                        found.Tags = poi.Tags;
                         updated++;
                     }
                     else
@@ -330,10 +334,76 @@ namespace GeoSlayer.Domain.Services.Journey
                     Skill = skill,
                     Location = location,
                     XpReward = xp,
+                    Tags = InterestingTags(tags),
                 });
             }
 
             return pois;
+        }
+
+        /// <summary>
+        /// OSM tags worth keeping, for Cryptic clue riddles (Stage 13 task 3).
+        ///
+        /// <para>An allow-list rather than the whole tag dict. A typical OSM element carries
+        /// survey dates, source attributions and operator IDs — none of which describe a
+        /// place in a way a human could recognise standing in front of it, which is the only
+        /// thing a riddle can use. Storing them all would inflate the table for no reader.</para>
+        ///
+        /// <para>Each key here must be something visible from the street, because the player
+        /// has to confirm it on foot.</para>
+        /// </summary>
+        private static readonly string[] CrypticTagKeys =
+        [
+            "building:levels",
+            "architect",
+            "building:material",
+            "roof:material",
+            "roof:colour",
+            "colour",
+            "denomination",
+            "religion",
+            "start_date",
+            "heritage",
+            "listed_status",
+            "tower:type",
+            "cuisine",
+            "brewery",
+            "outdoor_seating",
+            "wheelchair",
+            "operator",
+            "brand",
+            "height",
+            "material",
+            "artist_name",
+            "artwork_type",
+            "inscription",
+            "memorial",
+            "castle_type",
+            "ruins",
+            "sport",
+            "surface",
+            "lit",
+            "covered",
+        ];
+
+        /// <summary>Keeps only <see cref="CrypticTagKeys"/>, and only short scalar values.</summary>
+        private static Dictionary<string, string> InterestingTags(JObject tags)
+        {
+            var kept = new Dictionary<string, string>();
+
+            foreach (var key in CrypticTagKeys)
+            {
+                var value = tags[key]?.ToString();
+
+                // Long values are almost always prose (a description or a note), which reads
+                // as a giveaway rather than a riddle.
+                if (!string.IsNullOrWhiteSpace(value) && value.Length <= 64)
+                {
+                    kept[key] = value;
+                }
+            }
+
+            return kept;
         }
 
         private static (SkillType skill, int xp)? MatchSkill(JObject tags)

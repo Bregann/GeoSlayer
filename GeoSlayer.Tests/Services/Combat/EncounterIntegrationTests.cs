@@ -473,6 +473,116 @@ namespace GeoSlayer.Tests.Services.Combat
                 Is.GreaterThan(EncounterResolution.WinChance(20, 20)));
         }
 
+        // ── Gear (§5C.3: "Combat level and equipped gear") ──────────────
+
+        [Test]
+        public void WinChance_RisesWithGear()
+        {
+            // The criterion Stage 16 left unmet: level alone decided a fight, so an equipped
+            // sword changed nothing — §4.3's "an equipped item that changes no behaviour is
+            // a bug", in the one system that most obviously should read it.
+            Assert.That(EncounterResolution.WinChance(20, 20, gearPowerLevels: 8),
+                Is.GreaterThan(EncounterResolution.WinChance(20, 20)));
+        }
+
+        [Test]
+        public void Gear_CountsAsLevels_OnTheSameAxisAsTraining()
+        {
+            // Modelled as effective levels rather than a separate bonus, so gear and training
+            // compose instead of stacking multiplicatively.
+            Assert.That(EncounterResolution.WinChance(20, 20, gearPowerLevels: 10),
+                Is.EqualTo(EncounterResolution.WinChance(30, 20)).Within(1e-9));
+        }
+
+        [Test]
+        public void Gear_CannotMakeAFightCertain()
+        {
+            // The whole point of folding gear into the margin: it stays under the 95% ceiling
+            // however much of it you pile on, so an encounter is never a formality.
+            Assert.That(EncounterResolution.WinChance(99, 1, gearPowerLevels: 1000),
+                Is.LessThanOrEqualTo(0.95));
+        }
+
+        [Test]
+        public void NoGear_LeavesTheOddsExactlyAsTheyWere()
+        {
+            // Stage 16's tuning must not shift for players who have not crafted any of it.
+            Assert.That(EncounterResolution.WinChance(30, 20, gearPowerLevels: 0),
+                Is.EqualTo(EncounterResolution.WinChance(30, 20)));
+        }
+
+        [Test]
+        public async Task EquippedGear_ChangesTheOddsThePlayerIsShown()
+        {
+            // The preview and the resolve must read the same gear, or the odds shown before
+            // a walk are a lie about the odds given after it.
+            //
+            // Level 1 deliberately: a high-level player is already pinned at the 95% ceiling
+            // against a low-tier encounter, where gear correctly changes nothing.
+            await AtOrigin();
+            await UnlockCombat(1);
+            await AddPoi("The Corner Café", SkillType.Tavern);
+
+            var before = (await _sut.GetEncounters(_player.Id, Ct)).First().WinChance;
+
+            await EquipCombatGear(powerLevels: 8);
+
+            var after = (await _sut.GetEncounters(_player.Id, Ct)).First().WinChance;
+
+            Assert.That(after, Is.GreaterThan(before),
+                "the win chance shown must account for what the player is carrying");
+        }
+
+        [Test]
+        public async Task UnequippedGear_ChangesNothing()
+        {
+            // Carrying a sword in the bank is not carrying a sword. Same rule as every other
+            // modifier — IsEquipped is what counts.
+            //
+            // Level 1 for the same reason as above: at the 95% ceiling this would pass
+            // whether the code read IsEquipped or ignored it entirely.
+            await AtOrigin();
+            await UnlockCombat(1);
+            await AddPoi("The Corner Café", SkillType.Tavern);
+
+            var before = (await _sut.GetEncounters(_player.Id, Ct)).First().WinChance;
+
+            await EquipCombatGear(powerLevels: 8, equipped: false);
+
+            var after = (await _sut.GetEncounters(_player.Id, Ct)).First().WinChance;
+
+            Assert.That(after, Is.EqualTo(before));
+        }
+
+        /// <summary>Gives the player a combat item, equipped by default.</summary>
+        private async Task EquipCombatGear(double powerLevels, bool equipped = true)
+        {
+            var item = new Item
+            {
+                Key = $"test_combat_gear_{Guid.NewGuid():N}",
+                Name = "Test Blade",
+                Description = "For the test suite.",
+                Kind = ItemKind.Gear,
+                Slot = ItemSlot.Trinket,
+                Modifier = ItemModifier.CombatPowerLevels,
+                ModifierValue = powerLevels,
+                Tier = 1,
+            };
+
+            DbContext.Items.Add(item);
+            await DbContext.SaveChangesAsync();
+
+            DbContext.PlayerItems.Add(new PlayerItem
+            {
+                PlayerId = _player.Id,
+                ItemId = item.Id,
+                Quantity = 1,
+                IsEquipped = equipped,
+            });
+
+            await DbContext.SaveChangesAsync();
+        }
+
         [Test]
         public void Resolution_IsSeeded_SoAReplayCannotReroll()
         {

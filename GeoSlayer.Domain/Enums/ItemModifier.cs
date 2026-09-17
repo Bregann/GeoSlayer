@@ -38,5 +38,16 @@ namespace GeoSlayer.Domain.Enums
         /// pointless. 0.2 means 20% faster, which shows up as more units per cell.</para>
         /// </summary>
         GatherSpeedPercent,
+
+        /// <summary>
+        /// Effective Combat levels added when resolving an encounter (§5C.3, Stage 16).
+        ///
+        /// <para>Expressed in <b>levels</b> rather than a win-chance fraction so it composes
+        /// with the existing margin rule instead of sitting on top of it: gear makes you
+        /// fight as though you were higher level, which is the same axis training moves.
+        /// A percentage would have had to be clamped separately and would have let gear
+        /// outrun the 95% ceiling that keeps a fight uncertain.</para>
+        /// </summary>
+        CombatPowerLevels,
     }
 }

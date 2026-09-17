@@ -274,7 +274,17 @@ namespace GeoSlayer.Domain.Services.Fog
             var skillTraining_ = new List<SkillTrainingDto>();
             var museumAcquisitions = new List<DTOs.Museum.Responses.MuseumAcquisitionDto>();
 
-            if (newCells.Count > 0)
+            // Distance is scaled by the same reveal fraction the cells were: a bus passenger
+            // covers kilometres without walking any of them, and paying an endurance skill
+            // for that would make the commute the efficient route — the exact degeneracy
+            // §7.1's grading exists to prevent.
+            var walkedMetres = TraceValidator.PathLengthMetres(verdict.Accepted) * revealFraction;
+
+            // Training runs even with no new cells, which is the whole point of distance
+            // synergy (Stage 15): a lap of a route already walked reveals nothing and is
+            // still a run. Cell-driven XP is naturally zero in that case, so nothing else
+            // double-pays.
+            if (newCells.Count > 0 || walkedMetres > 0)
             {
                 // Persist the cells before granting: GrantXp saves, and the reveal and its XP
                 // must land together or a crash between them pays for cells twice.
@@ -289,6 +299,7 @@ namespace GeoSlayer.Domain.Services.Fog
                 skillTraining_ = await skillTraining.TrainFromCells(
                     playerId,
                     newCells.Select(c => new GridCell(c.GridLat, c.GridLng)).ToList(),
+                    walkedMetres,
                     ct);
 
                 // Each new cell is also a small flat Adventurer milestone (§3.0b).

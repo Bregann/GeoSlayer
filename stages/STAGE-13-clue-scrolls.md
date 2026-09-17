@@ -4,9 +4,11 @@
 
 ## Status
 
-- **State:** DONE, with two step types deferred
-- **Completed:** tasks 1, 2, 4, 5; task 3 (Cryptic) deferred
-- **Remaining:** see below.
+- **State:** DONE — all tasks, all criteria
+- **Completed:** tasks 1, 2, 3, 4, 5. Task 3 (Cryptic) was deferred at the time and has
+  since been built; see below.
+- **Remaining:** none. `Terrain`, `Relational` and `Sequence` remain defined-but-ungenerated
+  by design, as task 2 allows.
 
 ### Always achievable, by construction
 
@@ -32,21 +34,33 @@ player plan a route the clue is meant to reveal one leg at a time — and a `Dir
 POI coordinates are never sent at all, since handing them over would turn the riddle into
 a map pin. Only `Coordinate` steps expose a position, and only as a search *area*.
 
-### Deferred: Cryptic and the other four step types
+### ~~Deferred: Cryptic~~ — built in a later pass
 
 Task 2 says to "start with `Direct`, `Category` and `Coordinate` — the simplest three. Add
-`Cryptic` and `Relational` once those work end to end." **That is exactly what shipped.**
+`Cryptic` and `Relational` once those work end to end." That is what shipped originally,
+and Cryptic has since been added as the task intended.
 
-`ClueStepType` defines all seven so the schema needs no change to add them, and
-`ClueRiddleText.Cryptic` is written and tested — but **nothing generates a Cryptic step
-yet**, because task 3's hard requirement is that a generated riddle "resolves to exactly
-one POI within the search radius", and that validation needs `building:levels`-style tag
-detail the importer does not currently store. `PointOfInterest` keeps a name, a skill and
-a location; it does not keep arbitrary tags.
+**What unblocked it.** Criterion 5's requirement is that a generated riddle resolve to
+exactly one POI in the radius, and that needed tag detail the importer threw away.
+`PointOfInterest` now carries a `Tags` jsonb column, filled at import from
+`PoiImportService.CrypticTagKeys` — an allow-list, not the whole tag dict, because a
+typical OSM element carries survey dates and source attributions that describe nothing a
+player could recognise standing in front of the place.
 
-Storing raw tags is a schema change to the import path, which belongs with a stage that
-touches the importer rather than bolted onto this one. **Criterion 5 is therefore not met**
-and is recorded as outstanding rather than ticked.
+**The uniqueness rule is the whole design.** `ClueCrypticTags.DistinguishingDetail` takes
+the candidate POI *and every same-skill rival in the radius*, and discards any detail a
+rival shares. "Beneath three spires" is a riddle when one church has three spires and a
+coin flip when two do. Comparison is same-skill only, because the category phrase has
+already narrowed the field — a library sharing a storey count with a church does not make
+the church ambiguous.
+
+**It fails closed.** No tags, no phraseable tag, or no *unique* phraseable tag all return
+null, and the generator issues a Category step instead. That matters for the installed
+base: every POI imported before this column existed has empty tags, so the whole system
+degrades to what it did before rather than breaking. A re-import backfills them.
+
+`Terrain`, `Relational` and `Sequence` remain defined-but-ungenerated, which task 2
+explicitly permits.
 
 ### Raw power stays low (§5B.3)
 
@@ -70,7 +84,7 @@ explicit that "a player who ignores clues entirely should not fall behind", and
 | 2 | Every step within a reachable radius | ✅ `AGeneratedScroll_PlacesEveryStepNearRevealedTerritory` |
 | 3 | `Direct` completes only when genuinely in range | ✅ `AStepCompletes_WhenThePlayerIsGenuinelyThere` |
 | 4 | Out-of-range completion rejected | ✅ 3 tests, incl. no-verified-position and nothing-advanced |
-| 5 | Cryptic riddle resolves to exactly one POI | ❌ **NOT MET** — Cryptic generation deferred, see above |
+| 5 | Cryptic riddle resolves to exactly one POI | ✅ `ACrypticStep_ResolvesToExactlyOnePoi`, `WhenEveryPoiSharesATag_NoCrypticStepIsGenerated`, + 10 unit tests |
 | 6 | Skip advances and deducts, once per scroll | ✅ 4 skip tests |
 | 7 | Completion rolls rewards and adds a Relic | ✅ `CompletingAScroll_AwardsARelicToTheMuseum` |
 | 8 | One active scroll per tier | ✅ `OnlyOneActiveScrollPerTier` and two companions |
@@ -124,13 +138,15 @@ data already in the database.
 
 ### 3. Cryptic generation
 
-- [ ] **NOT DONE — Cryptic generation.** `ClueRiddleText.Cryptic` exists and is tested,
-      but nothing generates a Cryptic step. The validation below needs arbitrary OSM tags
-      (`building:levels` and the like) that `PointOfInterest` does not store — it keeps a
-      name, a skill and a location. That is an importer schema change, not a clue change.
-- [ ] **Blocked on the above** — templates reference tag patterns, which requires tags.
-- [ ] **Blocked on the above.** This is the hard requirement that makes Cryptic worth
-      shipping: an ambiguous riddle is unsolvable, so it must not ship without it.
+- [x] **Cryptic generation.** `PointOfInterest.Tags` (jsonb) stores street-visible OSM tags
+      at import; `ClueCrypticTags` phrases one as a riddle detail. Steps after the first
+      are Cryptic where tags allow and Category where they do not.
+- [x] **Templates reference tag patterns** — `ClueCrypticTags.Phrasings`, ordered by how
+      recognisable the detail is from the pavement, since the player has to confirm it on
+      foot.
+- [x] **Resolves to exactly one POI.** Any detail shared by another same-skill POI in the
+      radius is discarded. An ambiguous riddle is unsolvable, so the generator declines to
+      produce one rather than softening it.
 
 ### 4. Completion and rewards
 

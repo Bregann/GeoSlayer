@@ -191,7 +191,19 @@ namespace GeoSlayer.Domain.Services.Materials
             // would be exactly the "displays but does nothing" bug §4.3 warns about.
             var completedWings = await CompletedMuseumWings(playerId, ct);
 
+            // Banking level raises what you can keep (Stage 15). Which skills do this is seed
+            // data — see SkillSeedData.StackCapSkills — so this stays free of a per-skill
+            // branch, which NoServiceCode_BranchesOnASpecificSkill forbids.
+            var stackCapSkills = Services.Skills.SkillSeedData.StackCapSkills;
+
+            var skillLevels = await db.PlayerSkills
+                .Where(s => s.PlayerId == playerId && stackCapSkills.Contains(s.SkillType))
+                .SumAsync(s => s.Level, ct);
+
+            var fromSkills = skillLevels * Services.Skills.SkillSeedData.StackCapPerSkillLevel;
+
             return fromItems
+                 + fromSkills
                  + Services.Museum.MuseumSetBonus.TotalFor(ItemModifier.StackCapPercent, completedWings);
         }
 

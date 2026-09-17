@@ -46,9 +46,12 @@ namespace GeoSlayer.Domain.Services.Skills
         private const double MinSecondsBetweenVisits = 30;
 
         public async Task<List<SkillTrainingDto>> TrainFromCells(
-            int playerId, IReadOnlyList<GridCell> cells, CancellationToken ct)
+            int playerId, IReadOnlyList<GridCell> cells, double walkedMetres, CancellationToken ct)
         {
-            if (cells.Count == 0)
+            // Not `cells.Count == 0` any more: a player running a lap of a route they have
+            // walked before reveals no new cells but has genuinely covered the distance, and
+            // that is the exact case distance synergy exists to pay for.
+            if (cells.Count == 0 && walkedMetres <= 0)
             {
                 return [];
             }
@@ -90,6 +93,23 @@ namespace GeoSlayer.Domain.Services.Skills
                     }
 
                     xpBySkill[skill] = xpBySkill.GetValueOrDefault(skill) + xp;
+                }
+            }
+
+            // Distance synergy (Stage 15). Which skills earn it is seed data, not a branch
+            // here — see SkillSeedData.DistanceSynergySkills for why.
+            if (walkedMetres > 0)
+            {
+                var distanceXp = walkedMetres / 1000.0 * SkillSeedData.DistanceSynergyXpPerKilometre;
+
+                foreach (var skill in SkillSeedData.DistanceSynergySkills)
+                {
+                    if (!unlockedSet.Contains(skill))
+                    {
+                        continue;
+                    }
+
+                    xpBySkill[skill] = xpBySkill.GetValueOrDefault(skill) + distanceXp;
                 }
             }
 

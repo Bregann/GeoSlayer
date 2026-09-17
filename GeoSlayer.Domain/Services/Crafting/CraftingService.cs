@@ -414,6 +414,7 @@ namespace GeoSlayer.Domain.Services.Crafting
             ItemModifier.WorkerRatePercent => $"+{Math.Round(value * 100)}% worker output",
             ItemModifier.ToolTier => $"Gathers up to tier {value:0}",
             ItemModifier.GatherSpeedPercent => $"{Math.Round(value * 100)}% faster gathering",
+            ItemModifier.CombatPowerLevels => $"Fights as +{value:0.##} Combat levels",
             _ => $"+{value:0.##}",
         };
 

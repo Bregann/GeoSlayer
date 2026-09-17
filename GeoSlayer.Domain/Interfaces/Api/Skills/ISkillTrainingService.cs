@@ -19,8 +19,14 @@ namespace GeoSlayer.Domain.Interfaces.Api.Skills
         /// A skill with no row for a terrain still trains from its <c>Open</c> row — terrain
         /// multiplies, it never gates (§5.2).
         /// </summary>
+        /// <param name="walkedMetres">
+        /// Distance actually walked in this batch, for the skills in
+        /// <c>SkillSeedData.DistanceSynergySkills</c>. Cells reward new ground; this rewards
+        /// the legs, which is the only way a skill about endurance can pay for a route the
+        /// player has walked before.
+        /// </param>
         Task<List<SkillTrainingDto>> TrainFromCells(
-            int playerId, IReadOnlyList<GridCell> cells, CancellationToken ct);
+            int playerId, IReadOnlyList<GridCell> cells, double walkedMetres, CancellationToken ct);
 
         /// <summary>
         /// Visit a POI: validates range server-side, applies decay, grants XP and materials.
