@@ -97,6 +97,87 @@ public static class SkillSeedData
             UnlockLevel = 5,
             Category = SkillCategory.Gathering,
         },
+        new()
+        {
+            SkillType = SkillType.Farming,
+            Name = "Farming",
+            Description = "Working the land. Slow-burn and worker-heavy by design — the idle-flavoured skill.",
+            Icon = "🌾",
+            UnlockLevel = 20,
+            Category = SkillCategory.Gathering,
+        },
+        new()
+        {
+            SkillType = SkillType.Trading,
+            Name = "Trading",
+            Description = "Buying low and selling on. Opens the economy: materials to coin, coin to upkeep.",
+            Icon = "💰",
+            UnlockLevel = 25,
+            Category = SkillCategory.Social,
+        },
+        new()
+        {
+            SkillType = SkillType.Prayer,
+            Name = "Prayer",
+            Description = "Quiet places and old stone. A cathedral is worth more than a chapel, but both count.",
+            Icon = "🙏",
+            UnlockLevel = 30,
+            Category = SkillCategory.Social,
+        },
+        new()
+        {
+            SkillType = SkillType.Knowledge,
+            Name = "Knowledge",
+            Description = "Libraries, museums and lecture halls. Pairs naturally with the Museum.",
+            Icon = "📚",
+            UnlockLevel = 32,
+            Category = SkillCategory.Social,
+        },
+        new()
+        {
+            SkillType = SkillType.Healing,
+            Name = "Healing",
+            Description = "Mending what is broken. Trained where the ailing are looked after.",
+            Icon = "❤️",
+            UnlockLevel = 34,
+            Category = SkillCategory.Social,
+        },
+        new()
+        {
+            SkillType = SkillType.Athletics,
+            Name = "Athletics",
+            Description = "Distance and effort. The skill that most directly rewards simply walking further.",
+            Icon = "🏃",
+            UnlockLevel = 36,
+            Category = SkillCategory.Social,
+        },
+        new()
+        {
+            SkillType = SkillType.Tavern,
+            Name = "Tavern",
+            Description = "Pubs, cafés and somewhere to sit down. Dense in cities, thinner elsewhere.",
+            Icon = "🍺",
+            UnlockLevel = 38,
+            Category = SkillCategory.Social,
+        },
+        new()
+        {
+            SkillType = SkillType.Banking,
+            Name = "Banking",
+            Description = "Coin and the keeping of it. Storage-flavoured.",
+            Icon = "🏦",
+            UnlockLevel = 40,
+            Category = SkillCategory.Social,
+        },
+        new()
+        {
+            SkillType = SkillType.Combat,
+            Name = "Combat",
+            Description = "Castles, forts and battlefields. Treated as a gathering skill — historic ground is a boost, never the only venue.",
+            Icon = "⚔️",
+            UnlockLevel = 42,
+            Category = SkillCategory.Gathering,
+        },
     };
 
     /// <summary>
@@ -158,6 +239,88 @@ public static class SkillSeedData
         new() { SkillType = SkillType.Mining, Terrain = TerrainType.Woodland,   XpPerCell = 1.0, YieldMultiplier = 1.0 },
         new() { SkillType = SkillType.Mining, Terrain = TerrainType.Farmland,   XpPerCell = 1.0, YieldMultiplier = 1.0 },
         new() { SkillType = SkillType.Mining, Terrain = TerrainType.Urban,      XpPerCell = 1.0, YieldMultiplier = 1.0 },
+
+        // ── Farming (Stage 15) ──
+        new() { SkillType = SkillType.Farming, Terrain = TerrainType.Open,       XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Farming, Terrain = TerrainType.Woodland,   XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Farming, Terrain = TerrainType.Water,      XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Farming, Terrain = TerrainType.Farmland,   XpPerCell = 3.0, YieldMultiplier = 2.0 },
+        new() { SkillType = SkillType.Farming, Terrain = TerrainType.Urban,      XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Farming, Terrain = TerrainType.Industrial, XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Farming, Terrain = TerrainType.Rocky,      XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Farming, Terrain = TerrainType.Coastal,    XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        // ── Trading (Stage 15) ──
+        new() { SkillType = SkillType.Trading, Terrain = TerrainType.Open,       XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Trading, Terrain = TerrainType.Woodland,   XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Trading, Terrain = TerrainType.Water,      XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Trading, Terrain = TerrainType.Farmland,   XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Trading, Terrain = TerrainType.Urban,      XpPerCell = 3.0, YieldMultiplier = 2.0 },
+        new() { SkillType = SkillType.Trading, Terrain = TerrainType.Industrial, XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Trading, Terrain = TerrainType.Rocky,      XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Trading, Terrain = TerrainType.Coastal,    XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        // ── Prayer (Stage 15) ──
+        new() { SkillType = SkillType.Prayer, Terrain = TerrainType.Open,       XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Prayer, Terrain = TerrainType.Woodland,   XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Prayer, Terrain = TerrainType.Water,      XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Prayer, Terrain = TerrainType.Farmland,   XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Prayer, Terrain = TerrainType.Urban,      XpPerCell = 3.0, YieldMultiplier = 2.0 },
+        new() { SkillType = SkillType.Prayer, Terrain = TerrainType.Industrial, XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Prayer, Terrain = TerrainType.Rocky,      XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Prayer, Terrain = TerrainType.Coastal,    XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        // ── Knowledge (Stage 15) ──
+        new() { SkillType = SkillType.Knowledge, Terrain = TerrainType.Open,       XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Knowledge, Terrain = TerrainType.Woodland,   XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Knowledge, Terrain = TerrainType.Water,      XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Knowledge, Terrain = TerrainType.Farmland,   XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Knowledge, Terrain = TerrainType.Urban,      XpPerCell = 3.0, YieldMultiplier = 2.0 },
+        new() { SkillType = SkillType.Knowledge, Terrain = TerrainType.Industrial, XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Knowledge, Terrain = TerrainType.Rocky,      XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Knowledge, Terrain = TerrainType.Coastal,    XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        // ── Healing (Stage 15) ──
+        new() { SkillType = SkillType.Healing, Terrain = TerrainType.Open,       XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Healing, Terrain = TerrainType.Woodland,   XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Healing, Terrain = TerrainType.Water,      XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Healing, Terrain = TerrainType.Farmland,   XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Healing, Terrain = TerrainType.Urban,      XpPerCell = 3.0, YieldMultiplier = 2.0 },
+        new() { SkillType = SkillType.Healing, Terrain = TerrainType.Industrial, XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Healing, Terrain = TerrainType.Rocky,      XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Healing, Terrain = TerrainType.Coastal,    XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        // ── Athletics (Stage 15) ──
+        new() { SkillType = SkillType.Athletics, Terrain = TerrainType.Open,       XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Athletics, Terrain = TerrainType.Woodland,   XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Athletics, Terrain = TerrainType.Water,      XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Athletics, Terrain = TerrainType.Farmland,   XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Athletics, Terrain = TerrainType.Urban,      XpPerCell = 3.0, YieldMultiplier = 2.0 },
+        new() { SkillType = SkillType.Athletics, Terrain = TerrainType.Industrial, XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Athletics, Terrain = TerrainType.Rocky,      XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Athletics, Terrain = TerrainType.Coastal,    XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        // ── Tavern (Stage 15) ──
+        new() { SkillType = SkillType.Tavern, Terrain = TerrainType.Open,       XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Tavern, Terrain = TerrainType.Woodland,   XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Tavern, Terrain = TerrainType.Water,      XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Tavern, Terrain = TerrainType.Farmland,   XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Tavern, Terrain = TerrainType.Urban,      XpPerCell = 3.0, YieldMultiplier = 2.0 },
+        new() { SkillType = SkillType.Tavern, Terrain = TerrainType.Industrial, XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Tavern, Terrain = TerrainType.Rocky,      XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Tavern, Terrain = TerrainType.Coastal,    XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        // ── Banking (Stage 15) ──
+        new() { SkillType = SkillType.Banking, Terrain = TerrainType.Open,       XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Banking, Terrain = TerrainType.Woodland,   XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Banking, Terrain = TerrainType.Water,      XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Banking, Terrain = TerrainType.Farmland,   XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Banking, Terrain = TerrainType.Urban,      XpPerCell = 3.0, YieldMultiplier = 2.0 },
+        new() { SkillType = SkillType.Banking, Terrain = TerrainType.Industrial, XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Banking, Terrain = TerrainType.Rocky,      XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Banking, Terrain = TerrainType.Coastal,    XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        // ── Combat (Stage 15) ──
+        new() { SkillType = SkillType.Combat, Terrain = TerrainType.Open,       XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Combat, Terrain = TerrainType.Woodland,   XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Combat, Terrain = TerrainType.Water,      XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Combat, Terrain = TerrainType.Farmland,   XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Combat, Terrain = TerrainType.Urban,      XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Combat, Terrain = TerrainType.Industrial, XpPerCell = 1.0, YieldMultiplier = 1.0 },
+        new() { SkillType = SkillType.Combat, Terrain = TerrainType.Rocky,      XpPerCell = 3.0, YieldMultiplier = 2.0 },
+        new() { SkillType = SkillType.Combat, Terrain = TerrainType.Coastal,    XpPerCell = 1.0, YieldMultiplier = 1.0 },
     };
 
     /// <summary>
@@ -303,6 +466,97 @@ public static class SkillSeedData
             ("meteoric_gear",     "Meteoric Gear"),
         ]);
 
+
+    /// <summary>Farming's ladder (Stage 15).</summary>
+    public static IReadOnlyList<Material> FarmingMaterials { get; } = BuildLadder(
+        SkillType.Farming, MaterialCategory.Grown,
+        [
+            ("chaff", "Chaff"), ("field_grain", "Grain"), ("root_crop", "Root Crop"),
+            ("orchard_fruit", "Orchard Fruit"), ("prize_livestock", "Prize Livestock"),
+            ("heirloom_seed", "Heirloom Seed"), ("goldenwheat", "Goldenwheat"),
+        ]);
+
+    /// <summary>Trading's ladder (Stage 15).</summary>
+    public static IReadOnlyList<Material> TradingMaterials { get; } = BuildLadder(
+        SkillType.Trading, MaterialCategory.Traded,
+        [
+            ("trinket", "Trinket"), ("textile", "Textile"), ("spice", "Spice"),
+            ("fine_cloth", "Fine Cloth"), ("jewellery", "Jewellery"),
+            ("artefact", "Artefact"), ("royal_commission", "Royal Commission"),
+        ]);
+
+    /// <summary>Prayer's ladder (Stage 15).</summary>
+    public static IReadOnlyList<Material> PrayerMaterials { get; } = BuildLadder(
+        SkillType.Prayer, MaterialCategory.Sacred,
+        [
+            ("tallow_candle", "Tallow Candle"), ("incense", "Incense"),
+            ("consecrated_water", "Blessed Water"), ("relic_fragment", "Relic Shard"),
+            ("sacred_text", "Sacred Text"), ("reliquary", "Reliquary"),
+            ("saints_token", "Saint's Token"),
+        ]);
+
+    /// <summary>Knowledge's ladder (Stage 15).</summary>
+    public static IReadOnlyList<Material> KnowledgeMaterials { get; } = BuildLadder(
+        SkillType.Knowledge, MaterialCategory.Written,
+        [
+            ("scrap_note", "Scrap Note"), ("ink", "Ink"), ("parchment", "Parchment"),
+            ("bound_tome", "Bound Tome"), ("rare_manuscript", "Rare Manuscript"),
+            ("star_chart", "Star Chart"), ("lost_codex", "Lost Codex"),
+        ]);
+
+    /// <summary>Healing's ladder (Stage 15).</summary>
+    public static IReadOnlyList<Material> HealingMaterials { get; } = BuildLadder(
+        SkillType.Healing, MaterialCategory.Remedy,
+        [
+            ("clean_water", "Clean Water"), ("bandage", "Bandage"), ("salve", "Salve"),
+            ("tincture", "Tincture"), ("antidote", "Antidote"),
+            ("panacea", "Panacea"), ("elixir_of_life", "Elixir of Life"),
+        ]);
+
+    /// <summary>Athletics' ladder (Stage 15).</summary>
+    public static IReadOnlyList<Material> AthleticsMaterials { get; } = BuildLadder(
+        SkillType.Athletics, MaterialCategory.Athletic,
+        [
+            ("worn_laces", "Worn Laces"), ("chalk", "Chalk"), ("resin", "Resin"),
+            ("training_weights", "Training Weights"), ("endurance_draught", "Endurance Draught"),
+            ("champions_sash", "Champion's Sash"), ("victors_laurel", "Victor's Laurel"),
+        ]);
+
+    /// <summary>Tavern's ladder (Stage 15).</summary>
+    public static IReadOnlyList<Material> TavernMaterials { get; } = BuildLadder(
+        SkillType.Tavern, MaterialCategory.Brewed,
+        [
+            ("small_ale", "Small Ale"), ("cider", "Cider"), ("stout", "Stout"),
+            ("aged_wine", "Aged Wine"), ("spirits", "Spirits"),
+            ("vintage_reserve", "Vintage Reserve"), ("legendary_cask", "Legendary Cask"),
+        ]);
+
+    /// <summary>Banking's ladder (Stage 15).</summary>
+    public static IReadOnlyList<Material> BankingMaterials { get; } = BuildLadder(
+        SkillType.Banking, MaterialCategory.Coin,
+        [
+            ("copper_coin", "Copper Coin"), ("silver_coin", "Silver Coin"),
+            ("gold_coin", "Gold Coin"), ("promissory_note", "Promissory Note"),
+            ("deed", "Deed"), ("bearer_bond", "Bearer Bond"), ("royal_charter", "Royal Charter"),
+        ]);
+
+    /// <summary>
+    /// Combat's ladder (Stage 15).
+    ///
+    /// <para>Treated as a <b>gathering</b> skill per the stage's default: visit historic
+    /// POIs, gain XP and relics. §9's open question about a full encounter system is left
+    /// for a human — and if one is built, historic ground should be a <i>boost</i> rather
+    /// than the only venue, since most players have no castle nearby.</para>
+    /// </summary>
+    public static IReadOnlyList<Material> CombatMaterials { get; } = BuildLadder(
+        SkillType.Combat, MaterialCategory.Martial,
+        [
+            ("rusted_fragment", "Rusted Fragment"), ("iron_shard", "Iron Shard"),
+            ("steel_fitting", "Steel Fitting"), ("officers_insignia", "Officer's Insignia"),
+            ("warlords_seal", "Warlord's Seal"), ("ancient_blade", "Ancient Blade"),
+            ("kings_relic", "King's Relic"),
+        ]);
+
     /// <summary>
     /// Skills whose materials are <b>produced, not gathered</b>, so they are excluded
     /// from terrain drop tables. A cooked pie must not be found lying in a field.
@@ -316,7 +570,10 @@ public static class SkillSeedData
     /// <summary>Every gathering skill's ladder, so seeders iterate rather than enumerate.</summary>
     public static IReadOnlyList<Material> AllSkillMaterials { get; } =
         [.. ForagingMaterials, .. FishingMaterials, .. WoodcuttingMaterials,
-         .. CookingMaterials, .. MiningMaterials, .. SmithingMaterials];
+         .. CookingMaterials, .. MiningMaterials, .. SmithingMaterials,
+         .. FarmingMaterials, .. TradingMaterials, .. PrayerMaterials,
+         .. KnowledgeMaterials, .. HealingMaterials, .. AthleticsMaterials,
+         .. TavernMaterials, .. BankingMaterials, .. CombatMaterials];
 
     /// <summary>
     /// Drop entries for the Foraging ladder, by terrain.

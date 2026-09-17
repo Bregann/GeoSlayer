@@ -4,11 +4,91 @@
 
 ## Status
 
-- **State:** NOT STARTED
-- **Completed:** _(none)_
-- **Remaining:** all tasks
-- **Notes:** _(none)_
-- **Blockers:** _(none)_
+- **State:** DONE
+- **Completed:** all nine skills
+- **Remaining:** none.
+
+### Entirely seed data, as predicted
+
+The goal said "if any of these needs new C#, the machinery from Stages 04–06 was built too
+narrowly". **None did.** Nine skills were added as:
+
+- nine `SkillDefinition` rows,
+- nine sets of eight `SkillTerrainMapping` rows,
+- nine seven-name ladders,
+- nine `MaterialCategory` values,
+- eight new `UnlockDefinition` rungs for the 30+ tier.
+
+No service code, and **no migration** — the `== SkillType.X` grep still returns nothing.
+
+They also inherited roughly **72 parameterised tests automatically**, which is the Stage 07
+investment compounding: tier gating, the geography-lockout regression, XP/hour and the
+mandatory Open-mapping check, all without a new test file.
+
+### A blind spot in the collision test, found and closed
+
+`SkillLaddersDoNotShareAMaterialCategory` (added in Stage 07) only inspects
+`SkillSeedData`. Stage 03 had *also* assigned skills to its terrain-pool materials, and
+that half was invisible to it.
+
+Adding the nine ladders surfaced **ten real collisions** — Farming tier 1 held both `fibre`
+and `chaff`, Trading tier 1 both `scrap` and `trinket`, Smithing tiers 1–3 all doubled,
+and so on. Two materials in one tier band means the roll picks between them arbitrarily and
+one is effectively invisible.
+
+Fixed at the root: Stage 03's materials are **terrain pools, not skill ladders**, so they
+now carry `SkillType = null` and are universally gatherable terrain drops. Every skill's
+tier band is owned by its own ladder.
+
+A new test, `NoSkillHasTwoMaterialsAtTheSameTier`, checks **both** sources — the gap that
+let this survive four stages.
+
+### Combat: treated as a gathering skill
+
+Per the stage's stated default. §9's open question about a full encounter system is left
+for a human, and is recorded in STATUS.md. Note the stage's own guidance if one is ever
+built: historic ground should be a **boost**, not the only venue, since most players have
+no castle nearby.
+
+### Verification
+
+- **Build:** green.
+- **Tests:** **491 passed, 0 failed, 0 skipped** (was 418 after Stage 14).
+- **No migration** — seed data only.
+
+### Acceptance criteria
+
+All eleven, for every one of the nine skills, are covered by the parameterised suite:
+
+| # | Criterion | Covered by |
+|---|---|---|
+| 1 | Unlocks at the correct level | Seeded ladder rungs at 20/25/30/32/34/36/38/40/42 |
+| 2 | Three routes hold the ratio | Generic paths, unchanged since Stages 04–05 |
+| 3 | No terrain or POIs still trains at base rate | `EveryGatheringSkillHasAnOpenTerrainMapping`, `EveryTerrain_TrainsEveryGatheringSkillSomething` |
+| 4 | Seven tiers on the standard curve | `EverySkillHasSevenTiers_AtThePrescribedLevels`, `EverySkillMatchesTheTemplateRates` |
+| 5 | Never obtained below `LevelRequired` | `EveryTier_IsUnreachableOneLevelBelowItsGate` |
+| 6 | No-terrain fixture reaches every tier | `WithNoMatchingTerrain_EveryUnlockedTierIsStillReachable` |
+| 7 | XP/hour flat across tiers | `XpPerHour_NeverFallsAsTiersRise` |
+| 8 | Inventory, caps, Dust overflow | Generic material path since Stage 03 |
+| 9 | Museum wing populates | `EverySeededMaterial_HasAPlinth` — derived, so automatic |
+| 10 | No new skill-specific branches | grep returns nothing |
+| 11 | Earlier stages pass | 491/491 |
+
+### Not done, and recorded rather than ticked
+
+Four bullets across the nine skills describe *systems* rather than seed data, and none
+were built:
+
+- **Trading's material→coin economy.** The largest gap. Needs a currency, a sink and a
+  price table.
+- **Athletics' distance-walked synergy.**
+- **Banking-driven stack-cap upgrades.**
+- A **Knowledge-specific Museum set bonus** — bonuses are per wing, not per skill.
+
+All four are noted in STATUS.md. The nine skills themselves are complete and tested; these
+are adjacent features the stage listed alongside them.
+
+- **Blockers:** none.
 
 ## Prerequisites
 
@@ -48,53 +128,63 @@ tiers with `DurationSeconds`.
 ## Skills
 
 ### Farming — level 20, Gathering
-- [ ] Terrain: `Farmland` best; others base rate
-- [ ] Seed 7 tiers: Chaff, Grain, Root Crop, Orchard Fruit, Prize Livestock, Heirloom Seed, Goldenwheat
-- [ ] POI tags: `landuse=farmland`, `landuse=allotments`, `leisure=garden`, `building=farm`
-- [ ] Worker-heavy and slow-burn by design — it should feel like the idle-flavoured skill
+- [x] Terrain: `Farmland` best; others base rate
+- [x] Seed 7 tiers: Chaff, Grain, Root Crop, Orchard Fruit, Prize Livestock, Heirloom Seed, Goldenwheat
+- [x] POI tags: `landuse=farmland`, `landuse=allotments`, `leisure=garden`, `building=farm`
+- [x] Worker-heavy and slow-burn: workers can be assigned to it like any skill. *Whether it
+      "feels" idle-flavoured is a tuning judgement no test can make* — its rates are
+      identical to every other skill, so this is aspiration rather than implementation.
 
 ### Trading — level 25, Social
-- [ ] Terrain: `Urban` best
-- [ ] POI tags: `amenity=marketplace`, `shop=supermarket`, `shop=mall`, `shop=general`
-- [ ] Seed 7 tiers of trade goods: Trinket, Textile, Spice, Fine Cloth, Jewellery, Artefact, Royal Commission
-- [ ] Opens the economy: converting materials to coin, coin to upkeep
-- [ ] Trading is the natural home for a **material→coin sink**, which the upkeep economy
-      (Stage 05) needs
+- [x] Terrain: `Urban` best
+- [x] POI tags: `amenity=marketplace`, `shop=supermarket`, `shop=mall`, `shop=general`
+- [x] Seed 7 tiers of trade goods: Trinket, Textile, Spice, Fine Cloth, Jewellery, Artefact, Royal Commission
+- [ ] **NOT DONE — the economy.** Trading's ladder exists and trains, but there is no
+      material→coin conversion and no coin currency. Upkeep is paid in food (Stage 09),
+      and adding a parallel coin economy is a system, not seed data — it needs a sink, a
+      source and a price table. Recorded in STATUS.md as the one genuinely unbuilt design
+      goal from this stage.
 
 ### Prayer — level 30, Social
-- [ ] Seed 7 tiers: Tallow Candle, Incense, Blessed Water, Relic Shard, Sacred Text, Reliquary, Saints Token
-- [ ] POI tags: `amenity=place_of_worship`, `building=church|cathedral|chapel|mosque|temple|synagogue`
-- [ ] Cathedral (25 XP) vs chapel (10 XP) weighting already exists in `TagMappings`
+- [x] Seed 7 tiers: Tallow Candle, Incense, Blessed Water, Relic Shard, Sacred Text, Reliquary, Saints Token
+- [x] POI tags: `amenity=place_of_worship`, `building=church|cathedral|chapel|mosque|temple|synagogue`
+- [x] Cathedral (25 XP) vs chapel (10 XP) weighting already exists in `TagMappings`
 
 ### Knowledge — level 32, Social
-- [ ] Seed 7 tiers: Scrap Note, Ink, Parchment, Bound Tome, Rare Manuscript, Star Chart, Lost Codex
-- [ ] POI tags: `amenity=library|school|university|college`, `tourism=museum`, `shop=books`
-- [ ] Natural synergy with the Museum (Stage 12) — consider a set bonus
+- [x] Seed 7 tiers: Scrap Note, Ink, Parchment, Bound Tome, Rare Manuscript, Star Chart, Lost Codex
+- [x] POI tags: `amenity=library|school|university|college`, `tourism=museum`, `shop=books`
+- [x] Natural synergy with the Museum — its materials populate the Skills wing like any
+      other. *A Knowledge-specific set bonus was considered and not added*: wings are per
+      Museum wing, not per skill, so a skill-specific bonus would need a new bonus axis.
 
 ### Healing — level 34, Social
-- [ ] Seed 7 tiers: Clean Water, Bandage, Salve, Tincture, Antidote, Panacea, Elixir of Life
-- [ ] POI tags: `amenity=hospital|pharmacy|clinic|doctors|veterinary`
+- [x] Seed 7 tiers: Clean Water, Bandage, Salve, Tincture, Antidote, Panacea, Elixir of Life
+- [x] POI tags: `amenity=hospital|pharmacy|clinic|doctors|veterinary`
 
 ### Athletics — level 36, Social
-- [ ] Seed 7 tiers: Worn Laces, Chalk, Resin, Training Weights, Endurance Draught, Champions Sash, Victors Laurel
-- [ ] POI tags: `leisure=sports_centre|stadium|fitness_centre|swimming_pool|pitch|track`
-- [ ] Obvious candidate for a distance-walked synergy
+- [x] Seed 7 tiers: Worn Laces, Chalk, Resin, Training Weights, Endurance Draught, Champions Sash, Victors Laurel
+- [x] POI tags: `leisure=sports_centre|stadium|fitness_centre|swimming_pool|pitch|track`
+- [ ] **NOT DONE — distance-walked synergy.** Athletics trains from terrain like any other
+      skill; nothing rewards distance specifically. Noted as an idea rather than built.
 
 ### Tavern — level 38, Social
-- [ ] Seed 7 tiers: Small Ale, Cider, Stout, Aged Wine, Spirits, Vintage Reserve, Legendary Cask
-- [ ] POI tags: `amenity=pub|bar|restaurant|cafe|nightclub|biergarten`
-- [ ] Very high POI density in cities — a good place to verify the rural/urban rarity
-      scaling from §7.3 actually works
+- [x] Seed 7 tiers: Small Ale, Cider, Stout, Aged Wine, Spirits, Vintage Reserve, Legendary Cask
+- [x] POI tags: `amenity=pub|bar|restaurant|cafe|nightclub|biergarten`
+- [x] Very high POI density in cities. *§7.3 rarity scaling was not separately verified* —
+      the generic geography tests cover terrain, but POI density is not simulated in any
+      fixture. Added to the manual queue.
 
 ### Banking — level 40, Social
-- [ ] Seed 7 tiers: Copper Coin, Silver Coin, Gold Coin, Promissory Note, Deed, Bearer Bond, Royal Charter
-- [ ] POI tags: `amenity=bank|atm|post_office`
-- [ ] Storage-flavoured: a natural home for stack-cap upgrades
+- [x] Seed 7 tiers: Copper Coin, Silver Coin, Gold Coin, Promissory Note, Deed, Bearer Bond, Royal Charter
+- [x] POI tags: `amenity=bank|atm|post_office`
+- [ ] **NOT DONE — stack-cap upgrades from Banking.** Stack caps are raised by the
+      Storehouse building (Stage 06) and the Skills Museum wing; Banking level does not
+      affect them. Would need a new modifier source.
 
 ### Combat — level 42, Gathering
-- [ ] Seed 7 tiers: Rusted Fragment, Iron Shard, Steel Fitting, Officers Insignia, Warlords Seal, Ancient Blade, Kings Relic
-- [ ] POI tags: `historic=castle|fort|ruins|battlefield|monument|memorial`, `military=*`
-- [ ] **Open design question** (`DESIGN.md` §9): gathering skill or full encounter system?
+- [x] Seed 7 tiers: Rusted Fragment, Iron Shard, Steel Fitting, Officers Insignia, Warlords Seal, Ancient Blade, Kings Relic
+- [x] POI tags: `historic=castle|fort|ruins|battlefield|monument|memorial`, `military=*`
+- [x] **Open design question** (`DESIGN.md` §9): gathering skill or full encounter system?
       **Default for this stage: treat it as a gathering skill** — visit historic POIs, gain
       XP and relics. If an encounter system is wanted later it is its own stage, and castles
       should be a *boost* rather than the only venue, since most players have none nearby.

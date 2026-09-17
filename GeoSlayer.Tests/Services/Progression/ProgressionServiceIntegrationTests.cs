@@ -352,7 +352,11 @@ public class ProgressionServiceIntegrationTests : DatabaseIntegrationTestBase
     {
         // SKILL-TEMPLATE.md: always something in view. A progress bar with no stated
         // destination is just a number going up.
+        //
+        // Needs the skill ladders, not just the terrain pools: Stage 15 detached the pool
+        // materials from skills, so the "next tier" comes from SkillSeedData now.
         await TestDatabaseSeedHelper.SeedMaterialDefinitions(DbContext);
+        await TestDatabaseSeedHelper.SeedSkillDefinitions(DbContext);
 
         var dto = await _sut.GetSkills(_player.Id, Ct);
         var foraging = dto.Unlocked.First(s => s.SkillType == SkillType.Foraging);
@@ -368,6 +372,7 @@ public class ProgressionServiceIntegrationTests : DatabaseIntegrationTestBase
     public async Task GetSkills_HasNoNextTierOnceEveryTierIsUnlocked()
     {
         await TestDatabaseSeedHelper.SeedMaterialDefinitions(DbContext);
+        await TestDatabaseSeedHelper.SeedSkillDefinitions(DbContext);
 
         // Above the top tier's level 90 requirement.
         var row = await DbContext.PlayerSkills

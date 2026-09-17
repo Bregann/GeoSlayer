@@ -79,7 +79,7 @@ public static class MaterialSeedData
         // Stage 07. Reassigned to Foraging, which is the better fit for gathered
         // deadfall, and kept so the Stage 06 recipes referencing timber_rough still
         // resolve.
-        Tiered("timber_rough",  "Rough Timber",  MaterialCategory.Woodland, 1, 1,  3,  SkillType.Foraging),
+        Tiered("timber_rough",  "Rough Timber",  MaterialCategory.Woodland, 1, 1,  3, null),
 
         // ── Water ────────────────────────────────────────────────────
         // Fishing's own ladder lives in SkillSeedData (Stage 07). The three placeholder
@@ -88,20 +88,20 @@ public static class MaterialSeedData
         // "highest unlocked tier wins" rule would have picked between them arbitrarily.
         // Reeds survives as a non-Fishing water material so the terrain still has a pool
         // of its own.
-        Tiered("reeds",         "Reeds",         MaterialCategory.Water, 1, 1,  3,  SkillType.Foraging),
+        Tiered("reeds",         "Reeds",         MaterialCategory.Water, 1, 1,  3, null),
 
         // ── Farmland (Farming) ───────────────────────────────────────
-        Tiered("fibre",         "Plant Fibre",   MaterialCategory.Farmland, 1, 1,  3,  SkillType.Farming),
-        Tiered("grain",         "Grain",         MaterialCategory.Farmland, 2, 10, 5,  SkillType.Farming),
+        Tiered("fibre",         "Plant Fibre",   MaterialCategory.Farmland, 1, 1,  3, null),
+        Tiered("grain",         "Grain",         MaterialCategory.Farmland, 2, 10, 5, null),
 
         // ── Urban (Trading) ──────────────────────────────────────────
-        Tiered("scrap",         "Scrap",         MaterialCategory.Urban, 1, 1,  3,  SkillType.Trading),
-        Tiered("salvage",       "Salvage",       MaterialCategory.Urban, 2, 10, 5,  SkillType.Trading),
+        Tiered("scrap",         "Scrap",         MaterialCategory.Urban, 1, 1,  3, null),
+        Tiered("salvage",       "Salvage",       MaterialCategory.Urban, 2, 10, 5, null),
 
         // ── Industrial (Smithing) ────────────────────────────────────
-        Tiered("slag",          "Slag",          MaterialCategory.Industrial, 1, 1,  3,  SkillType.Smithing),
-        Tiered("ingot_crude",   "Crude Ingot",   MaterialCategory.Industrial, 2, 10, 5,  SkillType.Smithing),
-        Tiered("coal",          "Coal",          MaterialCategory.Industrial, 3, 20, 9,  SkillType.Smithing),
+        Tiered("slag",          "Slag",          MaterialCategory.Industrial, 1, 1,  3, null),
+        Tiered("ingot_crude",   "Crude Ingot",   MaterialCategory.Industrial, 2, 10, 5, null),
+        Tiered("coal",          "Coal",          MaterialCategory.Industrial, 3, 20, 9, null),
 
         // ── Rocky ────────────────────────────────────────────────────
         // Mining's ladder lives in SkillSeedData (Stage 10) and adopted these five keys,
@@ -112,17 +112,17 @@ public static class MaterialSeedData
         // ── Coastal ──────────────────────────────────────────────────
         // Likewise reassigned to Foraging: beachcombing is foraging, and leaving them on
         // Fishing would collide with its Stage 07 ladder.
-        Tiered("driftwood",     "Driftwood",     MaterialCategory.Coastal, 1, 1,  3,  SkillType.Foraging),
-        Tiered("shellfish",     "Shellfish",     MaterialCategory.Coastal, 2, 10, 5,  SkillType.Foraging),
+        Tiered("driftwood",     "Driftwood",     MaterialCategory.Coastal, 1, 1,  3, null),
+        Tiered("shellfish",     "Shellfish",     MaterialCategory.Coastal, 2, 10, 5, null),
 
         // ── Unique named materials (§7.4: reserve for the rarest) ────
         // Three of a ≤15 budget. The rest arrive with the POI systems that justify them,
         // rather than being invented now to fill a quota.
         // Each sits in its own skill's ladder, so they do not compete for a tier slot
         // with each other. They are excluded from cell drop tables entirely.
-        Tiered("blessed_water", "Blessed Water", MaterialCategory.Relic, 3, 20, 9,  SkillType.Prayer,    isUnique: true, stackCap: 50),
-        Tiered("ancient_tome",  "Ancient Tome",  MaterialCategory.Relic, 4, 35, 15, SkillType.Knowledge, isUnique: true, stackCap: 50),
-        Tiered("relic_shard",   "Relic Shard",   MaterialCategory.Relic, 5, 50, 24, SkillType.Combat,    isUnique: true, stackCap: 50),
+        Tiered("blessed_water", "Blessed Water", MaterialCategory.Relic, 3, 20, 9, null,    isUnique: true, stackCap: 50),
+        Tiered("ancient_tome",  "Ancient Tome",  MaterialCategory.Relic, 4, 35, 15, null, isUnique: true, stackCap: 50),
+        Tiered("relic_shard",   "Relic Shard",   MaterialCategory.Relic, 5, 50, 24, null,    isUnique: true, stackCap: 50),
     };
 
     /// <summary>

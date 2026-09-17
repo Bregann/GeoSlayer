@@ -42,6 +42,18 @@ public static class ProgressionSeedData
 
         new() { AdventurerLevel = 25, UnlockType = UnlockType.Skill,  Payload = nameof(SkillType.Trading),     DisplayName = "Trading" },
         new() { AdventurerLevel = 25, UnlockType = UnlockType.System, Payload = "Economy",                     DisplayName = "Economy & Market" },
+
+        // ── The "30+" tier (Stage 15) ────────────────────────────────────────────────
+        // §3.1's table groups these as one row; Stage 15 gives each its own level so the
+        // roadmap keeps drip-feeding rather than dumping seven skills at once.
+        new() { AdventurerLevel = 30, UnlockType = UnlockType.Skill,  Payload = nameof(SkillType.Prayer),      DisplayName = "Prayer" },
+        new() { AdventurerLevel = 32, UnlockType = UnlockType.Skill,  Payload = nameof(SkillType.Knowledge),   DisplayName = "Knowledge" },
+        new() { AdventurerLevel = 34, UnlockType = UnlockType.Skill,  Payload = nameof(SkillType.Healing),     DisplayName = "Healing" },
+        new() { AdventurerLevel = 36, UnlockType = UnlockType.Skill,  Payload = nameof(SkillType.Athletics),   DisplayName = "Athletics" },
+        new() { AdventurerLevel = 38, UnlockType = UnlockType.Skill,  Payload = nameof(SkillType.Tavern),      DisplayName = "Tavern" },
+        new() { AdventurerLevel = 40, UnlockType = UnlockType.Skill,  Payload = nameof(SkillType.Banking),     DisplayName = "Banking" },
+        new() { AdventurerLevel = 42, UnlockType = UnlockType.Skill,  Payload = nameof(SkillType.Combat),      DisplayName = "Combat" },
+        new() { AdventurerLevel = 42, UnlockType = UnlockType.System, Payload = "PoiFeatures",                 DisplayName = "POI Features" },
     };
 
     /// <summary>

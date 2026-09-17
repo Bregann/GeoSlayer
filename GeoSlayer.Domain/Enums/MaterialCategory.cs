@@ -35,6 +35,37 @@ public enum MaterialCategory
     /// <summary>What is dug out of the ground — the Mining ladder (Stage 10).</summary>
     Mined,
 
+    // ── Stage 15 ladders ──────────────────────────────────────────
+    // One category per skill: two ladders sharing a category compete for the same tier
+    // band and the roll picks between them arbitrarily.
+
+    /// <summary>Farming's ladder.</summary>
+    Grown,
+
+    /// <summary>Trading's ladder.</summary>
+    Traded,
+
+    /// <summary>Prayer's ladder.</summary>
+    Sacred,
+
+    /// <summary>Knowledge's ladder.</summary>
+    Written,
+
+    /// <summary>Healing's ladder.</summary>
+    Remedy,
+
+    /// <summary>Athletics' ladder.</summary>
+    Athletic,
+
+    /// <summary>Tavern's ladder.</summary>
+    Brewed,
+
+    /// <summary>Banking's ladder.</summary>
+    Coin,
+
+    /// <summary>Combat's ladder.</summary>
+    Martial,
+
     /// <summary>Worked metal — the Smithing ladder (Stage 11).</summary>
     Forged,
 

@@ -1,6 +1,6 @@
 # Build status
 
-**Current stage: `STAGE-15-remaining-skills.md`**
+**All 15 planned stages are `DONE`.** See the open questions and outstanding work below.
 
 Single source of truth for where the build is. Update this when a stage completes.
 
@@ -20,9 +20,23 @@ Single source of truth for where the build is. Update this when a stage complete
 | 12 | Museum | DONE |
 | 13 | Clue scrolls | DONE |
 | 14 | Retention systems | DONE |
-| 15 | Remaining skills | NOT STARTED |
+| 15 | Remaining skills | DONE |
 
 States: `NOT STARTED` → `IN PROGRESS` → `DONE` (or `BLOCKED`, with a reason).
+
+## Open questions for a human
+
+Stage 15's definition of done asks that `DESIGN.md` §9's open questions be recorded here
+rather than decided by an agent. **None of these should be settled without you.**
+
+- **Combat scope.** Shipped as a gathering skill — visit historic POIs, gain XP and
+  relics — which is the default Stage 15 states. A full encounter system is a different
+  game and its own stage. If you build one, the stage's own guidance is that castles
+  should be a *boost* rather than the only venue, since most players have none nearby.
+- **Multiplayer.** Nothing in the build assumes other players exist. §9 lists it as open;
+  the Museum's shareable profile (§5A.1) is the only hook that points that way.
+- **Monetisation.** Untouched, deliberately. It shapes the whole design and is not an
+  agent's call.
 
 ## Blockers
 
@@ -338,3 +352,52 @@ Worth a human eye:
 - **Whether the transit redemption ratio feels right.** One walked cell redeems three
   banked. Too generous and the commute becomes the efficient route; too stingy and the
   bank rots unused. All constants are in `TransitGrading`.
+
+---
+
+## Outstanding work, all stages
+
+Everything below is recorded because it was deliberately not built, not because it was
+forgotten. Ordered by how much it matters.
+
+### 1. The app is largely unverified
+
+**No `.tsx` file in this project has ever been rendered or typechecked** — this
+environment has no `node_modules` and no app toolchain. Screen *logic* lives in pure
+helpers with ~130 passing tests (`npm test`), but every component is unproven.
+
+Eight screens exist: map, skills, upgrades, inventory, crafting, equipment, workers,
+museum, clues.
+
+### 2. Stage 14's systems have no app surface at all
+
+The largest single gap. All five retention systems are backend-complete and tested, and
+**none of them is visible to a player**:
+
+- Banked transit is not drawn on the map, so a commuter banks cells and never learns why.
+- Expeditions, patrol routes, surges and District status are all API-only.
+
+### 3. Genuinely unmet acceptance criteria
+
+- **Stage 13 criterion 5** — Cryptic clue generation. Needs raw OSM tags stored on import;
+  `PointOfInterest` keeps only a name, skill and location. An importer change.
+
+### 4. Systems described but not built
+
+- **Trading's material→coin economy** (Stage 15). Needs a currency, sink and price table.
+- **Craft-completion notifications** (Stage 06). No push infrastructure exists.
+- **Athletics distance synergy**, **Banking stack-cap upgrades** (Stage 15).
+
+### 5. Needs a human with a phone
+
+No test can answer these:
+
+- Walk a **generated clue** end to end — is the riddle solvable by someone who did not
+  write the generator?
+- Walk a **known wood, riverside and plain street** — does terrain classification match?
+- **Visit one POI repeatedly** — does the §3.4 decay curve feel right or punitive?
+- **Leave the app closed overnight** — does the welcome-back screen read as a reward?
+- Check **region naming**: `PoiRegionResolver` names a cell after its most notable POI, so
+  "you have been to Tesco Express" is possible and tonally wrong.
+- **Balance generally.** Every constant is reasoned from DESIGN.md's ratios and none is
+  playtested. All of it is seeded, so retuning needs no deploy.

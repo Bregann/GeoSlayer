@@ -252,6 +252,27 @@ public class GatheringSkillLadderTests
     }
 
     [Test]
+    public void NoSkillHasTwoMaterialsAtTheSameTier()
+    {
+        // The category test below only sees SkillSeedData. Stage 03 also seeded materials
+        // against skills in MaterialSeedData, and two materials on one skill at one tier
+        // compete for the same band — the roll picks between them arbitrarily, so one is
+        // effectively invisible.
+        var all = Domain.Services.Materials.MaterialSeedData.Materials
+            .Concat(SkillSeedData.AllSkillMaterials)
+            .Where(m => m.SkillType is not null);
+
+        var clashes = all
+            .GroupBy(m => (m.SkillType!.Value, m.Tier))
+            .Where(g => g.Count() > 1)
+            .Select(g => $"{g.Key.Item1} tier {g.Key.Tier}: {string.Join(", ", g.Select(m => m.Key))}")
+            .ToList();
+
+        Assert.That(clashes, Is.Empty,
+            "two materials competing for one tier band:\n" + string.Join("\n", clashes));
+    }
+
+    [Test]
     public void SkillLaddersDoNotShareAMaterialCategory()
     {
         // Two ladders in one category compete for the same tier band, and the
