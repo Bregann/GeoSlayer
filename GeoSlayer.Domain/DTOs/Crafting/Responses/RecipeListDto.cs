@@ -3,6 +3,15 @@ using GeoSlayer.Domain.Enums;
 
 namespace GeoSlayer.Domain.DTOs.Crafting.Responses
 {
+    public class RecipeListDto
+    {
+        public List<RecipeDto> Recipes { get; set; } = [];
+
+        /// <summary>Crafts running now, against the queue limit.</summary>
+        public int QueuedCount { get; set; }
+        public int QueueLimit { get; set; }
+    }
+
     /// <summary>
     /// Why a recipe cannot be crafted. The distinction matters: §4.2 wants the player to know
     /// the difference between "keep playing" and "go somewhere new".
@@ -65,67 +74,5 @@ namespace GeoSlayer.Domain.DTOs.Crafting.Responses
 
         /// <summary>Human-readable reason, ready to render under a greyed recipe.</summary>
         public string? LockText { get; set; }
-    }
-
-    public class RecipeListDto
-    {
-        public List<RecipeDto> Recipes { get; set; } = [];
-
-        /// <summary>Crafts running now, against the queue limit.</summary>
-        public int QueuedCount { get; set; }
-        public int QueueLimit { get; set; }
-    }
-
-    public class CraftDto
-    {
-        public int Id { get; set; }
-        public string RecipeKey { get; set; } = null!;
-        public string RecipeName { get; set; } = null!;
-        public DateTime StartedUtc { get; set; }
-        public DateTime CompletesUtc { get; set; }
-        public bool IsComplete { get; set; }
-
-        /// <summary>Seconds remaining, or 0 when done. For the queue timer.</summary>
-        public double SecondsRemaining { get; set; }
-    }
-
-    /// <summary>What collecting finished crafts produced.</summary>
-    public class CraftCollectionDto
-    {
-        public bool HasCollection { get; set; }
-        public List<string> CompletedRecipes { get; set; } = [];
-        public List<MaterialGainDto> Materials { get; set; } = [];
-        public List<PlayerItemDto> Items { get; set; } = [];
-        public long SkillXpEarned { get; set; }
-        public long AdventurerXpEarned { get; set; }
-    }
-
-    public class PlayerItemDto
-    {
-        public int Id { get; set; }
-        public int ItemId { get; set; }
-        public string Key { get; set; } = null!;
-        public string Name { get; set; } = null!;
-        public string Description { get; set; } = null!;
-        public ItemKind Kind { get; set; }
-        public ItemSlot Slot { get; set; }
-        public ItemModifier Modifier { get; set; }
-        public double ModifierValue { get; set; }
-
-        /// <summary>
-        /// The effect as text, e.g. "+20% skill XP". Includes a secondary modifier when the
-        /// item has one — a tool that gates a tier *and* gathers faster must say both, or the
-        /// screen undersells it.
-        /// </summary>
-        public string ModifierText { get; set; } = null!;
-
-        public ItemModifier? SecondaryModifier { get; set; }
-        public double SecondaryModifierValue { get; set; }
-
-        public int Tier { get; set; }
-        public int Quantity { get; set; }
-        public bool IsEquipped { get; set; }
-        public int? ClaimId { get; set; }
-        public string? ClaimName { get; set; }
     }
 }

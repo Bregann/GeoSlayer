@@ -2,6 +2,16 @@ using GeoSlayer.Domain.Enums;
 
 namespace GeoSlayer.Domain.DTOs.Museum.Responses
 {
+    public class MuseumDto
+    {
+        public List<MuseumWingDto> Wings { get; set; } = [];
+        public int TotalFound { get; set; }
+        public int TotalEntries { get; set; }
+
+        /// <summary>Museum-only currency from donated duplicates (§5A.1).</summary>
+        public long Curation { get; set; }
+    }
+
     /// <summary>One plinth, found or empty.</summary>
     public class MuseumEntryDto
     {
@@ -46,39 +56,5 @@ namespace GeoSlayer.Domain.DTOs.Museum.Responses
         public bool SetBonusActive { get; set; }
 
         public List<MuseumEntryDto> Entries { get; set; } = [];
-    }
-
-    public class MuseumDto
-    {
-        public List<MuseumWingDto> Wings { get; set; } = [];
-        public int TotalFound { get; set; }
-        public int TotalEntries { get; set; }
-
-        /// <summary>Museum-only currency from donated duplicates (§5A.1).</summary>
-        public long Curation { get; set; }
-    }
-
-    /// <summary>What a first-find produced, for the acquisition celebration.</summary>
-    public class MuseumAcquisitionDto
-    {
-        public string Key { get; set; } = null!;
-        public string Name { get; set; } = null!;
-        public MuseumWing Wing { get; set; }
-        public MuseumRarity Rarity { get; set; }
-        public string? AcquiredAtName { get; set; }
-
-        /// <summary>True when this filled the last empty plinth in its wing.</summary>
-        public bool CompletedWing { get; set; }
-    }
-
-    public class DonationResultDto
-    {
-        public string Key { get; set; } = null!;
-        public int Donated { get; set; }
-        public long CurationEarned { get; set; }
-        public long TotalCuration { get; set; }
-
-        /// <summary>Always true: donating never removes the entry (§5A, criterion 6).</summary>
-        public bool EntryRetained { get; set; } = true;
     }
 }
