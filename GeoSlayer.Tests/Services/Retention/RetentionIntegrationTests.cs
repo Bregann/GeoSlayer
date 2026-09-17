@@ -379,6 +379,108 @@ public class RetentionIntegrationTests : DatabaseIntegrationTestBase
         Assert.That(collected.HasCollection, Is.False);
     }
 
+    // ── Destinations: the visit log as a menu ───────────────────────
+
+    [Test]
+    public async Task DestinationsList_OnlyPoisActuallyVisited()
+    {
+        var (_, poi) = await SetUpExpedition();
+
+        // A second POI the player has never been to.
+        DbContext.PointsOfInterest.Add(new PointOfInterest
+        {
+            OsmId = Random.Shared.NextInt64(1, long.MaxValue),
+            OsmType = "node",
+            Name = "Never Visited",
+            Skill = SkillType.Knowledge,
+            Location = new Point(OriginLng + 0.2, OriginLat + 0.2) { SRID = 4326 },
+            XpReward = 10,
+        });
+        await DbContext.SaveChangesAsync();
+
+        var destinations = await _sut.GetExpeditionDestinations(_player.Id, Ct);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(destinations.Select(d => d.PoiId), Contains.Item(poi.Id));
+            Assert.That(destinations.Any(d => d.Name == "Never Visited"), Is.False,
+                "the menu is the visit log, not the POI table");
+        });
+    }
+
+    [Test]
+    public async Task DestinationsCarryTheTradeOff()
+    {
+        // Distance, duration and estimated yield shown before dispatching, so choosing is
+        // a decision rather than a guess.
+        await SetUpExpedition();
+
+        var destination = (await _sut.GetExpeditionDestinations(_player.Id, Ct)).Single();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(destination.DistanceMetres, Is.GreaterThan(0));
+            Assert.That(destination.DurationHours, Is.GreaterThanOrEqualTo(ExpeditionMath.MinimumHours));
+            Assert.That(destination.EstimatedMaterials, Is.GreaterThan(0));
+            Assert.That(destination.FirstVisitUtc, Is.LessThan(DateTime.UtcNow));
+        });
+    }
+
+    [Test]
+    public async Task ADestinationWithAWorkerAlreadyThere_IsMarkedUnavailable()
+    {
+        var (worker, poi) = await SetUpExpedition();
+
+        var before = (await _sut.GetExpeditionDestinations(_player.Id, Ct)).Single();
+        Assert.That(before.IsAvailable, Is.True);
+
+        await _sut.DispatchExpedition(_player.Id, worker.Id, poi.Id, Ct);
+
+        var after = (await _sut.GetExpeditionDestinations(_player.Id, Ct)).Single();
+
+        Assert.That(after.IsAvailable, Is.False);
+    }
+
+    [Test]
+    public async Task DestinationsAreOrderedFurthestFirst()
+    {
+        // The distant POI is the interesting choice — the whole point is that an old
+        // holiday trip still pays.
+        await SetUpExpedition();
+
+        var near = new PointOfInterest
+        {
+            OsmId = Random.Shared.NextInt64(1, long.MaxValue),
+            OsmType = "node",
+            Name = "Corner Shop",
+            Skill = SkillType.Trading,
+            Location = new Point(OriginLng + 0.001, OriginLat + 0.001) { SRID = 4326 },
+            XpReward = 10,
+        };
+
+        DbContext.PointsOfInterest.Add(near);
+        await DbContext.SaveChangesAsync();
+
+        DbContext.PlayerPoiVisits.Add(new PlayerPoiVisit
+        {
+            PlayerId = _player.Id, PoiId = near.Id, VisitCount = 1, TotalVisits = 1,
+            FirstVisitUtc = DateTime.UtcNow, LastVisitUtc = DateTime.UtcNow,
+        });
+        await DbContext.SaveChangesAsync();
+
+        var destinations = await _sut.GetExpeditionDestinations(_player.Id, Ct);
+
+        Assert.That(destinations[0].Name, Is.EqualTo("Distant Cathedral"));
+    }
+
+    [Test]
+    public async Task WithNoVisits_TheMenuIsEmpty()
+    {
+        var destinations = await _sut.GetExpeditionDestinations(_player.Id, Ct);
+
+        Assert.That(destinations, Is.Empty);
+    }
+
     // ── Criteria 4 & 5: patrol routes ───────────────────────────────
 
     private async Task<int> CreateRoute()

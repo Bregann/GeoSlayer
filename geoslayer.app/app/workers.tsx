@@ -176,6 +176,13 @@ export default function WorkersScreen() {
           >
             <Text style={styles.buyText}>HIRE WORKER</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.buyButton}
+            onPress={() => router.push('/expeditions')}
+          >
+            <Text style={styles.buyText}>🧭 EXPEDITIONS</Text>
+          </TouchableOpacity>
         </ScrollView>
       )}
     </View>

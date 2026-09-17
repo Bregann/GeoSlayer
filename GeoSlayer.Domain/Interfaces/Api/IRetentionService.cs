@@ -23,6 +23,12 @@ public interface IRetentionService
 
     Task<List<ExpeditionDto>> GetExpeditions(int playerId, CancellationToken ct);
 
+    /// <summary>
+    /// POIs the player has visited, as dispatch destinations — the visit log turned into
+    /// a menu. Ordered by distance, since that is what decides the trade-off.
+    /// </summary>
+    Task<List<ExpeditionDestinationDto>> GetExpeditionDestinations(int playerId, CancellationToken ct);
+
     /// <summary>Collect returned expeditions, lazily on sync.</summary>
     Task<ExpeditionCollectionDto> CollectExpeditions(int playerId, CancellationToken ct);
 

@@ -27,6 +27,11 @@ public class RetentionController(
     public async Task<ActionResult<List<ExpeditionDto>>> GetExpeditions(CancellationToken ct) =>
         Ok(await retention.GetExpeditions(await CurrentPlayerId(ct), ct));
 
+    /// <summary>POIs you have visited, as dispatch destinations.</summary>
+    [HttpGet("expeditions/destinations")]
+    public async Task<ActionResult<List<ExpeditionDestinationDto>>> GetDestinations(CancellationToken ct) =>
+        Ok(await retention.GetExpeditionDestinations(await CurrentPlayerId(ct), ct));
+
     /// <summary>Send a worker to a POI you have personally visited.</summary>
     [HttpPost("expeditions")]
     public async Task<ActionResult<ExpeditionDto>> Dispatch(

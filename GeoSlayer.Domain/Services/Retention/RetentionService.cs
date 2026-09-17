@@ -273,6 +273,60 @@ public class RetentionService(
         SecondsRemaining = Math.Max(0, (expedition.ReturnsUtc - now).TotalSeconds),
     };
 
+    public async Task<List<ExpeditionDestinationDto>> GetExpeditionDestinations(
+        int playerId, CancellationToken ct)
+    {
+        var player = await db.Players.FirstOrDefaultAsync(p => p.Id == playerId, ct);
+        if (player is null) return [];
+
+        // The Stage 04 visit log *is* the destination list. Nothing else is needed, which
+        // is why §5.4 calls this "nearly free to implement".
+        var visits = await db.PlayerPoiVisits
+            .Include(v => v.Poi)
+            .Where(v => v.PlayerId == playerId)
+            .ToListAsync(ct);
+
+        if (visits.Count == 0) return [];
+
+        var busyPoiIds = (await db.WorkerExpeditions
+                .Where(e => e.PlayerId == playerId && !e.Collected)
+                .Select(e => e.PoiId)
+                .ToListAsync(ct))
+            .ToHashSet();
+
+        var destinations = visits
+            .Where(v => v.Poi is not null)
+            .Select(v =>
+            {
+                var distance = TraceValidator.HaversineMetres(
+                    player.LastLatitude, player.LastLongitude,
+                    v.Poi.Location.Y, v.Poi.Location.X);
+
+                return new ExpeditionDestinationDto
+                {
+                    PoiId = v.PoiId,
+                    Name = v.Poi.Name,
+                    Skill = v.Poi.Skill,
+                    SkillName = v.Poi.Skill.ToString(),
+                    FirstVisitUtc = v.FirstVisitUtc,
+                    TotalVisits = v.TotalVisits,
+                    DistanceMetres = distance,
+                    DurationHours = ExpeditionMath.Duration(distance).TotalHours,
+
+                    // Shown before dispatching so the distance/time trade-off is a real
+                    // decision rather than a guess.
+                    EstimatedMaterials = ExpeditionMath.MaterialYield(distance, 1),
+                    IsAvailable = !busyPoiIds.Contains(v.PoiId),
+                };
+            })
+            // Furthest first: a distant POI is the interesting choice, and the whole
+            // point is that an old holiday trip still pays.
+            .OrderByDescending(d => d.DistanceMetres)
+            .ToList();
+
+        return destinations;
+    }
+
     public async Task<ExpeditionCollectionDto> CollectExpeditions(int playerId, CancellationToken ct)
     {
         var now = DateTime.UtcNow;
