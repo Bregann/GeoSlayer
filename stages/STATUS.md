@@ -373,15 +373,19 @@ forgotten. Ordered by how much it matters.
 `npm install` was run and the whole app now **typechecks, lints and bundles clean**:
 
 ```
-npm run verify     # tsc --noEmit && expo lint && npm test
+npm run verify     # tsc --noEmit && expo lint
 ```
 
-- **`tsc --noEmit`: 0 errors** across every screen, component and helper — first run,
-  nothing needed fixing.
-- **`expo lint`: clean.**
-- **`npx expo export --platform web`: 16 routes, no errors.** Every screen
-  static-renders, which is stronger than typechecking: a component that threw on mount
-  would fail the export.
+- **`tsc --noEmit`: 0 errors** across every screen, component and helper.
+- **`expo lint`: clean**, 0 warnings.
+
+The app's own `.mjs` test suites were **removed** when the codebase was aligned to Orbit,
+which has no app-side tests. Verification is now typecheck, lint, and exercising the real
+API over HTTP — which is what caught four POSTs pointing at the wrong endpoint during the
+route migration, something no helper unit test could have seen.
+
+Do **not** run `npx expo export` on the dev box: it exhausts the 1.9 GB of RAM and takes
+the machine down.
 
 The caveat that stood through Stages 02–15 is closed. What remains is *visual* and
 *behavioural* review on a real device — layout, whether the framing reads right — not
@@ -390,8 +394,7 @@ whether the code is sound.
 ### 2. ~~Stage 14's systems are mostly still API-only~~ — RESOLVED
 
 All four remaining surfaces were built: expeditions, patrols, surges and District status.
-Each got a tested helper in the established `.mjs` pattern; the app is now at **13 suites**
-and the web bundle at **16 routes**.
+Each got a presentation helper; the web bundle reached **16 routes**.
 
 Two of them turned out not to be pure UI work:
 
@@ -404,21 +407,41 @@ Two of them turned out not to be pure UI work:
   it is short of.
 
 Worth a human eye: the patrols screen duplicates the server's 20-hour cooldown as
-`COOLDOWN_HOURS`. A test pins the client value, but nothing ties the two together — if the
-server rule moves, the client will quietly disagree.
+`COOLDOWN_HOURS`. Nothing ties the two together — if the server rule moves, the client
+will quietly disagree.
 
-### 3. Genuinely unmet acceptance criteria
+### 3. The codebase now follows Orbit's conventions
+
+Aligned to `github.com/Bregann/Orbit` as the reference: `GeoSlayer.Core` naming,
+block-scoped namespaces, `api/[controller]/[action]` routes, one DTO per file,
+feature-foldered interfaces, `required` properties, and on the app side
+`interfaces/api/<feature>/`, a `QueryKeys` enum and the `useMutation*` wrappers.
+`RunCSharpChecks.yml` now gates PRs on `dotnet format` plus the test suite.
+
+Two pre-existing bugs surfaced while verifying the new routes, both invisible to the test
+suite because tests construct services directly rather than through DI:
+
+- **`IUserContextHelper` was never registered.** Container validation failed at startup,
+  so the API could not boot at all.
+- **The app called `/api/Auth/RefreshAppToken`**, which does not exist. Token refresh
+  would have failed on first use.
+
+**Known issue:** `/swagger` returns 500. `GeoSlayer.Core.csproj` pins `Microsoft.OpenApi`
+3.10.2 for two CVEs and Swashbuckle 10.1.7 is incompatible with that version. A deliberate
+trade-off, but it means route changes must be verified by curling endpoints.
+
+### 4. Genuinely unmet acceptance criteria
 
 - **Stage 13 criterion 5** — Cryptic clue generation. Needs raw OSM tags stored on import;
   `PointOfInterest` keeps only a name, skill and location. An importer change.
 
-### 4. Systems described but not built
+### 5. Systems described but not built
 
 - **Trading's material→coin economy** (Stage 15). Needs a currency, sink and price table.
 - **Craft-completion notifications** (Stage 06). No push infrastructure exists.
 - **Athletics distance synergy**, **Banking stack-cap upgrades** (Stage 15).
 
-### 5. Needs a human with a phone
+### 6. Needs a human with a phone
 
 No test can answer these:
 
