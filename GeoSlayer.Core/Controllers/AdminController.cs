@@ -246,6 +246,18 @@ namespace GeoSlayer.Core.Controllers
             return Ok();
         }
 
+        /// <summary>Find players by username or email.</summary>
+        [HttpGet]
+        public async Task<ActionResult<List<AdminPlayerSummaryDto>>> SearchPlayers(
+            [FromQuery] string query, CancellationToken ct) =>
+            Ok(await admin.SearchPlayers(query, ct));
+
+        /// <summary>Everything about one player. Read-only.</summary>
+        [HttpGet]
+        public async Task<ActionResult<AdminPlayerDto>> GetPlayer(
+            [FromQuery] int playerId, CancellationToken ct) =>
+            Ok(await admin.GetPlayer(playerId, ct));
+
         /// <summary>The audit trail, newest first.</summary>
         [HttpGet]
         public async Task<ActionResult<List<AdminAuditDto>>> GetAuditTrail(

@@ -126,6 +126,18 @@ namespace GeoSlayer.Domain.Interfaces.Api.Admin
         /// <summary>Delete a Museum entry, refusing when players have already found it.</summary>
         Task DeleteMuseumEntry(string adminUserId, int entryId, CancellationToken ct);
 
+        /// <summary>
+        /// Find players by username or email.
+        ///
+        /// <para>Read-only, deliberately. This is the support view — most questions are
+        /// answered by seeing what an account actually looks like, without anyone needing
+        /// to change it.</para>
+        /// </summary>
+        Task<List<AdminPlayerSummaryDto>> SearchPlayers(string query, CancellationToken ct);
+
+        /// <summary>Everything about one player.</summary>
+        Task<AdminPlayerDto> GetPlayer(int playerId, CancellationToken ct);
+
         /// <summary>The audit trail, newest first.</summary>
         Task<List<AdminAuditDto>> GetAuditTrail(int limit, CancellationToken ct);
     }

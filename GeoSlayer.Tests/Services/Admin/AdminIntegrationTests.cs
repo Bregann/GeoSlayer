@@ -1046,6 +1046,126 @@ namespace GeoSlayer.Tests.Services.Admin
             });
         }
 
+        // ── Players (task 9, read-only) ─────────────────────────────────
+
+        [Test]
+        public async Task APlayerCanBeFoundByUsername()
+        {
+            var results = await _sut.SearchPlayers(_admin.Username, Ct);
+
+            Assert.That(results.Any(r => r.Username == _admin.Username), Is.True);
+        }
+
+        [Test]
+        public async Task APlayerCanBeFoundByEmail()
+        {
+            // Support questions arrive by email, so this is the field that ties a message
+            // to an account.
+            var results = await _sut.SearchPlayers(_admin.Email, Ct);
+
+            Assert.That(results, Is.Not.Empty);
+        }
+
+        [Test]
+        public async Task SearchIsCaseInsensitive()
+        {
+            var results = await _sut.SearchPlayers(_admin.Username.ToUpperInvariant(), Ct);
+
+            Assert.That(results, Is.Not.Empty);
+        }
+
+        [Test]
+        public async Task AVeryShortSearch_ReturnsNothing()
+        {
+            // A one-character search matches most of the table: a slow query and a useless
+            // answer.
+            Assert.Multiple(async () =>
+            {
+                Assert.That(await _sut.SearchPlayers("a", Ct), Is.Empty);
+                Assert.That(await _sut.SearchPlayers("", Ct), Is.Empty);
+                Assert.That(await _sut.SearchPlayers("  ", Ct), Is.Empty);
+            });
+        }
+
+        [Test]
+        public async Task APlayerViewCarriesTheirState()
+        {
+            var player = await DbContext.Players.FirstAsync();
+
+            var view = await _sut.GetPlayer(player.Id, Ct);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(view.PlayerId, Is.EqualTo(player.Id));
+                Assert.That(view.Username, Is.EqualTo(_admin.Username));
+                Assert.That(view.Email, Is.EqualTo(_admin.Email));
+                Assert.That(view.IsAdmin, Is.True);
+                Assert.That(view.AdventurerLevel, Is.EqualTo(player.AdventurerLevel));
+            });
+        }
+
+        [Test]
+        public async Task APlayerViewIncludesWhatTheyHold()
+        {
+            var player = await DbContext.Players.FirstAsync();
+            var material = await DbContext.Materials.FirstAsync();
+
+            DbContext.PlayerMaterials.Add(new PlayerMaterial
+            {
+                PlayerId = player.Id,
+                MaterialId = material.Id,
+                Quantity = 42,
+            });
+            await DbContext.SaveChangesAsync();
+
+            var view = await _sut.GetPlayer(player.Id, Ct);
+
+            Assert.That(view.Materials.Any(m => m.Key == material.Key && m.Quantity == 42), Is.True);
+        }
+
+        [Test]
+        public async Task EmptyHoldingsAreOmitted()
+        {
+            // A zero-quantity row is a leftover, not a holding — showing it would make an
+            // empty inventory look full.
+            var player = await DbContext.Players.FirstAsync();
+            var material = await DbContext.Materials.FirstAsync();
+
+            DbContext.PlayerMaterials.Add(new PlayerMaterial
+            {
+                PlayerId = player.Id,
+                MaterialId = material.Id,
+                Quantity = 0,
+            });
+            await DbContext.SaveChangesAsync();
+
+            var view = await _sut.GetPlayer(player.Id, Ct);
+
+            Assert.That(view.Materials.Any(m => m.Key == material.Key), Is.False);
+        }
+
+        [Test]
+        public void AMissingPlayer_IsNotFound()
+        {
+            Assert.That(
+                async () => await _sut.GetPlayer(999_999, Ct),
+                Throws.TypeOf<NotFoundException>());
+        }
+
+        [Test]
+        public async Task ReadingAPlayer_IsNotAudited()
+        {
+            // The trail records *changes*. Logging every read would bury the entries that
+            // actually matter under routine support lookups.
+            var player = await DbContext.Players.FirstAsync();
+            var before = (await _sut.GetAuditTrail(100, Ct)).Count;
+
+            await _sut.GetPlayer(player.Id, Ct);
+            await _sut.SearchPlayers(_admin.Username, Ct);
+
+            Assert.That((await _sut.GetAuditTrail(100, Ct)).Count, Is.EqualTo(before));
+        }
+
         // ── Audit trail (task 9) ────────────────────────────────────────
 
         [Test]

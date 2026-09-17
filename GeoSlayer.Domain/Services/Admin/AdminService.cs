@@ -1056,6 +1056,120 @@ namespace GeoSlayer.Domain.Services.Admin
                 $"{entry.Key} ({entry.Name})", ct);
         }
 
+        // ── Players (task 9, read-only) ─────────────────────────────────
+
+        public async Task<List<AdminPlayerSummaryDto>> SearchPlayers(
+            string query, CancellationToken ct)
+        {
+            var needle = (query ?? string.Empty).Trim();
+
+            if (needle.Length < 2)
+            {
+                // A one-character search returns most of the table, which is a slow query
+                // and a useless answer.
+                return [];
+            }
+
+            var pattern = $"%{needle}%";
+
+            return await db.Players
+                .Join(db.Users, p => p.UserId, u => u.Id, (p, u) => new { Player = p, User = u })
+                .Where(x => EF.Functions.ILike(x.User.Username, pattern)
+                         || EF.Functions.ILike(x.User.Email, pattern))
+                .OrderBy(x => x.User.Username)
+                .Take(50)
+                .Select(x => new AdminPlayerSummaryDto
+                {
+                    PlayerId = x.Player.Id,
+                    Username = x.User.Username,
+                    AdventurerLevel = x.Player.AdventurerLevel,
+                    AdventurerXp = x.Player.AdventurerXp,
+                    Coin = x.Player.Coin,
+                    LastSyncAtUtc = x.Player.LastSyncAtUtc,
+                })
+                .ToListAsync(ct);
+        }
+
+        public async Task<AdminPlayerDto> GetPlayer(int playerId, CancellationToken ct)
+        {
+            var player = await db.Players.FirstOrDefaultAsync(p => p.Id == playerId, ct)
+                ?? throw new NotFoundException($"Player {playerId} not found.");
+
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Id == player.UserId, ct);
+
+            var skills = await db.PlayerSkills
+                .Where(s => s.PlayerId == playerId)
+                .OrderBy(s => s.SkillType)
+                .Select(s => new AdminPlayerSkillDto
+                {
+                    SkillType = s.SkillType,
+                    Name = s.SkillType.ToString(),
+                    Level = s.Level,
+                    Xp = s.Xp,
+                })
+                .ToListAsync(ct);
+
+            var materials = await db.PlayerMaterials
+                .Include(pm => pm.Material)
+                .Where(pm => pm.PlayerId == playerId && pm.Quantity > 0)
+                .OrderByDescending(pm => pm.Quantity)
+                .Select(pm => new AdminPlayerHoldingDto
+                {
+                    Id = pm.MaterialId,
+                    Key = pm.Material.Key,
+                    Name = pm.Material.Name,
+                    Quantity = pm.Quantity,
+                })
+                .ToListAsync(ct);
+
+            var items = await db.PlayerItems
+                .Include(pi => pi.Item)
+                .Where(pi => pi.PlayerId == playerId && pi.Quantity > 0)
+                .OrderBy(pi => pi.Item.Name)
+                .Select(pi => new AdminPlayerHoldingDto
+                {
+                    Id = pi.ItemId,
+                    Key = pi.Item.Key,
+                    Name = pi.Item.Name,
+                    Quantity = pi.Quantity,
+                    IsEquipped = pi.IsEquipped,
+                })
+                .ToListAsync(ct);
+
+            return new AdminPlayerDto
+            {
+                PlayerId = player.Id,
+                UserId = player.UserId,
+                Username = user?.Username ?? "(user missing)",
+
+                // Shown because support questions usually arrive by email, so it is the
+                // field that ties a message to an account.
+                Email = user?.Email ?? "",
+                IsAdmin = user?.IsAdmin ?? false,
+
+                AdventurerLevel = player.AdventurerLevel,
+                AdventurerXp = player.AdventurerXp,
+                BonusPointsEarned = player.BonusPointsEarned,
+                BonusPointsSpent = player.BonusPointsSpent,
+                Curation = player.Curation,
+
+                Coin = player.Coin,
+                CoinDeposited = player.CoinDeposited,
+
+                CellsRevealed = await db.RevealedCells.CountAsync(c => c.PlayerId == playerId, ct),
+                ClaimCount = await db.Claims.CountAsync(c => c.PlayerId == playerId, ct),
+                WorkerCount = await db.Workers.CountAsync(w => w.PlayerId == playerId, ct),
+                MuseumEntriesFound =
+                    await db.PlayerMuseumEntries.CountAsync(e => e.PlayerId == playerId, ct),
+
+                LastSyncAtUtc = player.LastSyncAtUtc,
+
+                Skills = skills,
+                Materials = materials,
+                Items = items,
+            };
+        }
+
         // ── Audit (task 9) ──────────────────────────────────────────────
 
         public async Task<List<AdminAuditDto>> GetAuditTrail(int limit, CancellationToken ct)

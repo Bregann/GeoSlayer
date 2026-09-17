@@ -11,6 +11,7 @@ import {
   IconShieldBolt,
   IconStairs,
   IconSword,
+  IconUser,
 } from '@tabler/icons-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -33,6 +34,7 @@ const NAV = [
   { href: '/encounters', label: 'Encounters', icon: IconShieldBolt },
   { href: '/progression', label: 'Progression', icon: IconStairs },
   { href: '/museum', label: 'Museum', icon: IconBuildingBank },
+  { href: '/players', label: 'Players', icon: IconUser },
   { href: '/settings', label: 'Tuning', icon: IconAdjustments },
   { href: '/audit', label: 'Audit trail', icon: IconClipboardList },
 ]

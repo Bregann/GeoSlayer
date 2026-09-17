@@ -14,5 +14,7 @@ export enum QueryKeys {
   Progression = 'progression',
   MuseumEntries = 'museumEntries',
   GameSettings = 'gameSettings',
+  PlayerSearch = 'playerSearch',
+  Player = 'player',
   AuditTrail = 'auditTrail',
 }
