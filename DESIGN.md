@@ -664,8 +664,26 @@ out automatically.
 - Offline accrual is **capped** — base 4 hours, extended by the Offline Cap upgrade,
   Buildings and gear up to ~24h. The cap is the anti-degeneracy lever: you must come back,
   but you needn't be glued.
-- Workers consume **upkeep** (food, coin). Unfed workers idle. Upkeep is the material
-  sink that stops infinite stockpiling.
+- Workers consume **upkeep**: they are **paid in coin and fed on top**. Unpaid or unfed
+  workers idle. Upkeep is the sink that stops infinite stockpiling.
+
+  > **Two costs, not two currencies for one cost.** An earlier reading made coin a
+  > *substitute* for food — either would feed a worker. That would have made players
+  > optimise to whichever was cheaper and ignore the other entirely, leaving one of the two
+  > as dead content. Paying a wage *and* feeding is how employment works, and neither
+  > substitutes for the other, so both stay meaningful.
+  >
+  > Food was **halved** when wages arrived (1 → 0.5 units/hour). Doubling the total burden
+  > would have made workers not worth running, which is the opposite of what a sink is for.
+  >
+  > The wage is 1c/hour, deliberately small in absolute terms. A tier-1 worker produces
+  > about 2 coins' worth of material an hour, so it is felt without being punishing; a
+  > mid-game worker produces 30–50c/hour, so it fades to a rounding error. That shape is
+  > correct — the pressure belongs early, when a coin matters.
+  >
+  > Partial payment is deliberate. Taking nothing when the purse cannot cover the bill would
+  > let a player run workers indefinitely on nothing; taking them into debt would punish
+  > them for sleeping (§7.4). Paying what is there does neither.
 - **Terrain is a multiplier, never a gate.** A worker can train *any* unlocked skill on
   *any* Claim. Matching terrain grants a large bonus — call it +50% to +100% yield and XP —
   so varied, well-chosen territory is strictly better, but a landlocked player's worker
@@ -1064,9 +1082,23 @@ Before it existed, gathering past a stack cap converted to Dust at a poor rate, 
 bought nothing. A good night's gathering turned into a number that did nothing. Selling
 replaces that dead end with an errand.
 
-**Still open:** what else coin buys. Upkeep is currently paid in food alone, and nothing
-else in the game has a coin price yet. That is deliberate — the sink should be designed
-rather than accreted — but it is the next question, not a settled one.
+### 5D.4 What coin is spent on
+
+**Wages (§5.2).** The recurring sink, and the main one. Workers are paid in coin and fed on
+top. Small early, negligible later, and impossible to dodge by substituting the other cost.
+
+**Not upgrades.** Bonus Points already buy those, and §3.0a calls them "the main thing a
+levelling player actually engages with". A second route to the same upgrades makes one of
+the two redundant — either coin is cheaper and Bonus Points become vestigial, or it is
+dearer and nobody uses it. That is exactly the failure §4.3 names for gear versus points.
+
+**Not clue skips.** Curation already buys those (§5B.3).
+
+**Still open, and worth considering:** respec, which §3.0a explicitly asks for at "a
+material or currency cost" and which currently costs Bonus Points — odd, since it spends
+the thing you are trying to reclaim. Also plausible: renting a temporary craft queue slot,
+or instant craft completion. All are *convenience*, never progress you could not otherwise
+reach, which is the line that keeps coin from becoming a second progression track.
 
 ---
 

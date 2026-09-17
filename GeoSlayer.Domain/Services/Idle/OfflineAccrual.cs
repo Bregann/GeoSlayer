@@ -42,15 +42,32 @@ namespace GeoSlayer.Domain.Services.Idle
         public const double PerTierBonus = 0.5;
 
         /// <summary>
-        /// Food units one worker consumes per hour (DESIGN.md §5.2, deferred from Stage 05
-        /// until Cooking existed to supply it).
+        /// Food units one worker consumes per hour (DESIGN.md §5.2).
         ///
-        /// <para>Deliberately low relative to output: upkeep is a material <i>sink</i> against
-        /// infinite stockpiling, not a tax that makes workers not worth running. At 4 units
-        /// per 4-hour cycle against ~8 material units produced, a worker still nets
-        /// positive.</para>
+        /// <para><b>Halved when wages arrived.</b> Workers are now paid in coin and fed on
+        /// top, which is how employment actually works — §5.2's "food, coin" read as two
+        /// costs rather than two currencies for the same cost. Doubling the total burden
+        /// would have made workers not worth running, so food came down as coin went on.</para>
+        ///
+        /// <para>Deliberately low relative to output either way: upkeep is a
+        /// <i>sink</i> against infinite stockpiling, not a tax.</para>
         /// </summary>
-        public const double FoodPerHour = 1.0;
+        public const double FoodPerHour = 0.5;
+
+        /// <summary>
+        /// Coin one worker is paid per hour (§5.2, §5D.3).
+        ///
+        /// <para>The wage, and the thing that finally gives coin a recurring job. Deliberately
+        /// small in absolute terms: a tier-1 worker produces about 2 coins' worth of material
+        /// an hour, so 1c/hour leaves them clearly net positive while still being felt. A
+        /// mid-game worker produces 30–50c/hour, so the wage fades into insignificance as you
+        /// progress — which is correct. The pressure should be early, when a coin matters.</para>
+        ///
+        /// <para><b>Not a substitute for food, and food is not a substitute for it.</b> That
+        /// is the whole point of the shape: two parallel currencies for one cost would just
+        /// make players optimise to whichever was cheaper and ignore the other.</para>
+        /// </summary>
+        public const double CoinPerHour = 1.0;
 
         /// <summary>
         /// Food needed for an accrual window. Rounded up, so a partial hour still costs
@@ -58,6 +75,12 @@ namespace GeoSlayer.Domain.Services.Idle
         /// </summary>
         public static int FoodRequired(TimeSpan elapsed) =>
             elapsed <= TimeSpan.Zero ? 0 : (int)Math.Ceiling(elapsed.TotalHours * FoodPerHour);
+
+        /// <summary>
+        /// Wages owed for an accrual window. Rounded up, for the same reason food is.
+        /// </summary>
+        public static long WagesRequired(TimeSpan elapsed) =>
+            elapsed <= TimeSpan.Zero ? 0 : (long)Math.Ceiling(elapsed.TotalHours * CoinPerHour);
 
         /// <summary>What one worker accrued over an elapsed period.</summary>
         public readonly record struct Accrual(

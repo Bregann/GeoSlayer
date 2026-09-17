@@ -527,6 +527,118 @@ namespace GeoSlayer.Tests.Services.Idle
             });
         }
 
+        // ── Wages (§5.2, §5D.3) ─────────────────────────────────────────
+
+        [Test]
+        public async Task WorkersArePaidFromThePlayersPurse()
+        {
+            var (_, worker) = await StationedWorker(200);
+            await GiveFood("dried_rations", 20);
+
+            _player.Coin = 100;
+            await DbContext.SaveChangesAsync();
+
+            await BackdateCollection(worker.Id, TimeSpan.FromHours(3));
+
+            var result = await _sut.CollectOfflineAccrual(_player.Id, Ct);
+
+            var after = (await DbContext.Players.AsNoTracking()
+                .FirstAsync(p => p.Id == _player.Id)).Coin;
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.UpkeepConsumed.WagesRequired, Is.GreaterThan(0));
+                Assert.That(result.UpkeepConsumed.WagesPaid,
+                    Is.EqualTo(result.UpkeepConsumed.WagesRequired));
+                Assert.That(after, Is.EqualTo(100 - result.UpkeepConsumed.WagesPaid));
+                Assert.That(result.WorkersWentUnpaid, Is.False);
+            });
+        }
+
+        [Test]
+        public async Task AnEmptyPurse_LeavesWorkersUnpaidButNotRobbed()
+        {
+            // §7.4 again: an unpaid worker idles, it does not lose the night, and the player
+            // is never taken into debt for having slept.
+            var (_, worker) = await StationedWorker(210);
+            await GiveFood("dried_rations", 20);
+
+            _player.Coin = 0;
+            await DbContext.SaveChangesAsync();
+
+            await BackdateCollection(worker.Id, TimeSpan.FromHours(3));
+
+            var result = await _sut.CollectOfflineAccrual(_player.Id, Ct);
+
+            var after = (await DbContext.Players.AsNoTracking()
+                .FirstAsync(p => p.Id == _player.Id)).Coin;
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.WorkersWentUnpaid, Is.True);
+                Assert.That(after, Is.Zero, "never negative — no debt for sleeping");
+                Assert.That(result.Skills.Sum(x => x.XpEarned), Is.GreaterThan(0),
+                    "what was already earned must stand");
+            });
+        }
+
+        [Test]
+        public async Task APartialPurse_PaysWhatItCan()
+        {
+            // Taking nothing would let a player run workers indefinitely on an empty purse;
+            // taking them into debt would punish them for sleeping. Partial payment is the
+            // only option that does neither.
+            var (_, worker) = await StationedWorker(220);
+            await GiveFood("dried_rations", 20);
+
+            _player.Coin = 1;
+            await DbContext.SaveChangesAsync();
+
+            await BackdateCollection(worker.Id, TimeSpan.FromHours(4));
+
+            var result = await _sut.CollectOfflineAccrual(_player.Id, Ct);
+
+            var after = (await DbContext.Players.AsNoTracking()
+                .FirstAsync(p => p.Id == _player.Id)).Coin;
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.UpkeepConsumed.WagesRequired, Is.GreaterThan(1));
+                Assert.That(result.UpkeepConsumed.WagesPaid, Is.EqualTo(1));
+                Assert.That(result.WorkersWentUnpaid, Is.True);
+                Assert.That(after, Is.Zero);
+            });
+        }
+
+        [Test]
+        public async Task WagesAndFoodAreBothCharged()
+        {
+            // Two costs, not two currencies for one cost. If either could substitute for the
+            // other, players would optimise to whichever was cheaper and ignore it.
+            var (_, worker) = await StationedWorker(230);
+            await GiveFood("dried_rations", 20);
+
+            var foodBefore = await FoodHeld("dried_rations");
+
+            _player.Coin = 100;
+            await DbContext.SaveChangesAsync();
+
+            await BackdateCollection(worker.Id, TimeSpan.FromHours(3));
+
+            var result = await _sut.CollectOfflineAccrual(_player.Id, Ct);
+
+            var coinAfter = (await DbContext.Players.AsNoTracking()
+                .FirstAsync(p => p.Id == _player.Id)).Coin;
+
+            Assert.Multiple(async () =>
+            {
+                Assert.That(coinAfter, Is.LessThan(100), "wages were paid");
+                Assert.That(await FoodHeld("dried_rations"), Is.LessThan(foodBefore),
+                    "and food was still eaten");
+                Assert.That(result.UpkeepConsumed.FoodConsumed, Is.GreaterThan(0));
+            });
+        }
+
         [Test]
         public async Task UpkeepEatsTheCheapestFoodFirst()
         {

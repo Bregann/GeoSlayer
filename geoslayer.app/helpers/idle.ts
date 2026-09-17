@@ -107,3 +107,31 @@ export function hoursUntilCap(worker: Worker, now: Date = new Date()): number {
 
   return remaining <= 0 ? 0 : remaining;
 }
+
+/**
+ * What upkeep went short, if anything (§5.2).
+ *
+ * Workers are paid in coin and fed on top — two costs, not two currencies for one cost.
+ * Either running out leaves them idle, and §7.4 means nothing already earned is lost, so
+ * this is phrased as a prompt rather than a penalty.
+ *
+ * Returns null when both were covered, so the caller can skip the line entirely rather
+ * than rendering an empty reassurance nobody needs.
+ */
+export function upkeepShortfall(accrual: OfflineAccrual): string | null {
+  const { workersWentUnfed, workersWentUnpaid } = accrual;
+
+  if (workersWentUnfed && workersWentUnpaid) {
+    return 'Your workers ran out of food and wages. Cook something and sell a haul to get them going again.';
+  }
+
+  if (workersWentUnfed) {
+    return 'Your workers ran out of food. Cook something to keep them going.';
+  }
+
+  if (workersWentUnpaid) {
+    return 'Your workers went unpaid. Sell a haul at a shop to cover their wages.';
+  }
+
+  return null;
+}

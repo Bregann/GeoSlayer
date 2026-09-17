@@ -31,5 +31,13 @@ namespace GeoSlayer.Domain.DTOs.Idle.Responses
 
         /// <summary>True when workers ran out of food — a nudge to cook, not a penalty.</summary>
         public bool WorkersWentUnfed { get; set; }
+
+        /// <summary>
+        /// True when the purse ran dry and workers went unpaid (§5.2).
+        ///
+        /// <para>The nudge that tells a player to sell a haul, the way
+        /// <see cref="WorkersWentUnfed"/> tells them to cook.</para>
+        /// </summary>
+        public bool WorkersWentUnpaid { get; set; }
     }
 }

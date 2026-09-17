@@ -68,14 +68,17 @@ rather than decided by an agent. **None of these should be settled without you.*
 
   Stack caps were removed as part of it, reversing §7.4 — recorded there with the reasoning.
 
-  **Still open: what coin buys**, and deliberately so — the user is thinking about it.
-  Upkeep is paid in food alone and nothing else has a coin price. Coin currently stores
-  value and makes a full satchel worth something, which is a real job, but the sink should
-  be designed rather than accreted.
+  ~~**Still open: what coin buys.**~~ **DECIDED: wages** (`DESIGN.md` §5.2, §5D.4).
+  Workers are paid in coin and fed on top — two costs, not two currencies for one cost.
+  Food halved as wages went on, so the total burden stayed in the same range.
 
-  Now unblocked by the monetisation decision: with no real-money purchases planned, a
-  convenience sink (instant craft completion, respec, extra queue slots) no longer risks
-  colliding with something money would later buy.
+  **Coin deliberately does not buy upgrades.** Bonus Points already do, and §3.0a calls
+  them "the main thing a levelling player actually engages with" — a second route makes one
+  of the two redundant, which is the §4.3 failure.
+
+  Still candidates, none built: respec (§3.0a asks for it at "a material or currency cost"
+  and it currently costs Bonus Points, which is odd), renting a craft queue slot, instant
+  craft completion. All convenience, never progress.
 
 - ~~**Rarity**~~ **DECIDED: not building it** (Stage 18 task 5). Drop frequency is already
   `DropTableEntry.Weight`; a cosmetic tier mapping adds no decision; and POI scarcity is

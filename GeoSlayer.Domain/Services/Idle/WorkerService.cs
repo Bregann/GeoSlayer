@@ -197,6 +197,7 @@ namespace GeoSlayer.Domain.Services.Idle
             // §7.4's "never punish you for sleeping" outranks the sink.
             result.UpkeepConsumed = await ConsumeUpkeep(playerId, snapshots, ct);
             result.WorkersWentUnfed = result.UpkeepConsumed.Unfed;
+            result.WorkersWentUnpaid = result.UpkeepConsumed.Unpaid;
 
             result.Materials = await AwardWorkerMaterials(playerId, snapshots, ct);
 
@@ -206,11 +207,15 @@ namespace GeoSlayer.Domain.Services.Idle
         }
 
         /// <summary>
-        /// Consume food for the hours worked (§5.2).
+        /// Pay and feed workers for the hours worked (§5.2).
         ///
-        /// <para>Feeds workers in order and stops when the larder runs out; the unfed ones
-        /// simply produced nothing extra. Crucially this never throws and never rolls back
-        /// what was already earned — an unfed worker idles, it does not lose the night.</para>
+        /// <para>Two costs, not two currencies for one cost: workers are <b>paid in coin and
+        /// fed on top</b>, the way employment actually works. An earlier design had coin as a
+        /// substitute for food, which would just have made players optimise to whichever was
+        /// cheaper and ignore the other.</para>
+        ///
+        /// <para>Crucially this never throws and never rolls back what was already earned —
+        /// an unpaid or unfed worker idles, it does not lose the night (§7.4).</para>
         /// </summary>
         private async Task<UpkeepDto> ConsumeUpkeep(
             int playerId,
@@ -218,11 +223,37 @@ namespace GeoSlayer.Domain.Services.Idle
             CancellationToken ct)
         {
             var required = snapshots.Sum(s => OfflineAccrual.FoodRequired(s.Accrual.Elapsed));
+            var wages = snapshots.Sum(s => OfflineAccrual.WagesRequired(s.Accrual.Elapsed));
 
-            var result = new UpkeepDto { FoodRequired = required };
+            var result = new UpkeepDto { FoodRequired = required, WagesRequired = wages };
+
+            // Wages first, because they are the simpler half — a single balance rather than a
+            // walk through the larder.
+            if (wages > 0)
+            {
+                var player = await db.Players.FirstOrDefaultAsync(p => p.Id == playerId, ct);
+
+                if (player is not null)
+                {
+                    // Partial payment is deliberate. Taking nothing when a player cannot
+                    // cover the full bill would let them run workers indefinitely on an empty
+                    // purse, and taking them into debt would punish someone for sleeping.
+                    var paid = Math.Min(wages, player.Coin);
+
+                    player.Coin -= paid;
+
+                    result.WagesPaid = paid;
+                    result.Unpaid = paid < wages;
+                }
+            }
 
             if (required <= 0)
             {
+                if (result.WagesPaid > 0)
+                {
+                    await db.SaveChangesAsync(ct);
+                }
+
                 return result;
             }
 
@@ -261,7 +292,7 @@ namespace GeoSlayer.Domain.Services.Idle
             result.FoodConsumed = required - remaining;
             result.Unfed = remaining > 0;
 
-            if (result.Consumed.Count > 0)
+            if (result.Consumed.Count > 0 || result.WagesPaid > 0)
             {
                 await db.SaveChangesAsync(ct);
             }

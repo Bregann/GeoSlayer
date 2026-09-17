@@ -11,4 +11,10 @@ export interface OfflineAccrual {
   unlocks: { displayName: string; payload: string; adventurerLevel: number }[];
   adventurerXpEarned: number;
   bonusPointsGranted: number;
+
+  /** The larder ran out — the nudge to go and cook (§5.2). */
+  workersWentUnfed: boolean;
+
+  /** The purse ran dry — the nudge to go and sell a haul (§5.2). */
+  workersWentUnpaid: boolean;
 }

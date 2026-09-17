@@ -1,6 +1,6 @@
 import { Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
-import { capWarning, formatDuration } from '@/helpers/idle';
+import { capWarning, formatDuration, upkeepShortfall } from '@/helpers/idle';
 import { celebrationStyles, progressionStyles } from '@/styles/progression';
 import type { OfflineAccrual } from '@/interfaces/api/idle/OfflineAccrual';
 
@@ -31,6 +31,13 @@ export function WelcomeBack({ accrual, onDismiss }: Props) {
         <Text style={celebrationStyles.kind}>
           Your workers ran for {formatDuration(accrual.hoursAccrued)}
         </Text>
+
+        {/* Upkeep that went short (§5.2). Phrased as a prompt rather than a penalty —
+            nothing already earned was lost (§7.4), so this is "go and do X", not a
+            telling-off for having slept. Renders nothing when both were covered. */}
+        {upkeepShortfall(accrual) !== null && (
+          <Text style={progressionStyles.effectText}>{upkeepShortfall(accrual)}</Text>
+        )}
 
         <ScrollView
           style={{ maxHeight: 280, alignSelf: 'stretch' }}
