@@ -46,6 +46,10 @@ namespace GeoSlayer.Domain.Database.Context
         public DbSet<EncounterDefinition> EncounterDefinitions { get; set; } = null!;
         public DbSet<PlayerEncounter> PlayerEncounters { get; set; } = null!;
 
+        // ── Admin (Stage 18) ──
+        public DbSet<ItemImage> ItemImages { get; set; } = null!;
+        public DbSet<AdminAuditEntry> AdminAuditEntries { get; set; } = null!;
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -162,6 +166,27 @@ namespace GeoSlayer.Domain.Database.Context
             modelBuilder.Entity<Item>(entity =>
             {
                 entity.HasIndex(e => e.Key).IsUnique();
+            });
+
+            modelBuilder.Entity<ItemImage>(entity =>
+            {
+                // One image per item — uploading again replaces rather than accumulating.
+                entity.HasIndex(e => e.ItemId).IsUnique();
+
+                // Deleting an item takes its image with it; an orphaned blob is invisible
+                // storage nobody will ever think to clean up.
+                entity.HasOne(e => e.Item)
+                      .WithMany()
+                      .HasForeignKey(e => e.ItemId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<AdminAuditEntry>(entity =>
+            {
+                // The two questions actually asked of an audit trail: "what happened
+                // recently" and "what happened to this thing".
+                entity.HasIndex(e => e.OccurredUtc);
+                entity.HasIndex(e => new { e.EntityType, e.EntityId });
             });
 
             modelBuilder.Entity<PlayerItem>(entity =>

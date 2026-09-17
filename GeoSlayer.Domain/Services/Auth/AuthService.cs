@@ -23,6 +23,17 @@ namespace GeoSlayer.Domain.Services.Auth
         IProgressionService progression,
         IWorkerService workerService) : IAuthService
     {
+        /// <summary>
+        /// The role name carried in the JWT for admin users (Stage 18).
+        ///
+        /// <para>Declared once here and referenced by every <c>[Authorize(Roles = ...)]</c>,
+        /// because a role name that is a string literal in twenty places is a role name that
+        /// will eventually be misspelled in one of them — and the failure mode of a
+        /// misspelled role is an endpoint that authorises nobody, or worse, one whose
+        /// attribute silently never matches.</para>
+        /// </summary>
+        public const string AdminRole = "Admin";
+
         private readonly AppDbContext _context = dbContext;
         private readonly PasswordHasher<User> _passwordHasher = new();
 
@@ -156,11 +167,21 @@ namespace GeoSlayer.Domain.Services.Auth
 
         private static string GenerateJwtToken(User user)
         {
-            var claims = new[]
+            var claims = new List<SecurityClaim>
             {
-                new SecurityClaim(ClaimTypes.Name, user.Username),
-                new SecurityClaim(ClaimTypes.NameIdentifier, user.Id.ToString())
+                new(ClaimTypes.Name, user.Username),
+                new(ClaimTypes.NameIdentifier, user.Id.ToString())
             };
+
+            // The admin role is carried as a claim, so [Authorize(Roles = ...)] enforces it
+            // without a database round trip per request. The token lives an hour, which is
+            // also how long a revoked admin keeps access — acceptable for a flag that is
+            // granted out of band and rarely removed, and the alternative is a lookup on
+            // every call.
+            if (user.IsAdmin)
+            {
+                claims.Add(new SecurityClaim(ClaimTypes.Role, AdminRole));
+            }
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JwtKey")!));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

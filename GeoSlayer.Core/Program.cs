@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
+using System.Security.Claims;
 using System.Text;
 using GeoSlayer.Domain.Interfaces.Helpers;
 using GeoSlayer.Domain.Helpers;
@@ -21,6 +22,7 @@ using GeoSlayer.Domain.Services.Retention;
 using GeoSlayer.Domain.Services.Skills;
 using GeoSlayer.Domain.Database.Context;
 using GeoSlayer.Domain.Enums;
+using GeoSlayer.Domain.Interfaces.Api.Admin;
 using GeoSlayer.Domain.Interfaces.Api.Auth;
 using GeoSlayer.Domain.Interfaces.Api.Clues;
 using GeoSlayer.Domain.Interfaces.Api.Combat;
@@ -34,6 +36,7 @@ using GeoSlayer.Domain.Interfaces.Api.Museum;
 using GeoSlayer.Domain.Interfaces.Api.Progression;
 using GeoSlayer.Domain.Interfaces.Api.Retention;
 using GeoSlayer.Domain.Interfaces.Api.Skills;
+using GeoSlayer.Domain.Services.Admin;
 using GeoSlayer.Domain.Services.Auth;
 using GeoSlayer.Domain.Services.Fog;
 using GeoSlayer.Domain.Services.Journey;
@@ -95,6 +98,7 @@ builder.Services.AddScoped<IFogService, FogService>();
 builder.Services.AddScoped<IJourneyService, JourneyService>();
 builder.Services.AddScoped<IEncounterService, EncounterService>();
 builder.Services.AddScoped<IEconomyService, EconomyService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -107,7 +111,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
             ValidIssuer = Environment.GetEnvironmentVariable("JwtValidIssuer"),
             ValidAudience = Environment.GetEnvironmentVariable("JwtValidAudience"),
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JwtKey")!))
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JwtKey")!)),
+
+            // Stated explicitly rather than relying on the default mapping. If these ever
+            // stop matching what AuthService writes, [Authorize(Roles = "Admin")] does not
+            // error — it simply authorises nobody, or in the worse direction fails open on
+            // an endpoint that assumed the attribute was doing something.
+            RoleClaimType = ClaimTypes.Role,
+            NameClaimType = ClaimTypes.Name
         };
     });
 
