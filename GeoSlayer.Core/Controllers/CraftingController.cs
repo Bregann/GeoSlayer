@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace GeoSlayer.Controllers
+namespace GeoSlayer.Core.Controllers
 {
     /// <summary>Crafting, gear and buildings (Stage 06).</summary>
     [ApiController]

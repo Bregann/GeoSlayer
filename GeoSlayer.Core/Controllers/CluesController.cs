@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace GeoSlayer.Controllers
+namespace GeoSlayer.Core.Controllers
 {
     /// <summary>Clue scrolls (Stage 13, DESIGN.md §5B).</summary>
     [ApiController]

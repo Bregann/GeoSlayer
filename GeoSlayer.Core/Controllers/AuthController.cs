@@ -2,7 +2,7 @@ using GeoSlayer.Domain.DTOs.Auth.Requests;
 using GeoSlayer.Domain.Interfaces.Api;
 using Microsoft.AspNetCore.Mvc;
 
-namespace GeoSlayer.Controllers
+namespace GeoSlayer.Core.Controllers
 {
     [ApiController]
     [Route("api/[controller]/[action]")]

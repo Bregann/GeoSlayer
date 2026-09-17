@@ -13,7 +13,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build Docker image
-        run: docker build -f GeoSlayer/Dockerfile -t 192.168.1.100:5000/geoslayer:latest .
+        run: docker build -f GeoSlayer.Core/Dockerfile -t 192.168.1.100:5000/geoslayer:latest .
 
       - name: Push Docker image
         run: docker push 192.168.1.100:5000/geoslayer:latest

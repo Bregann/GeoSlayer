@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace GeoSlayer.Controllers
+namespace GeoSlayer.Core.Controllers
 {
     /// <summary>The retention systems (Stage 14, DESIGN.md §5.4–5.7, §7.1).</summary>
     [ApiController]

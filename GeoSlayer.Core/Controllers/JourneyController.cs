@@ -6,7 +6,7 @@ using GeoSlayer.Domain.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace GeoSlayer.Controllers
+namespace GeoSlayer.Core.Controllers
 {
     [ApiController]
     [Authorize]

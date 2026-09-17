@@ -7,7 +7,7 @@ using Serilog;
 using System.Text;
 using GeoSlayer.Domain.Interfaces.Helpers;
 using GeoSlayer.Domain.Helpers;
-using GeoSlayer;
+using GeoSlayer.Core;
 using GeoSlayer.Domain.Interfaces.Api;
 using GeoSlayer.Domain.Services;
 using GeoSlayer.Domain.Services.Materials;

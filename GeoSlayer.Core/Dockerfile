@@ -14,27 +14,27 @@ ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
 # Copy project files
-COPY ["GeoSlayer/GeoSlayer.csproj", "GeoSlayer/"]
+COPY ["GeoSlayer.Core/GeoSlayer.Core.csproj", "GeoSlayer.Core/"]
 COPY ["GeoSlayer.Domain/GeoSlayer.Domain.csproj", "GeoSlayer.Domain/"]
 
 # Restore dependencies
-RUN dotnet restore "GeoSlayer/GeoSlayer.csproj"
+RUN dotnet restore "GeoSlayer.Core/GeoSlayer.Core.csproj"
 
 # Copy all source
 COPY . .
 
 # Build the project
-WORKDIR "/src/GeoSlayer"
-RUN dotnet build "GeoSlayer.csproj" -c $BUILD_CONFIGURATION -o /app/build
+WORKDIR "/src/GeoSlayer.Core"
+RUN dotnet build "GeoSlayer.Core.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # Publish stage
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-WORKDIR "/src/GeoSlayer"
-RUN dotnet publish "GeoSlayer.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+WORKDIR "/src/GeoSlayer.Core"
+RUN dotnet publish "GeoSlayer.Core.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 # Final runtime image
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "GeoSlayer.dll"]
+ENTRYPOINT ["dotnet", "GeoSlayer.Core.dll"]

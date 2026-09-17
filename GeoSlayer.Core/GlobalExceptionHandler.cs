@@ -2,7 +2,7 @@ using GeoSlayer.Domain.Exceptions;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 
-namespace GeoSlayer
+namespace GeoSlayer.Core
 {
     // Implements IExceptionHandler (ASP.NET Core .NET 8+) to centralise exception-to-HTTP-response
     // mapping for all known/expected exceptions. Registered in Program.cs via
