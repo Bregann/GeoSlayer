@@ -37,5 +37,11 @@ namespace GeoSlayer.Domain.Interfaces.Api.Materials
 
         /// <summary>The player's inventory, grouped for display.</summary>
         Task<InventoryDto> GetInventory(int playerId, CancellationToken ct);
+
+        /// <summary>
+        /// The player's fractional sell-price bonus (§5.4) — gear, buildings, Museum wings
+        /// and Banking level combined.
+        /// </summary>
+        Task<double> SellPriceBonus(int playerId, CancellationToken ct);
     }
 }

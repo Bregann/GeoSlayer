@@ -1,4 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, Text, TouchableOpacity, View } from 'react-native';
 
@@ -126,6 +127,39 @@ export function PoiDetailModal({ poi, visitCount = 0, onClose, onVisited }: Prop
                   {blocked ?? 'VISIT'}
                 </Text>
               )}
+            </TouchableOpacity>
+          )}
+
+          {/* Trading and Banking POIs do something beyond training (§5.4, §5.4a), so
+              they get a second action. Only offered in range — a button that opens a
+              screen the server will then refuse is worse than no button. */}
+          {poi?.skill === 'Trading' && poi.inRange && (
+            <TouchableOpacity
+              style={visitStyles.visitButton}
+              onPress={() => {
+                onClose();
+                router.push({
+                  pathname: '/shop',
+                  params: { poiId: String(poi.id), poiName: poi.name },
+                });
+              }}
+            >
+              <Text style={visitStyles.visitText}>SELL HERE</Text>
+            </TouchableOpacity>
+          )}
+
+          {poi?.skill === 'Banking' && poi.inRange && (
+            <TouchableOpacity
+              style={visitStyles.visitButton}
+              onPress={() => {
+                onClose();
+                router.push({
+                  pathname: '/bank',
+                  params: { poiId: String(poi.id), poiName: poi.name },
+                });
+              }}
+            >
+              <Text style={visitStyles.visitText}>BANK</Text>
             </TouchableOpacity>
           )}
 

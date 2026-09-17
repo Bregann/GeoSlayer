@@ -61,31 +61,27 @@ namespace GeoSlayer.Domain.Services.Skills
         public const double DistanceSynergyXpPerKilometre = 12.0;
 
         /// <summary>
-        /// Skills whose <b>level</b> raises per-material stack caps (Stage 15 — Banking-driven
-        /// stack-cap upgrades).
+        /// Skills whose <b>level</b> raises what materials sell for (§5.4).
         ///
-        /// <para>Stack caps were previously raised only by the Storehouse building and the
-        /// Skills Museum wing, so Banking levelled without ever changing anything a player
-        /// could feel — §4.3's "an equipped item that changes no behaviour is a bug" applies
-        /// just as well to a skill. Banking is about what you can keep, so what you can keep
-        /// is what it should move.</para>
+        /// <para>Originally stack caps; repointed when caps were removed. Banking is about
+        /// money, so moving the price you get is a better fit than moving storage ever was —
+        /// and it keeps the skill from being one that levels without changing anything a
+        /// player can feel, which §4.3 calls a bug.</para>
         ///
         /// <para>Seed data rather than a service branch, for the same reason as
         /// <see cref="DistanceSynergySkills"/>.</para>
         /// </summary>
-        public static IReadOnlySet<SkillType> StackCapSkills { get; } =
+        public static IReadOnlySet<SkillType> SellPriceSkills { get; } =
             new HashSet<SkillType> { SkillType.Banking };
 
         /// <summary>
-        /// Stack-cap bonus per level in a <see cref="StackCapSkills"/> skill.
+        /// Sell-price bonus per level in a <see cref="SellPriceSkills"/> skill.
         ///
-        /// <para>0.005 means level 99 Banking is +49.5% — comparable to the Storehouse, and
-        /// deliberately not larger. Stacking on top of buildings and the Museum wing is fine
-        /// because the cap is a convenience rather than a power curve: §4.1a's overflow rule
-        /// (excess becomes Dust) means a higher cap smooths a chore, it does not multiply
-        /// income.</para>
+        /// <para>0.005 means level 99 Banking sells at +49.5%. Deliberately the same curve
+        /// the stack-cap version used: it was tuned to be comparable to the Storehouse and
+        /// that relationship still holds, since the Storehouse was repointed too.</para>
         /// </summary>
-        public const double StackCapPerSkillLevel = 0.005;
+        public const double SellPricePerSkillLevel = 0.005;
 
         /// <summary>Skill metadata for the skills screen.</summary>
         public static IReadOnlyList<SkillDefinition> Definitions { get; } = new List<SkillDefinition>
@@ -414,11 +410,6 @@ namespace GeoSlayer.Domain.Services.Skills
                     LevelRequired = level,
                     BaseGatherSeconds = seconds,
                     XpPerUnit = xp,
-
-                    // Higher tiers are rarer, so a smaller stack still represents real effort
-                    // and the cap bites at a comparable amount of gathering time.
-                    StackCap = tier <= 2 ? 1000 : tier <= 4 ? 500 : 250,
-                    DustPerOverflow = tier,
                 });
             }
 
@@ -586,12 +577,23 @@ namespace GeoSlayer.Domain.Services.Skills
                 ("vintage_reserve", "Vintage Reserve"), ("legendary_cask", "Legendary Cask"),
             ]);
 
-        /// <summary>Banking's ladder (Stage 15).</summary>
+        /// <summary>
+        /// Banking's ladder (Stage 15), reflavoured when real currency arrived (§5.4).
+        ///
+        /// <para>These were Copper Coin / Silver Coin / Gold Coin. Once <c>Player.Coin</c>
+        /// existed, "sell 40 Gold Coins for 800 coin" was going to read as a bug rather than
+        /// a trade. They are <b>valuables</b> now — things a bank holds — which keeps the
+        /// ladder and loses the collision.</para>
+        ///
+        /// <para>Priced highest of any category (<c>CoinPricing</c>), so a bank is the best
+        /// place to fill a satchel. That is the point: it gives Banking a reason to be
+        /// visited before deposits and interest are unlocked.</para>
+        /// </summary>
         public static IReadOnlyList<Material> BankingMaterials { get; } = BuildLadder(
             SkillType.Banking, MaterialCategory.Coin,
             [
-                ("copper_coin", "Copper Coin"), ("silver_coin", "Silver Coin"),
-                ("gold_coin", "Gold Coin"), ("promissory_note", "Promissory Note"),
+                ("copper_token", "Copper Token"), ("silver_bar", "Silver Bar"),
+                ("gold_bullion", "Gold Bullion"), ("promissory_note", "Promissory Note"),
                 ("deed", "Deed"), ("bearer_bond", "Bearer Bond"), ("royal_charter", "Royal Charter"),
             ]);
 

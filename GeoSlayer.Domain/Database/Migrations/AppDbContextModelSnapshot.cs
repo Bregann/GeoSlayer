@@ -449,9 +449,6 @@ namespace GeoSlayer.Domain.Database.Migrations
                     b.Property<int>("Category")
                         .HasColumnType("integer");
 
-                    b.Property<int>("DustPerOverflow")
-                        .HasColumnType("integer");
-
                     b.Property<bool>("IsUnique")
                         .HasColumnType("boolean");
 
@@ -469,9 +466,6 @@ namespace GeoSlayer.Domain.Database.Migrations
                         .HasColumnType("character varying(128)");
 
                     b.Property<int?>("SkillType")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("StackCap")
                         .HasColumnType("integer");
 
                     b.Property<int>("Tier")
@@ -617,8 +611,17 @@ namespace GeoSlayer.Domain.Database.Migrations
                     b.Property<int>("BonusPointsSpent")
                         .HasColumnType("integer");
 
+                    b.Property<long>("Coin")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("CoinDeposited")
+                        .HasColumnType("bigint");
+
                     b.Property<long>("Curation")
                         .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("InterestSettledUtc")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<double?>("LastCellLat")
                         .HasColumnType("double precision");

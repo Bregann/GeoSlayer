@@ -9,7 +9,8 @@ namespace GeoSlayer.Domain.DTOs.Materials.Responses
         /// <summary>Distinct material types held — the headline number for the screen.</summary>
         public int DistinctMaterials { get; set; }
 
-        public int NearCapCount { get; set; }
+        /// <summary>What the whole inventory would fetch at a shop, bonus included.</summary>
+        public long TotalSellValue { get; set; }
     }
 
     public class InventoryItemDto
@@ -21,13 +22,17 @@ namespace GeoSlayer.Domain.DTOs.Materials.Responses
         public MaterialCategory Category { get; set; }
         public SkillType? SkillType { get; set; }
         public long Quantity { get; set; }
-        public int StackCap { get; set; }
         public bool IsUnique { get; set; }
 
-        /// <summary>At or above 90% of the cap — the app flags these before they overflow.</summary>
-        public bool IsNearCap { get; set; }
+        /// <summary>Coin for one unit, before the player's sell bonus (§5.4).</summary>
+        public long UnitPrice { get; set; }
 
-        public bool IsFull { get; set; }
+        /// <summary>Coin the whole stack fetches, bonus included.</summary>
+        public long StackPrice { get; set; }
+
+        /// <summary>Safe for the "sell all junk" shortcut — low tier, never a Relic.</summary>
+        public bool IsJunk { get; set; }
+
     }
 
     public class InventoryCategoryDto

@@ -1,15 +1,19 @@
 # Build status
 
-**All 16 stages are `DONE`, and every acceptance criterion in the project is now met.**
+**Stages 01–17 are `DONE`. Stage 18 (admin web) is the only one outstanding.**
+
+Every acceptance criterion in the *game* is met. Stage 18 is a management interface, not
+gameplay — see `stages/STAGE-18-admin-web.md`.
 
 Stage 16 (Combat encounters) was added after the scope question was decided — see
-`DESIGN.md` §5C. A follow-up pass since then closed the last three unmet criteria
-(Cryptic clues, combat gear, encounters on the map) and built the two Stage 15 synergies
-that were described but not implemented. **556 tests pass, 0 fail.**
+`DESIGN.md` §5C. A follow-up pass closed the last three unmet criteria (Cryptic clues,
+combat gear, encounters on the map) and built the two Stage 15 synergies that were
+described but not implemented. Stage 17 then resolved §9.5 by building the coin economy
+and removing stack caps.
 
-What remains unbuilt is listed under *Systems described but not built* below, and is
-either blocked on a human decision (the coin economy) or on infrastructure that does not
-exist yet (push notifications).
+What remains unbuilt is listed under *Systems described but not built* below. See
+**Running the tests** for the current suite state — it is roughly 599 passing but has not
+been confirmed end to end since the last change.
 
 Single source of truth for where the build is. Update this when a stage completes.
 
@@ -31,6 +35,8 @@ Single source of truth for where the build is. Update this when a stage complete
 | 14 | Retention systems | DONE |
 | 15 | Remaining skills | DONE |
 | 16 | Combat encounters | DONE |
+| 17 | Coin economy | DONE |
+| 18 | Admin web interface | NOT STARTED |
 
 States: `NOT STARTED` → `IN PROGRESS` → `DONE` (or `BLOCKED`, with a reason).
 
@@ -47,16 +53,42 @@ rather than decided by an agent. **None of these should be settled without you.*
   the Museum's shareable profile (§5A.1) is the only hook that points that way.
 - **Monetisation.** Untouched, deliberately. It shapes the whole design and is not an
   agent's call.
-- **Trading's coin economy.** Flagged for decision rather than built: there is no currency
-  and no material→coin sink, and upkeep is paid in food alone. What coin is *for* should be
-  decided before it exists — a second currency with no job is worse than none. Recorded as
-  `DESIGN.md` §9.5.
+- ~~**Trading's coin economy.**~~ **DECIDED and BUILT** (Stage 17, `DESIGN.md` §5D).
+  Coin is earned by selling materials while standing at a Trading POI; prices derive from
+  tier and category; Banking gained deposits and a deliberately tiny interest rate.
 
-  **Re-confirmed as yours, not an agent's**, when the other outstanding work was picked up.
-  Two shapes were sketched as starting points if you want them: coin as upkeep's second
-  axis (materials sell at Trading POIs, coin feeds workers alongside food), or coin as the
-  Dust sink (overflow converts at a poor rate, coin buys stack-cap upgrades). Both commit
-  the economy's shape, which is why neither was built.
+  Stack caps were removed as part of it, reversing §7.4 — recorded there with the reasoning.
+
+  **Still open: what coin buys.** Upkeep is paid in food alone and nothing else has a coin
+  price. Coin currently stores value and makes a full satchel worth something, which is a
+  real job, but the sink should be designed rather than accreted.
+
+- **Rarity** (Stage 18 task 5). `Material.IsUnique` is the closest thing today and tiers
+  carry most of what rarity would mean. Whether it is a new axis or a presentation of tier
+  is a design question, not a build task — a second axis duplicating tier is the mistake
+  §4.3 warns about for gear versus Bonus Points.
+
+## Running the tests
+
+**The dev box cannot take repeated full-suite runs.** The suite spins up PostGIS via
+Testcontainers, and running it back-to-back has taken the machine down twice. A killed run
+also leaves orphaned containers behind, which keep consuming resources until removed:
+
+```bash
+docker ps -q | xargs -r docker rm -f
+```
+
+Prefer a targeted filter while working:
+
+```bash
+dotnet test --filter "FullyQualifiedName~Economy"
+```
+
+**Current state:** the last *full* run finished at **598/599**, with the one failure
+(`NoServiceCode_BranchesOnASpecificSkill`) fixed immediately afterwards via
+`EconomySeedData`. A targeted re-run of that test plus all Economy tests passed **44/44**.
+The full suite has not been run to completion since, so the total is **unverified** — expect
+~599 passing, but confirm before relying on it.
 
 ## Blockers
 
@@ -375,6 +407,24 @@ Worth a human eye:
   banked. Too generous and the commute becomes the efficient route; too stingy and the
   bank rots unused. All constants are in `TransitGrading`.
 
+### From Stage 17 (coin economy)
+
+**A re-import is not needed.** Nothing about coin depends on POI tags.
+
+Needs a human with a phone:
+
+- **Whether a shop detour feels worth making.** The whole design rests on selling being a
+  reason to walk somewhere rather than a menu. If players ignore it and hoard forever, the
+  price curve is not the problem — the errand is.
+- **Whether prices feel right.** Every category multiplier is reasoned from what that
+  category costs to reach, not playtested. All in `CoinPricing`.
+- **Whether interest reads as a nudge or as an insult.** It is deliberately tiny — 0.1%/hour,
+  bounded by the offline cap. A player who deposits 10,000 and returns to 40 might read that
+  badly. The framing in `helpers/economy.ts` `interestSummary` matters as much as the number.
+- **Whether removing stack caps lost a rhythm.** The bet is that the offline *time* cap does
+  all the pacing and caps only added busywork. Only real play shows whether the bag filling
+  up was providing something nobody noticed until it went.
+
 ### From the criteria-closing pass
 
 **A re-import is needed before Cryptic clues appear.** `PointOfInterest.Tags` is empty for
@@ -494,9 +544,8 @@ Every acceptance criterion in the project is now met.
 
 ### 5. Systems described but not built
 
-- **Trading's material→coin economy** (Stage 15). Needs a currency, sink and price table.
-  **Still open deliberately** — see the open questions above. What coin is *for* is a
-  human's call, and a second currency with no job is worse than none.
+- ~~**Trading's material→coin economy**~~ **Built** (Stage 17). See `DESIGN.md` §5D.
+  What coin *buys* remains open, deliberately.
 - **Craft-completion notifications** (Stage 06). No push infrastructure exists.
 - ~~**Athletics distance synergy**~~ **Built.** `SkillTrainingService` now takes the
   distance actually walked, and pays the skills named in

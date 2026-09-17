@@ -26,29 +26,25 @@ export function categoryIcon(name: string): string {
   return CATEGORY_ICONS[name] ?? '📦';
 }
 
-/** How full a stack is, 0–100. */
-export function stackPercent(item: InventoryItem): number {
-  if (item.stackCap <= 0) return 0;
-  return Math.max(0, Math.min(100, (item.quantity / item.stackCap) * 100));
-}
-
 /**
- * "120 / 1,000" — the stack against its cap.
+ * "1,204 held" — just the quantity.
  *
- * Always shows the cap: §7.4 makes overflow a real cost, so the player needs to see the
- * ceiling coming rather than discover it when materials start turning into Dust.
+ * Stack caps were removed with the coin economy (§5.4), so there is no ceiling to warn
+ * about any more. What replaced the warning is `priceLabel`: the interesting fact about a
+ * stack is now what it is worth, not how close it is to overflowing.
  */
 export function stackLabel(item: InventoryItem): string {
-  return `${item.quantity.toLocaleString()} / ${item.stackCap.toLocaleString()}`;
+  return `${item.quantity.toLocaleString()} held`;
 }
 
-/**
- * The warning for a stack, or null when there is nothing to say.
- */
-export function stackWarning(item: InventoryItem): string | null {
-  if (item.isFull) return 'FULL — extra converts to Dust';
-  if (item.isNearCap) return 'Nearly full';
-  return null;
+/** "480c" — what the whole stack fetches at a shop, the player's bonus included. */
+export function priceLabel(item: InventoryItem): string {
+  return `${item.stackPrice.toLocaleString()}c`;
+}
+
+/** "2c each" — shown so the player can judge a stack they have not gathered yet. */
+export function unitPriceLabel(item: InventoryItem): string {
+  return `${item.unitPrice.toLocaleString()}c each`;
 }
 
 /** Tier badge, e.g. "T3". Tier 1 is unremarkable and gets no badge. */
@@ -57,11 +53,14 @@ export function tierLabel(item: InventoryItem): string | null {
 }
 
 /**
- * Items within a category, fullest first so anything about to overflow reads at the top.
+ * Items within a category, most valuable first.
+ *
+ * Was "fullest first", which sorted by what was about to be lost. With nothing to lose,
+ * the useful order is what is worth carrying to a shop.
  */
-export function sortByUrgency(items: InventoryItem[]): InventoryItem[] {
+export function sortByValue(items: InventoryItem[]): InventoryItem[] {
   return [...items].sort(
-    (a, b) => stackPercent(b) - stackPercent(a) || a.name.localeCompare(b.name),
+    (a, b) => b.stackPrice - a.stackPrice || a.name.localeCompare(b.name),
   );
 }
 
@@ -76,14 +75,6 @@ export function formatPickups(gains: MaterialGain[]): string | null {
   if (real.length === 0) return null;
 
   return real.map((g) => `+${g.quantity} ${g.name}`).join(', ');
-}
-
-/**
- * Whether any of this sync's gains overflowed into Dust — worth telling the player,
- * since it means they are losing value to a full stack.
- */
-export function hasOverflow(gains: MaterialGain[]): boolean {
-  return gains.some((g) => g.overflowConvertedToDust > 0);
 }
 
 /** Total units held, for the screen header. */

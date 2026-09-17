@@ -3,5 +3,6 @@ import type { InventoryCategory } from '@/interfaces/api/materials/InventoryCate
 export interface Inventory {
   categories: InventoryCategory[];
   distinctMaterials: number;
-  nearCapCount: number;
+  /** What the whole haul would fetch at a shop. */
+  totalSellValue: number;
 }

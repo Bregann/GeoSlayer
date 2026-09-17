@@ -520,7 +520,7 @@ namespace GeoSlayer.Tests.Services.Museum
         [Test]
         public async Task AnIncompleteWing_GrantsNoSetBonus()
         {
-            var total = await _sut.GetSetBonusTotal(_player.Id, ItemModifier.StackCapPercent, Ct);
+            var total = await _sut.GetSetBonusTotal(_player.Id, ItemModifier.SellPricePercent, Ct);
 
             Assert.That(total, Is.Zero);
         }
@@ -559,7 +559,7 @@ namespace GeoSlayer.Tests.Services.Museum
             foreach (var (_, bonus) in MuseumSetBonus.Bonuses)
             {
                 if (bonus.Modifier is ItemModifier.SkillXpPercent
-                    or ItemModifier.StackCapPercent
+                    or ItemModifier.SellPricePercent
                     or ItemModifier.WorkerRatePercent)
                 {
                     Assert.That(bonus.Value, Is.LessThanOrEqualTo(0.10),

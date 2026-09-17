@@ -11,7 +11,14 @@ using Microsoft.EntityFrameworkCore;
 namespace GeoSlayer.Domain.Services.Materials
 {
     /// <summary>
-    /// Materials, stack caps and cell drops (Stage 03, DESIGN.md §4.1, §4.1a, §7.4).
+    /// Materials and cell drops (Stage 03, DESIGN.md §4.1, §4.1a, §7.4).
+    ///
+    /// <para><b>Stack caps were removed</b> when the coin economy landed (§5.4). §7.4
+    /// originally capped per material so overflow created pressure to return; selling at a
+    /// shop replaces that with a positive reason to come back, and the offline <i>time</i>
+    /// cap still does the pacing work §7.4 wanted. A cap that turns a good night's gathering
+    /// into Dust is a chore; a full satchel worth real coin is an errand. Quantities are
+    /// <c>long</c>, so the only ceiling is one no walk reaches.</para>
     /// </summary>
     public class MaterialService(
         AppDbContext db,
@@ -22,9 +29,6 @@ namespace GeoSlayer.Domain.Services.Materials
         /// geography controls — never which tiers are reachable (§4.1a).
         /// </summary>
         private const double MatchingTerrainMultiplier = 1.5;
-
-        /// <summary>Flag at 90% of cap so the app can warn before anything is lost.</summary>
-        private const double NearCapFraction = 0.9;
 
         public async Task<TerrainType> GetOrClassifyTerrain(int gridLat, int gridLng, CancellationToken ct)
         {
@@ -170,20 +174,25 @@ namespace GeoSlayer.Domain.Services.Materials
         }
 
         /// <summary>
-        /// A player's effective cap for a material, including any Storehouse placed on a
-        /// Claim (§4.3 buildings raise stack caps).
+        /// A player's sell-price bonus (§5.4), from equipped gear, a placed Storehouse and a
+        /// completed Museum wing.
+        ///
+        /// <para>These three used to raise stack caps. With caps gone they would have been
+        /// modifiers nothing reads — the bug §4.3 explicitly names — so they were repointed
+        /// rather than deleted. The feel is preserved: all three still reward the player who
+        /// gathers more than they immediately need.</para>
         ///
         /// Read directly rather than through ICraftingService to avoid a service cycle —
         /// FogService already depends on both.
         /// </summary>
-        private async Task<double> StackCapBonus(int playerId, CancellationToken ct)
+        public async Task<double> SellPriceBonus(int playerId, CancellationToken ct)
         {
             var fromItems = await db.PlayerItems
                 .Include(pi => pi.Item)
                 .Where(pi => pi.PlayerId == playerId
                           && pi.IsEquipped
                           && pi.Quantity > 0
-                          && pi.Item.Modifier == ItemModifier.StackCapPercent)
+                          && pi.Item.Modifier == ItemModifier.SellPricePercent)
                 .SumAsync(pi => pi.Item.ModifierValue, ct);
 
             // A completed Museum wing grants a small permanent bonus (§5A). Read here rather
@@ -191,20 +200,20 @@ namespace GeoSlayer.Domain.Services.Materials
             // would be exactly the "displays but does nothing" bug §4.3 warns about.
             var completedWings = await CompletedMuseumWings(playerId, ct);
 
-            // Banking level raises what you can keep (Stage 15). Which skills do this is seed
-            // data — see SkillSeedData.StackCapSkills — so this stays free of a per-skill
-            // branch, which NoServiceCode_BranchesOnASpecificSkill forbids.
-            var stackCapSkills = Services.Skills.SkillSeedData.StackCapSkills;
+            // Banking level raises what your haul is worth (§5.4). Which skills do this is
+            // seed data — see SkillSeedData.SellPriceSkills — so this stays free of a
+            // per-skill branch, which NoServiceCode_BranchesOnASpecificSkill forbids.
+            var sellPriceSkills = Services.Skills.SkillSeedData.SellPriceSkills;
 
             var skillLevels = await db.PlayerSkills
-                .Where(s => s.PlayerId == playerId && stackCapSkills.Contains(s.SkillType))
+                .Where(s => s.PlayerId == playerId && sellPriceSkills.Contains(s.SkillType))
                 .SumAsync(s => s.Level, ct);
 
-            var fromSkills = skillLevels * Services.Skills.SkillSeedData.StackCapPerSkillLevel;
+            var fromSkills = skillLevels * Services.Skills.SkillSeedData.SellPricePerSkillLevel;
 
             return fromItems
                  + fromSkills
-                 + Services.Museum.MuseumSetBonus.TotalFor(ItemModifier.StackCapPercent, completedWings);
+                 + Services.Museum.MuseumSetBonus.TotalFor(ItemModifier.SellPricePercent, completedWings);
         }
 
         /// <summary>Wings the player has filled, for set bonuses.</summary>
@@ -246,16 +255,11 @@ namespace GeoSlayer.Domain.Services.Materials
                 .Where(m => materialIds.Contains(m.Id))
                 .ToDictionaryAsync(m => m.Id, ct);
 
-            var dust = await db.Materials.FirstOrDefaultAsync(m => m.Key == MaterialSeedData.DustKey, ct);
-
             var existing = await db.PlayerMaterials
                 .Where(pm => pm.PlayerId == playerId)
                 .ToDictionaryAsync(pm => pm.MaterialId, ct);
 
-            var capBonus = await StackCapBonus(playerId, ct);
-
             var gains = new List<MaterialGainDto>();
-            var dustFromOverflow = 0L;
 
             foreach (var (materialId, requested) in quantityByMaterialId)
             {
@@ -278,19 +282,10 @@ namespace GeoSlayer.Domain.Services.Materials
                     existing[materialId] = row;
                 }
 
-                var cap = EffectiveCap(material.StackCap, capBonus);
-                var space = Math.Max(0, cap - row.Quantity);
-                var accepted = (int)Math.Min(requested, space);
-                var overflow = requested - accepted;
-
-                row.Quantity += accepted;
-
-                // Overflow becomes Dust rather than being discarded or blocking the gather
-                // (§7.4). Gathering at cap still succeeds — it just pays worse.
-                if (overflow > 0 && dust is not null && material.Id != dust.Id)
-                {
-                    dustFromOverflow += (long)overflow * material.DustPerOverflow;
-                }
+                // No stack cap, and therefore no overflow (§7.4, revised — see the class
+                // remarks). The whole quantity is accepted. Quantity is a long, so the only
+                // ceiling is long.MaxValue, which no amount of walking reaches.
+                row.Quantity += requested;
 
                 gains.Add(new MaterialGainDto
                 {
@@ -299,58 +294,17 @@ namespace GeoSlayer.Domain.Services.Materials
                     Name = material.Name,
                     Tier = material.Tier,
                     Category = material.Category,
-                    Quantity = accepted,
-                    OverflowConvertedToDust = overflow,
+                    Quantity = requested,
                 });
-            }
-
-            if (dustFromOverflow > 0 && dust is not null)
-            {
-                var dustRow = existing.GetValueOrDefault(dust.Id);
-
-                if (dustRow is null)
-                {
-                    dustRow = new PlayerMaterial { PlayerId = playerId, MaterialId = dust.Id, Quantity = 0 };
-                    db.PlayerMaterials.Add(dustRow);
-                    existing[dust.Id] = dustRow;
-                }
-
-                // Dust has its own (very large) cap, so it is clamped like anything else
-                // rather than being allowed to grow without bound.
-                dustRow.Quantity = Math.Min(
-                    EffectiveCap(dust.StackCap, capBonus), dustRow.Quantity + dustFromOverflow);
-
-                var dustGain = gains.FirstOrDefault(g => g.MaterialId == dust.Id);
-
-                if (dustGain is null)
-                {
-                    gains.Add(new MaterialGainDto
-                    {
-                        MaterialId = dust.Id,
-                        Key = dust.Key,
-                        Name = dust.Name,
-                        Tier = dust.Tier,
-                        Category = dust.Category,
-                        Quantity = (int)dustFromOverflow,
-                    });
-                }
-                else
-                {
-                    dustGain.Quantity += (int)dustFromOverflow;
-                }
             }
 
             await db.SaveChangesAsync(ct);
             return gains;
         }
 
-        /// <summary>Base cap raised by any stack-cap bonus, floored at the base.</summary>
-        private static long EffectiveCap(int baseCap, double bonus) =>
-            (long)Math.Max(baseCap, Math.Floor(baseCap * (1 + Math.Max(0, bonus))));
-
         public async Task<InventoryDto> GetInventory(int playerId, CancellationToken ct)
         {
-            var capBonus = await StackCapBonus(playerId, ct);
+            var sellBonus = await SellPriceBonus(playerId, ct);
 
             var rows = await db.PlayerMaterials
                 .Include(pm => pm.Material)
@@ -367,10 +321,15 @@ namespace GeoSlayer.Domain.Services.Materials
                     Category = pm.Material.Category,
                     SkillType = pm.Material.SkillType,
                     Quantity = pm.Quantity,
-                    StackCap = (int)EffectiveCap(pm.Material.StackCap, capBonus),
                     IsUnique = pm.Material.IsUnique,
-                    IsNearCap = pm.Quantity >= EffectiveCap(pm.Material.StackCap, capBonus) * NearCapFraction,
-                    IsFull = pm.Quantity >= EffectiveCap(pm.Material.StackCap, capBonus),
+
+                    // Shown per material so the player can see what a stack is worth before
+                    // walking to a shop — the decision is "is this haul worth the detour",
+                    // and it cannot be made from a quantity alone.
+                    UnitPrice = Economy.CoinPricing.UnitPrice(pm.Material.Tier, pm.Material.Category),
+                    StackPrice = Economy.CoinPricing.StackPrice(
+                        pm.Material.Tier, pm.Material.Category, pm.Quantity, sellBonus),
+                    IsJunk = Economy.CoinPricing.IsJunk(pm.Material.Tier, pm.Material.Category),
                 })
                 .ToList();
 
@@ -389,7 +348,7 @@ namespace GeoSlayer.Domain.Services.Materials
             {
                 Categories = categories,
                 DistinctMaterials = items.Count,
-                NearCapCount = items.Count(i => i.IsNearCap),
+                TotalSellValue = items.Sum(i => i.StackPrice),
             };
         }
     }

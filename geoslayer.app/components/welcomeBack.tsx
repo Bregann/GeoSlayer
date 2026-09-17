@@ -56,7 +56,6 @@ export function WelcomeBack({ accrual, onDismiss }: Props) {
               {materials.map((material) => (
                 <Text key={material.materialId} style={progressionStyles.cardMeta}>
                   +{material.quantity.toLocaleString()} {material.name}
-                  {material.overflowConvertedToDust > 0 && ' (stack full — converted to Dust)'}
                 </Text>
               ))}
             </View>

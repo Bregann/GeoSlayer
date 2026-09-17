@@ -21,8 +21,16 @@ namespace GeoSlayer.Domain.Enums
         /// <summary>Additional hours of offline accrual.</summary>
         OfflineCapHours,
 
-        /// <summary>Fractional bonus to per-material stack caps.</summary>
-        StackCapPercent,
+        /// <summary>
+        /// Fractional bonus to what materials sell for (§5.4).
+        ///
+        /// <para>Was <c>StackCapPercent</c> until caps were removed. The sources are
+        /// unchanged — a Storehouse, a completed Museum wing, Banking level — and so is the
+        /// feel: all three reward the player who gathers more than they immediately need.
+        /// Repointed rather than deleted, because a modifier nothing reads is the bug §4.3
+        /// names.</para>
+        /// </summary>
+        SellPricePercent,
 
         /// <summary>Fractional bonus to worker output.</summary>
         WorkerRatePercent,

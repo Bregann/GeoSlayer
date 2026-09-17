@@ -30,12 +30,6 @@ namespace GeoSlayer.Domain.Database.Models
         public SkillType? SkillType { get; set; }
 
         /// <summary>
-        /// Per-material cap (§7.4). Caps are per material, never a global inventory limit —
-        /// a global limit makes offline workers stall overnight.
-        /// </summary>
-        public int StackCap { get; set; } = 1000;
-
-        /// <summary>
         /// True for the small reserved set of named materials attached to the rarest POIs.
         /// Exclusivity means nothing if everything is exclusive (§7.4).
         /// </summary>
@@ -59,10 +53,5 @@ namespace GeoSlayer.Domain.Database.Models
         /// </summary>
         public double XpPerUnit { get; set; } = 1;
 
-        /// <summary>
-        /// Units of Dust one overflowing unit converts to (§7.4). Deliberately poor: overflow
-        /// should create pressure to return, not reward ignoring caps.
-        /// </summary>
-        public int DustPerOverflow { get; set; } = 1;
     }
 }

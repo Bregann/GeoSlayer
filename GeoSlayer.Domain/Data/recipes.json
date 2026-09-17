@@ -269,8 +269,8 @@
     },
     {
       "key": "storehouse",
-      "name": "Storehouse",
-      "description": "Raises every stack cap. Placed on a Claim.",
+      "name": "Counting House",
+      "description": "Somewhere to keep it, and someone to count it.",
       "skill": "Foraging",
       "levelRequired": 14,
       "durationSeconds": 10800,

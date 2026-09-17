@@ -46,6 +46,38 @@ namespace GeoSlayer.Domain.Database.Models
         /// </summary>
         public long Curation { get; set; }
 
+        /// <summary>
+        /// Coin in hand (DESIGN.md §9.5, resolved).
+        ///
+        /// <para>A column rather than a <c>Material</c> row: coin has no tier, no terrain, no
+        /// drop table and no skill, so modelling it as a material would force every material
+        /// query to special-case it — which is precisely how Dust became awkward.</para>
+        ///
+        /// <para><c>long</c> because nothing caps it. Earned by selling materials at Trading
+        /// POIs (§5.4), which is what finally gives Trading an economy rather than just a
+        /// gathering ladder.</para>
+        /// </summary>
+        public long Coin { get; set; }
+
+        /// <summary>
+        /// Coin deposited at a bank, earning interest (§5.4a).
+        ///
+        /// <para>Separate from <see cref="Coin"/> because deposited coin is <b>not spendable
+        /// until withdrawn</b> — that illiquidity is the whole trade, and merging the two
+        /// would make interest a free bonus on money you were using anyway.</para>
+        /// </summary>
+        public long CoinDeposited { get; set; }
+
+        /// <summary>
+        /// When interest was last settled onto <see cref="CoinDeposited"/>.
+        ///
+        /// <para>Interest accrues from this moment, bounded by the offline cap — the same
+        /// rule worker accrual follows (§5.2). Unbounded compounding on an uncapped balance
+        /// would eventually dwarf walking, which is the opposite of what a game about going
+        /// outside should reward.</para>
+        /// </summary>
+        public DateTime? InterestSettledUtc { get; set; }
+
         public virtual ICollection<PlayerSkill> Skills { get; set; } = new List<PlayerSkill>();
 
         public virtual ICollection<PlayerUpgrade> Upgrades { get; set; } = new List<PlayerUpgrade>();

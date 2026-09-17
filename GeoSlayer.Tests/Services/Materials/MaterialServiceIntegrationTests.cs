@@ -104,84 +104,86 @@ namespace GeoSlayer.Tests.Services.Materials
             Assert.That(gains.Sum(g => g.Quantity), Is.GreaterThan(0));
         }
 
-        // ── Criterion 5: stack caps and overflow ────────────────────────
+        // ── Criterion 5 (revised): no stack caps ────────────────────────
+        //
+        // §7.4 originally capped per material, with overflow becoming Dust. Caps were removed
+        // when the coin economy landed (§5.4): selling at a shop gives a positive reason to
+        // return, where a cap gave a punitive one, and the offline *time* cap still paces the
+        // idle layer. These tests hold the new contract — nothing is ever lost.
 
         [Test]
-        public async Task GatheringIntoAFullStack_YieldsDustAndDoesNotError()
+        public async Task GatheringIntoALargeStack_AcceptsEverything()
         {
             var sut = ServiceFor(TerrainType.Open);
-
             var scrapId = await MaterialId("scrap");
-            var scrap = await DbContext.Materials.FirstAsync(m => m.Id == scrapId);
-
-            // Fill the stack to its cap.
-            DbContext.PlayerMaterials.Add(new PlayerMaterial
-            {
-                PlayerId = _player.Id,
-                MaterialId = scrapId,
-                Quantity = scrap.StackCap,
-            });
-            await DbContext.SaveChangesAsync();
-
-            var gains = await sut.GrantMaterials(_player.Id, new Dictionary<int, int> { [scrapId] = 10 }, Ct);
-
-            var scrapGain = gains.First(g => g.MaterialId == scrapId);
-            var dustId = await MaterialId(MaterialSeedData.DustKey);
-
-            var dustHeld = await DbContext.PlayerMaterials
-                .Where(pm => pm.PlayerId == _player.Id && pm.MaterialId == dustId)
-                .Select(pm => pm.Quantity)
-                .FirstOrDefaultAsync();
-
-            Assert.Multiple(() =>
-            {
-                Assert.That(scrapGain.Quantity, Is.Zero, "nothing fits in a full stack");
-                Assert.That(scrapGain.OverflowConvertedToDust, Is.EqualTo(10));
-                Assert.That(dustHeld, Is.GreaterThan(0), "overflow must become Dust, not vanish");
-            });
-        }
-
-        [Test]
-        public async Task APartiallyFullStack_AcceptsWhatFitsAndDustsTheRest()
-        {
-            var sut = ServiceFor(TerrainType.Open);
-
-            var scrapId = await MaterialId("scrap");
-            var scrap = await DbContext.Materials.FirstAsync(m => m.Id == scrapId);
 
             DbContext.PlayerMaterials.Add(new PlayerMaterial
             {
                 PlayerId = _player.Id,
                 MaterialId = scrapId,
-                Quantity = scrap.StackCap - 3,
+                Quantity = 5_000_000,
             });
             await DbContext.SaveChangesAsync();
 
             var gains = await sut.GrantMaterials(_player.Id, new Dictionary<int, int> { [scrapId] = 10 }, Ct);
-            var gain = gains.First(g => g.MaterialId == scrapId);
-
-            Assert.Multiple(() =>
-            {
-                Assert.That(gain.Quantity, Is.EqualTo(3), "only the remaining space is accepted");
-                Assert.That(gain.OverflowConvertedToDust, Is.EqualTo(7));
-            });
-        }
-
-        [Test]
-        public async Task StackQuantity_NeverExceedsTheCap()
-        {
-            var sut = ServiceFor(TerrainType.Open);
-            var scrapId = await MaterialId("scrap");
-            var scrap = await DbContext.Materials.FirstAsync(m => m.Id == scrapId);
-
-            await sut.GrantMaterials(_player.Id, new Dictionary<int, int> { [scrapId] = scrap.StackCap * 3 }, Ct);
 
             var held = await DbContext.PlayerMaterials
                 .Where(pm => pm.PlayerId == _player.Id && pm.MaterialId == scrapId)
                 .Select(pm => pm.Quantity)
                 .FirstAsync();
 
-            Assert.That(held, Is.EqualTo(scrap.StackCap));
+            Assert.Multiple(() =>
+            {
+                Assert.That(gains.First(g => g.MaterialId == scrapId).Quantity, Is.EqualTo(10));
+                Assert.That(held, Is.EqualTo(5_000_010), "a big stack is not a full stack");
+            });
+        }
+
+        [Test]
+        public async Task NothingIsEverConvertedToDustOnGather()
+        {
+            // The regression that matters: a player who gathers a lot must keep all of it.
+            // Dust is now just an Open-terrain drop, never a consolation prize for overflow.
+            var sut = ServiceFor(TerrainType.Open);
+            var scrapId = await MaterialId("scrap");
+            var dustId = await MaterialId(MaterialSeedData.DustKey);
+
+            await sut.GrantMaterials(_player.Id, new Dictionary<int, int> { [scrapId] = 500_000 }, Ct);
+
+            var dustHeld = await DbContext.PlayerMaterials
+                .Where(pm => pm.PlayerId == _player.Id && pm.MaterialId == dustId)
+                .Select(pm => pm.Quantity)
+                .FirstOrDefaultAsync();
+
+            var scrapHeld = await DbContext.PlayerMaterials
+                .Where(pm => pm.PlayerId == _player.Id && pm.MaterialId == scrapId)
+                .Select(pm => pm.Quantity)
+                .FirstAsync();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(scrapHeld, Is.EqualTo(500_000), "every unit is kept");
+                Assert.That(dustHeld, Is.Zero, "gathering must not manufacture Dust");
+            });
+        }
+
+        [Test]
+        public async Task RepeatedGathering_AccumulatesWithoutBound()
+        {
+            var sut = ServiceFor(TerrainType.Open);
+            var scrapId = await MaterialId("scrap");
+
+            for (var i = 0; i < 5; i++)
+            {
+                await sut.GrantMaterials(_player.Id, new Dictionary<int, int> { [scrapId] = 100_000 }, Ct);
+            }
+
+            var held = await DbContext.PlayerMaterials
+                .Where(pm => pm.PlayerId == _player.Id && pm.MaterialId == scrapId)
+                .Select(pm => pm.Quantity)
+                .FirstAsync();
+
+            Assert.That(held, Is.EqualTo(500_000));
         }
 
         // ── Criterion 6: replay determinism, through the service ────────
@@ -253,7 +255,7 @@ namespace GeoSlayer.Tests.Services.Materials
         // ── Criterion 7: the inventory ──────────────────────────────────
 
         [Test]
-        public async Task Inventory_ListsMaterialsWithQuantitiesAndCaps()
+        public async Task Inventory_ListsMaterialsWithQuantitiesAndPrices()
         {
             var sut = ServiceFor(TerrainType.Open);
 
@@ -266,32 +268,27 @@ namespace GeoSlayer.Tests.Services.Materials
             Assert.Multiple(() =>
             {
                 Assert.That(item.Quantity, Is.EqualTo(5));
-                Assert.That(item.StackCap, Is.GreaterThan(0));
-                Assert.That(item.IsFull, Is.False);
-                Assert.That(item.IsNearCap, Is.False);
+                Assert.That(item.UnitPrice, Is.GreaterThan(0), "everything is worth something");
+                Assert.That(item.StackPrice, Is.EqualTo(item.UnitPrice * 5));
                 Assert.That(inventory.DistinctMaterials, Is.EqualTo(1));
             });
         }
 
         [Test]
-        public async Task Inventory_FlagsMaterialsNearTheirCap()
+        public async Task Inventory_ReportsWhatTheWholeHaulIsWorth()
         {
+            // The number that decides whether a trip to a shop is worth making, so it has to
+            // be on the inventory rather than discovered at the till.
             var sut = ServiceFor(TerrainType.Open);
 
             var scrapId = await MaterialId("scrap");
-            var scrap = await DbContext.Materials.FirstAsync(m => m.Id == scrapId);
-
-            await sut.GrantMaterials(
-                _player.Id, new Dictionary<int, int> { [scrapId] = (int)(scrap.StackCap * 0.95) }, Ct);
+            await sut.GrantMaterials(_player.Id, new Dictionary<int, int> { [scrapId] = 10 }, Ct);
 
             var inventory = await sut.GetInventory(_player.Id, Ct);
-            var item = inventory.Categories.SelectMany(c => c.Items).First(i => i.MaterialId == scrapId);
+            var items = inventory.Categories.SelectMany(c => c.Items).ToList();
 
-            Assert.Multiple(() =>
-            {
-                Assert.That(item.IsNearCap, Is.True, "95% of cap should warn before overflow");
-                Assert.That(inventory.NearCapCount, Is.EqualTo(1));
-            });
+            Assert.That(inventory.TotalSellValue, Is.EqualTo(items.Sum(i => i.StackPrice)));
+            Assert.That(inventory.TotalSellValue, Is.GreaterThan(0));
         }
 
         [Test]

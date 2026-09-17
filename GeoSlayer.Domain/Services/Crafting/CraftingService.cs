@@ -410,7 +410,7 @@ namespace GeoSlayer.Domain.Services.Crafting
             ItemModifier.RevealRadius => $"+{value:0.##} cell reveal radius",
             ItemModifier.PoiRangeMetres => $"+{value:0.##}m POI range",
             ItemModifier.OfflineCapHours => $"+{value:0.##}h offline cap",
-            ItemModifier.StackCapPercent => $"+{Math.Round(value * 100)}% stack caps",
+            ItemModifier.SellPricePercent => $"+{Math.Round(value * 100)}% sell price",
             ItemModifier.WorkerRatePercent => $"+{Math.Round(value * 100)}% worker output",
             ItemModifier.ToolTier => $"Gathers up to tier {value:0}",
             ItemModifier.GatherSpeedPercent => $"{Math.Round(value * 100)}% faster gathering",

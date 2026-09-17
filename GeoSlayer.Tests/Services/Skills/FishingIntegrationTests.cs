@@ -201,7 +201,7 @@ namespace GeoSlayer.Tests.Services.Skills
             Assert.Multiple(() =>
             {
                 Assert.That(item.Quantity, Is.EqualTo(5));
-                Assert.That(item.StackCap, Is.GreaterThan(0));
+                Assert.That(item.UnitPrice, Is.GreaterThan(0));
             });
         }
 

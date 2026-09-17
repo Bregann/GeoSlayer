@@ -32,8 +32,7 @@ namespace GeoSlayer.Domain.Services.Materials
             int levelRequired,
             double gatherSeconds,
             SkillType? skill = null,
-            bool isUnique = false,
-            int stackCap = 1000)
+            bool isUnique = false)
             => new()
             {
                 Key = key,
@@ -46,8 +45,6 @@ namespace GeoSlayer.Domain.Services.Materials
                 XpPerUnit = Math.Round(gatherSeconds * XpPerGatherSecond, 4),
                 SkillType = skill,
                 IsUnique = isUnique,
-                StackCap = stackCap,
-                DustPerOverflow = tier,
             };
 
         /// <summary>
@@ -67,9 +64,11 @@ namespace GeoSlayer.Domain.Services.Materials
                 Tier = 1,
                 LevelRequired = 1,
                 BaseGatherSeconds = 1,
-                XpPerUnit = 0,          // Overflow must not become an XP source.
-                StackCap = 1_000_000,
-                DustPerOverflow = 1,
+
+                // Dust is filler, not progress: it keeps a walk across featureless ground
+                // paying *something* (§4.1a) without becoming a way to train. Its value is
+                // that it is constant and sells for a coin, not that it is good.
+                XpPerUnit = 0,
             },
 
             // ── Woodland ─────────────────────────────────────────────────
@@ -120,9 +119,9 @@ namespace GeoSlayer.Domain.Services.Materials
             // rather than being invented now to fill a quota.
             // Each sits in its own skill's ladder, so they do not compete for a tier slot
             // with each other. They are excluded from cell drop tables entirely.
-            Tiered("blessed_water", "Blessed Water", MaterialCategory.Relic, 3, 20, 9, null,    isUnique: true, stackCap: 50),
-            Tiered("ancient_tome",  "Ancient Tome",  MaterialCategory.Relic, 4, 35, 15, null, isUnique: true, stackCap: 50),
-            Tiered("relic_shard",   "Relic Shard",   MaterialCategory.Relic, 5, 50, 24, null,    isUnique: true, stackCap: 50),
+            Tiered("blessed_water", "Blessed Water", MaterialCategory.Relic, 3, 20, 9, null, isUnique: true),
+            Tiered("ancient_tome",  "Ancient Tome",  MaterialCategory.Relic, 4, 35, 15, null, isUnique: true),
+            Tiered("relic_shard",   "Relic Shard",   MaterialCategory.Relic, 5, 50, 24, null, isUnique: true),
         };
 
         /// <summary>

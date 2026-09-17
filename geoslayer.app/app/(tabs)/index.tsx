@@ -28,7 +28,7 @@ import { mapScreenStyles as styles, overviewStyles } from '@/styles/mapScreen';
 import { pickupStyles, surgeStyles, transitStyles } from '@/styles/progression';
 import type { Coord } from '@/types/map';
 import { UnlockCelebration } from '@/components/unlockCelebration';
-import { formatPickups, hasOverflow } from '@/helpers/inventory';
+import { formatPickups } from '@/helpers/inventory';
 import { shouldShowWelcomeBack } from '@/helpers/idle';
 import { WelcomeBack } from '@/components/welcomeBack';
 import type { BankedTransit } from '@/interfaces/api/retention/BankedTransit';
@@ -67,7 +67,6 @@ export default function MapScreen() {
   const [selectedCluster, setSelectedCluster] = useState<NearbyPoi[] | null>(null);
   const [pendingUnlocks, setPendingUnlocks] = useState<UnlockEvent[]>([]);
   const [pickupText, setPickupText] = useState<string | null>(null);
-  const [pickupOverflow, setPickupOverflow] = useState(false);
   const [visitCounts, setVisitCounts] = useState<Record<number, number>>({});
   const [welcomeBack, setWelcomeBack] = useState<OfflineAccrual | null>(null);
   const [bankedTransit, setBankedTransit] = useState<BankedTransit[]>([]);
@@ -79,9 +78,9 @@ export default function MapScreen() {
   useEffect(() => {
     if (!pickupText) return;
 
-    const timeout = setTimeout(() => setPickupText(null), pickupOverflow ? 6000 : 3000);
+    const timeout = setTimeout(() => setPickupText(null), 3000);
     return () => clearTimeout(timeout);
-  }, [pickupText, pickupOverflow]);
+  }, [pickupText]);
 
   const { player, updatePlayer } = useAuth();
 
@@ -208,7 +207,6 @@ export default function MapScreen() {
             const text = formatPickups(data.materials);
             if (text) {
               setPickupText(text);
-              setPickupOverflow(hasOverflow(data.materials));
             }
           }
         }
@@ -522,9 +520,6 @@ export default function MapScreen() {
           activeOpacity={0.8}
         >
           <Text style={pickupStyles.text}>{pickupText}</Text>
-          {pickupOverflow && (
-            <Text style={pickupStyles.overflow}>Stack full — converted to Dust</Text>
-          )}
         </TouchableOpacity>
       )}
 
@@ -551,7 +546,6 @@ export default function MapScreen() {
             const text = formatPickups(result.materials);
             if (text) {
               setPickupText(text);
-              setPickupOverflow(hasOverflow(result.materials));
             }
           }
 

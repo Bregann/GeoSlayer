@@ -15,6 +15,7 @@ using GeoSlayer.Domain.Services.Crafting;
 using GeoSlayer.Domain.Services.Idle;
 using GeoSlayer.Domain.Services.Clues;
 using GeoSlayer.Domain.Services.Combat;
+using GeoSlayer.Domain.Services.Economy;
 using GeoSlayer.Domain.Services.Museum;
 using GeoSlayer.Domain.Services.Retention;
 using GeoSlayer.Domain.Services.Skills;
@@ -23,6 +24,7 @@ using GeoSlayer.Domain.Enums;
 using GeoSlayer.Domain.Interfaces.Api.Auth;
 using GeoSlayer.Domain.Interfaces.Api.Clues;
 using GeoSlayer.Domain.Interfaces.Api.Combat;
+using GeoSlayer.Domain.Interfaces.Api.Economy;
 using GeoSlayer.Domain.Interfaces.Api.Crafting;
 using GeoSlayer.Domain.Interfaces.Api.Fog;
 using GeoSlayer.Domain.Interfaces.Api.Idle;
@@ -92,6 +94,7 @@ builder.Services.AddScoped<IWorkerService, WorkerService>();
 builder.Services.AddScoped<IFogService, FogService>();
 builder.Services.AddScoped<IJourneyService, JourneyService>();
 builder.Services.AddScoped<IEncounterService, EncounterService>();
+builder.Services.AddScoped<IEconomyService, EconomyService>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

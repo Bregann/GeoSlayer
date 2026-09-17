@@ -10,7 +10,7 @@ namespace GeoSlayer.Tests.Services.Skills
 {
     /// <summary>
     /// The two skill synergies Stage 15 described but did not build: Athletics' distance
-    /// synergy, and Banking-driven stack caps.
+    /// synergy, and Banking's effect on what a haul is worth.
     ///
     /// <para>Both existed as skills that levelled without moving anything a player could
     /// feel. §4.3's rule that an equipped item changing no behaviour is a bug applies to a
@@ -164,48 +164,48 @@ namespace GeoSlayer.Tests.Services.Skills
                 "covering new ground must remain the better route");
         }
 
-        // ── Banking: stack caps ─────────────────────────────────────────
+        // ── Banking: sell price ─────────────────────────────────────────
 
-        /// <summary>The effective cap the inventory reports for the player's first material.</summary>
-        private async Task<int> FirstStackCap()
+        /// <summary>What the inventory says the player's first stack is worth.</summary>
+        private async Task<long> FirstStackPrice()
         {
             var materials = TestDatabaseSeedHelper.CreateMaterialService(DbContext, TerrainType.Urban);
             var inventory = await materials.GetInventory(_player.Id, Ct);
 
-            return inventory.Categories.SelectMany(c => c.Items).First().StackCap;
+            return inventory.Categories.SelectMany(c => c.Items).First().StackPrice;
         }
 
         [Test]
-        public async Task BankingLevel_RaisesStackCaps()
+        public async Task BankingLevel_RaisesSellPrice()
         {
             var material = await DbContext.Materials.FirstAsync();
             var materials = TestDatabaseSeedHelper.CreateMaterialService(DbContext, TerrainType.Urban);
 
-            await materials.GrantMaterials(_player.Id, new Dictionary<int, int> { [material.Id] = 1 }, Ct);
+            await materials.GrantMaterials(_player.Id, new Dictionary<int, int> { [material.Id] = 1000 }, Ct);
 
             await Unlock(SkillType.Banking, 1);
-            var atLevelOne = await FirstStackCap();
+            var atLevelOne = await FirstStackPrice();
 
             await Unlock(SkillType.Banking, 99);
-            var atLevelNinetyNine = await FirstStackCap();
+            var atLevelNinetyNine = await FirstStackPrice();
 
             Assert.That(atLevelNinetyNine, Is.GreaterThan(atLevelOne),
-                "Banking is about what you can keep, so levelling it must change what you can keep");
+                "Banking is about money, so levelling it must change what your haul fetches");
         }
 
         [Test]
-        public async Task OtherSkillLevels_DoNotRaiseStackCaps()
+        public async Task OtherSkillLevels_DoNotRaiseSellPrice()
         {
             var material = await DbContext.Materials.FirstAsync();
             var materials = TestDatabaseSeedHelper.CreateMaterialService(DbContext, TerrainType.Urban);
 
-            await materials.GrantMaterials(_player.Id, new Dictionary<int, int> { [material.Id] = 1 }, Ct);
+            await materials.GrantMaterials(_player.Id, new Dictionary<int, int> { [material.Id] = 1000 }, Ct);
 
-            var before = await FirstStackCap();
+            var before = await FirstStackPrice();
 
             await Unlock(SkillType.Foraging, 99);
 
-            Assert.That(await FirstStackCap(), Is.EqualTo(before));
+            Assert.That(await FirstStackPrice(), Is.EqualTo(before));
         }
     }
 }

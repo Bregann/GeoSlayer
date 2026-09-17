@@ -992,6 +992,84 @@ Its own stage, not a bolt-on:
 
 ---
 
+## 5D. Coin — the economy
+
+**Resolves §9.5.** The open question was never "should coin exist" — §5.2 and §5.7 both
+already assumed it — but *what coin is for*. A second currency with no job is worse than
+none, so this section exists to give it one before it was built.
+
+### 5D.1 Coin comes from selling, at shops
+
+Every material has a coin value. Materials are sold at **Trading POIs** — markets,
+supermarkets, malls, corner shops — and **only while standing at one**, validated against
+the server's own last verified position exactly as POI visits are (§7.2).
+
+**This is the whole design.** Coin is a *location* mechanic, not a menu, in a game whose
+premise is going outside. A sell button in the inventory would have made money something
+you generate from an armchair.
+
+It does not reintroduce a geography gate. Trading POIs are the densest category in the
+game — §4.1a asks that geography change how well you play, never whether you can, and
+almost everyone has a shop within a walk. A rural player walks further to sell, the same
+way they walk further for everything, and is never locked out.
+
+**Prices are derived, never enumerated.** Value comes from tier and category: roughly
+`tier²`, times a per-category multiplier. There are over a hundred materials across fifteen
+ladders and a hand-written price list would rot the moment a ladder was added — the same
+content-debt trap §5B.2 rejects for clue text. Three properties fall out of the formula and
+are worth stating, because each is a rule rather than a tuning value:
+
+- **Everything is worth at least one coin.** Dust is tier 1, and its entire job is that a
+  walk across featureless ground still pays *something*. A floor of zero would make a
+  thin-geography player's haul literally worthless.
+- **Coin per gathering second rises with tier.** A tier-7 material takes 20× as long to
+  gather as tier 1, so if it were not worth appreciably more, levelling would cut your
+  income — the same rule §4.1a applies to XP.
+- **Produced goods outvalue their inputs.** A crafted item costs materials *and* a craft
+  timer. If it sold for the same as its parts, crafting would be a way to lose money.
+
+**Selling is per material, with a junk shortcut.** One button that empties the bag would
+eventually sell the ore someone was saving for a recipe, which is the kind of loss a player
+does not forgive. The shortcut therefore reaches only low tiers and never Relics.
+
+### 5D.2 Banking — deposits and interest
+
+Coin can be deposited at **Banking POIs** (banks, ATMs, post offices) and earns interest
+while away. Deposited coin **cannot be spent until withdrawn**; that illiquidity is the
+entire trade, and merging it with coin in hand would make the bonus free.
+
+**The rate is deliberately tiny — a nudge for locking money away, not an income.** A game
+about walking outside must never make sitting still the efficient play. Two bounds enforce
+that, and both are rules rather than preferences:
+
+- **Interest accrues only over the offline-cap window** (4h base, extended by the same
+  Offline Cap upgrades and gear the worker layer reads). A month away pays exactly what one
+  window pays. §5.2 already decided how much a single absence may pay; a second, different
+  idle bound would be a rule to learn twice and would drift.
+- **Interest is simple, not compounding.** Compounding on an uncapped balance is how an
+  idle economy runs away from every other income source in the game.
+
+Banking's material ladder was **Copper Coin / Silver Coin / Gold Coin**; with real currency
+it is reflavoured to valuables (Copper Token, Silver Bar, Gold Bullion). "Sell 40 Gold Coins
+for 800 coin" reads as a bug rather than a trade. Those valuables are the highest-priced
+category, which gives a bank a reason to be visited before deposits are unlocked at all.
+
+### 5D.3 What coin is *for*
+
+Coin's first job is the one §5.2 and §5.7 already assumed — it is a store of the value a
+haul represents, spendable on upkeep and (in time) anything else the game charges for.
+Its immediate job is more important than that: **it makes a full satchel worth something.**
+
+Before it existed, gathering past a stack cap converted to Dust at a poor rate, and Dust
+bought nothing. A good night's gathering turned into a number that did nothing. Selling
+replaces that dead end with an errand.
+
+**Still open:** what else coin buys. Upkeep is currently paid in food alone, and nothing
+else in the game has a coin price yet. That is deliberate — the sink should be designed
+rather than accreted — but it is the next question, not a settled one.
+
+---
+
 ## 6. Background & offline behaviour
 
 Covered in detail in the review, restated here as design requirements:
@@ -1109,12 +1187,25 @@ promise into a chore of pre-emptive clearing.
   by category and tier (Common Urban, Rare Industrial&), not a bespoke item each. Reserve
   genuinely unique named materials for a small set — perhaps 10–15 — attached to the rarest
   and most memorable POI types. Exclusivity means nothing if everything is exclusive.
-- **Cap per-material, not per-inventory.** A stack limit per material type, with overflow
-  auto-converting to a universal currency (Dust, or coin) at a poor rate. Workers never
-  hard-stall; they just get less efficient once a stack is full. This keeps the pressure to
-  return without ever producing a wasted night.
-- **Buildings raise caps.** Gives Claims and crafting an obvious purpose, and makes storage
-  a real strategic investment rather than a nuisance.
+- ~~**Cap per-material, not per-inventory.**~~ **Reversed — caps were removed entirely
+  when coin arrived (§5D).** The original rule capped each material, with overflow
+  converting to Dust at a poor rate, so that filling up created pressure to return.
+
+  Two things were wrong with it in practice. Dust bought nothing, so overflow was a
+  *deletion* dressed as a conversion — a good night's gathering became a number that did
+  nothing. And the pressure it created was punitive: "come back or lose value" is a chore,
+  where §5D's "come back and sell this" is an errand. Quantities are now `long`, so the
+  only ceiling is one no walk reaches.
+
+  **What replaced the pacing.** The offline *time* cap (§5.2) already did that work — §9.3
+  says as much when rejecting stamina. Caps-as-pressure was always the weaker of the two
+  levers and the only one that generated busywork.
+
+- ~~**Buildings raise caps.**~~ The Storehouse became the **Counting House** and raises
+  sell price instead. The acquisition route and the feel are unchanged — it still rewards
+  the player who gathers more than they immediately need — and §4.3's rule that a modifier
+  nothing reads is a bug meant it had to be repointed rather than left in place. The Museum
+  Skills wing bonus and Banking level moved the same way.
 
 The guiding principle: **the idle layer must never punish you for sleeping.** Diminishing
 returns are fine; a hard stop that voids hours of accrual is not.
@@ -1212,16 +1303,20 @@ Things I'd want decided before Phase 3, flagged rather than assumed:
 4. **Monetisation, if any?** It shapes the offline cap and worker slots more than
    anything else in this doc. Better decided early than retrofitted.
 
-5. **Trading's coin economy.** Stage 15 shipped Trading's tier ladder but not the
-   economy it implies — there is no currency, no material→coin sink and no price table.
-   Upkeep (§5.2) is currently paid in food alone. Deciding what coin is *for* before
-   adding it is the point: a second currency with no job is worse than none.
+5. ~~**Trading's coin economy.**~~ **DECIDED and BUILT — see §5D.**
 
-   Still open after the pass that closed every other outstanding item. Two shapes worth
-   considering, neither built because both commit the whole economy: coin as **upkeep's
-   second axis** (materials sell at Trading POIs, coin feeds workers alongside food), or
-   coin as the **Dust sink** (§4.1a overflow converts at a poor rate, coin buys stack-cap
-   upgrades). The first gives Trading a job; the second gives overflow one.
+   Coin is earned by selling materials at Trading POIs, while standing at one. Prices are
+   derived from tier and category rather than listed. Banking gained deposits and a
+   deliberately tiny interest rate, bounded by the offline cap.
+
+   The investigation changed the question. Dust already *was* the second currency with no
+   job — seeded, produced by two sources, and spendable on nothing — so the real choice was
+   not whether to add one but what to do about the one already there. Stack caps went with
+   it (§7.4), because overflow-into-Dust was a deletion dressed as a conversion.
+
+   **What remains open is the sink.** Upkeep is still paid in food alone and nothing else
+   has a coin price. That is the next question, and it should be designed rather than
+   accreted.
 
 ---
 

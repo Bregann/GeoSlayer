@@ -67,11 +67,11 @@
     },
     {
       "key": "storehouse",
-      "name": "Storehouse",
-      "description": "+50% stack caps. Placed on a Claim.",
+      "name": "Counting House",
+      "description": "+50% sell price. What you hoard is worth more when you finally trade it.",
       "kind": "Building",
       "slot": "None",
-      "modifier": "StackCapPercent",
+      "modifier": "SellPricePercent",
       "modifierValue": 0.5,
       "tier": 1
     },
