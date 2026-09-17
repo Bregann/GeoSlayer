@@ -360,16 +360,26 @@ Worth a human eye:
 Everything below is recorded because it was deliberately not built, not because it was
 forgotten. Ordered by how much it matters.
 
-### 1. The app is largely unverified
+### 1. ~~The app is largely unverified~~ — RESOLVED
 
-**No `.tsx` file in this project has ever been rendered or typechecked** — this
-environment has no `node_modules` and no app toolchain. Screen *logic* lives in pure
-helpers with ~130 passing tests (`npm test`), but every component is unproven.
+`npm install` was run and the whole app now **typechecks, lints and bundles clean**:
 
-Eight screens exist: map, skills, upgrades, inventory, crafting, equipment, workers,
-museum, clues.
+```
+npm run verify     # tsc --noEmit && expo lint && npm test
+```
 
-### 2. Stage 14's systems have no app surface at all
+- **`tsc --noEmit`: 0 errors** across every screen, component and helper — first run,
+  nothing needed fixing.
+- **`expo lint`: clean.**
+- **`npx expo export --platform web`: 14 routes, 1,222 modules, no errors.** Every screen
+  static-renders, which is stronger than typechecking: a component that threw on mount
+  would fail the export.
+
+The caveat that stood through Stages 02–15 is closed. What remains is *visual* and
+*behavioural* review on a real device — layout, whether the framing reads right — not
+whether the code is sound.
+
+### 2. Stage 14's systems have no app surface at all — now the largest gap
 
 The largest single gap. All five retention systems are backend-complete and tested, and
 **none of them is visible to a player**:
