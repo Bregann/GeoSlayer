@@ -113,6 +113,17 @@ export const progressionStyles = StyleSheet.create({
     padding: 12,
     gap: 6,
   },
+  /** Text entry inside a card — flatter than the auth screens' input, which stands alone. */
+  input: {
+    backgroundColor: '#1a1a2e',
+    borderWidth: PIXEL_BORDER,
+    borderColor: '#4a4a7e',
+    color: '#fff',
+    fontFamily: 'monospace',
+    fontSize: 13,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
   lockedCard: {
     backgroundColor: 'rgba(20, 20, 45, 0.6)',
     borderColor: '#2a2a4e',
