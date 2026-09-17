@@ -6,6 +6,7 @@ import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'rea
 import { authApiClient } from '@/helpers/apiClient';
 import { groupItemsByKind, needsClaim, type PlayerItem } from '@/helpers/crafting';
 import { progressionStyles as styles } from '@/styles/progression';
+import { QueryKeys } from '@/helpers/QueryKeys';
 
 interface Claim {
   id: number;
@@ -25,12 +26,12 @@ export default function EquipmentScreen() {
   const [placing, setPlacing] = useState<number | null>(null);
 
   const items = useQuery<PlayerItem[]>({
-    queryKey: ['player', 'items'],
+    queryKey: [QueryKeys.Items],
     queryFn: async () => (await authApiClient.get<PlayerItem[]>('/api/Crafting/GetItems')).data,
   });
 
   const claims = useQuery<Claim[]>({
-    queryKey: ['player', 'claims'],
+    queryKey: [QueryKeys.Claims],
     queryFn: async () => (await authApiClient.get<Claim[]>('/api/Idle/GetClaims')).data,
   });
 
@@ -49,11 +50,11 @@ export default function EquipmentScreen() {
     onSuccess: () => {
       setError(null);
       setPlacing(null);
-      queryClient.invalidateQueries({ queryKey: ['player', 'items'] });
+      queryClient.invalidateQueries({ queryKey: [QueryKeys.Items] });
       // Gear changes reveal radius, XP, caps and offline time, so anything reading
       // those must not keep a stale copy.
-      queryClient.invalidateQueries({ queryKey: ['player', 'inventory'] });
-      queryClient.invalidateQueries({ queryKey: ['player', 'workers'] });
+      queryClient.invalidateQueries({ queryKey: [QueryKeys.Inventory] });
+      queryClient.invalidateQueries({ queryKey: [QueryKeys.Workers] });
     },
     onError: (err: unknown) => setError(failureMessage(err)),
   });

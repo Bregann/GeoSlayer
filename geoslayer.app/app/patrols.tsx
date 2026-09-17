@@ -24,6 +24,7 @@ import {
   type PatrolWaypoint,
 } from '@/helpers/patrols';
 import { progressionStyles as styles } from '@/styles/progression';
+import { QueryKeys } from '@/helpers/QueryKeys';
 
 /**
  * Patrol Routes (DESIGN.md §5.7).
@@ -44,7 +45,7 @@ export default function PatrolsScreen() {
   const [capturing, setCapturing] = useState(false);
 
   const routes = useQuery<PatrolRoute[]>({
-    queryKey: ['player', 'patrols'],
+    queryKey: [QueryKeys.Patrols],
     queryFn: async () => (await authApiClient.get<PatrolRoute[]>('/api/Retention/GetPatrols')).data,
   });
 
@@ -64,7 +65,7 @@ export default function PatrolsScreen() {
       setError(null);
       setDraft([]);
       setName('');
-      queryClient.invalidateQueries({ queryKey: ['player', 'patrols'] });
+      queryClient.invalidateQueries({ queryKey: [QueryKeys.Patrols] });
     },
     onError: (err: unknown) => setError(failureMessage(err)),
   });

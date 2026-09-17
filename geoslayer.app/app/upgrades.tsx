@@ -13,6 +13,7 @@ import {
 } from '@/helpers/progression';
 import { progressionStyles as styles } from '@/styles/progression';
 import type { PlayerUpgrades } from '@/types/progression';
+import { QueryKeys } from '@/helpers/QueryKeys';
 
 /**
  * Bonus Point upgrade screen (Stage 02 task 5, DESIGN.md §3.0a).
@@ -25,7 +26,7 @@ export default function UpgradesScreen() {
   const queryClient = useQueryClient();
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const queryKey = ['player', 'upgrades'];
+  const queryKey = [QueryKeys.Upgrades];
 
   const { data, isLoading, isError, error } = useQuery<PlayerUpgrades>({
     queryKey,
@@ -63,7 +64,7 @@ export default function UpgradesScreen() {
       queryClient.setQueryData(queryKey, updated);
       // Reveal Radius and Scholar change what a sync returns, so the skills view and
       // anything reading player state must not keep a stale copy.
-      queryClient.invalidateQueries({ queryKey: ['player', 'skills'] });
+      queryClient.invalidateQueries({ queryKey: [QueryKeys.Skills] });
     },
     onError: (err: unknown) => setActionError(failureMessage(err)),
   });
@@ -77,7 +78,7 @@ export default function UpgradesScreen() {
     onSuccess: (updated: PlayerUpgrades) => {
       setActionError(null);
       queryClient.setQueryData(queryKey, updated);
-      queryClient.invalidateQueries({ queryKey: ['player', 'skills'] });
+      queryClient.invalidateQueries({ queryKey: [QueryKeys.Skills] });
     },
     onError: (err: unknown) => setActionError(failureMessage(err)),
   });

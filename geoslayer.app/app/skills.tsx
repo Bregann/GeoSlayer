@@ -14,6 +14,7 @@ import {
 } from '@/helpers/progression';
 import { progressionStyles as styles } from '@/styles/progression';
 import type { PlayerSkills } from '@/types/progression';
+import { QueryKeys } from '@/helpers/QueryKeys';
 
 /**
  * Skills screen (Stage 02 task 5, DESIGN.md §3.1c).
@@ -24,7 +25,7 @@ import type { PlayerSkills } from '@/types/progression';
  */
 export default function SkillsScreen() {
   const { data, isLoading, isError, error } = useQuery<PlayerSkills>({
-    queryKey: ['player', 'skills'],
+    queryKey: [QueryKeys.Skills],
     queryFn: async () => {
       const response = await authApiClient.get<PlayerSkills>('/api/Player/GetSkills');
       return response.data;

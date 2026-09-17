@@ -14,6 +14,7 @@ import { hoursUntilCap, terrainNote, workerStatus, type Worker } from '@/helpers
 import { formatDuration } from '@/helpers/idle';
 import { progressionStyles as styles } from '@/styles/progression';
 import type { PlayerSkills } from '@/types/progression';
+import { QueryKeys } from '@/helpers/QueryKeys';
 
 interface Claim {
   id: number;
@@ -35,25 +36,25 @@ export default function WorkersScreen() {
   const [selected, setSelected] = useState<number | null>(null);
 
   const workers = useQuery<Worker[]>({
-    queryKey: ['player', 'workers'],
+    queryKey: [QueryKeys.Workers],
     queryFn: async () => (await authApiClient.get<Worker[]>('/api/Idle/GetWorkers')).data,
   });
 
   const claims = useQuery<Claim[]>({
-    queryKey: ['player', 'claims'],
+    queryKey: [QueryKeys.Claims],
     queryFn: async () => (await authApiClient.get<Claim[]>('/api/Idle/GetClaims')).data,
   });
 
   // Districts are a passive bonus on how Claims cluster (§5.5), so they belong with the
   // Claims rather than on a screen of their own.
   const district = useQuery<DistrictStatus>({
-    queryKey: ['player', 'district'],
+    queryKey: [QueryKeys.District],
     queryFn: async () =>
       (await authApiClient.get<DistrictStatus>('/api/Retention/GetDistrict')).data,
   });
 
   const skills = useQuery<PlayerSkills>({
-    queryKey: ['player', 'skills'],
+    queryKey: [QueryKeys.Skills],
     queryFn: async () => (await authApiClient.get<PlayerSkills>('/api/Player/GetSkills')).data,
   });
 
@@ -64,8 +65,8 @@ export default function WorkersScreen() {
   };
 
   const refresh = () => {
-    queryClient.invalidateQueries({ queryKey: ['player', 'workers'] });
-    queryClient.invalidateQueries({ queryKey: ['player', 'claims'] });
+    queryClient.invalidateQueries({ queryKey: [QueryKeys.Workers] });
+    queryClient.invalidateQueries({ queryKey: [QueryKeys.Claims] });
   };
 
   const hire = useMutation<Worker, unknown, void>({

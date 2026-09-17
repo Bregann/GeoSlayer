@@ -17,6 +17,7 @@ import {
   type Museum,
 } from '@/helpers/museum';
 import { museumStyles as styles, progressionStyles } from '@/styles/progression';
+import { QueryKeys } from '@/helpers/QueryKeys';
 
 /**
  * The Museum (Stage 12 task 4, DESIGN.md §5A).
@@ -31,7 +32,7 @@ export default function MuseumScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const { data, isLoading, isError } = useQuery<Museum>({
-    queryKey: ['player', 'museum'],
+    queryKey: [QueryKeys.Museum],
     queryFn: async () => (await authApiClient.get<Museum>('/api/Museum/GetMuseum')).data,
   });
 
@@ -42,7 +43,7 @@ export default function MuseumScreen() {
       })).data,
     onSuccess: () => {
       setError(null);
-      queryClient.invalidateQueries({ queryKey: ['player', 'museum'] });
+      queryClient.invalidateQueries({ queryKey: [QueryKeys.Museum] });
     },
     onError: (err: unknown) => {
       const response = (err as { response?: { data?: unknown } })?.response?.data;

@@ -17,6 +17,7 @@ import {
 } from '@/helpers/clues';
 import { progressionStyles as styles } from '@/styles/progression';
 import type { Museum } from '@/helpers/museum';
+import { QueryKeys } from '@/helpers/QueryKeys';
 
 /**
  * Clue scrolls (Stage 13 task 5, DESIGN.md §5B).
@@ -31,13 +32,13 @@ export default function CluesScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const scrolls = useQuery<ClueScroll[]>({
-    queryKey: ['player', 'clues'],
+    queryKey: [QueryKeys.Clues],
     queryFn: async () => (await authApiClient.get<ClueScroll[]>('/api/Clues/GetScrolls')).data,
   });
 
   // Curation funds skips, and lives on the Museum payload.
   const museum = useQuery<Museum>({
-    queryKey: ['player', 'museum'],
+    queryKey: [QueryKeys.Museum],
     queryFn: async () => (await authApiClient.get<Museum>('/api/Museum/GetMuseum')).data,
   });
 
@@ -48,8 +49,8 @@ export default function CluesScreen() {
   };
 
   const refresh = () => {
-    queryClient.invalidateQueries({ queryKey: ['player', 'clues'] });
-    queryClient.invalidateQueries({ queryKey: ['player', 'museum'] });
+    queryClient.invalidateQueries({ queryKey: [QueryKeys.Clues] });
+    queryClient.invalidateQueries({ queryKey: [QueryKeys.Museum] });
   };
 
   const generate = useMutation<ClueScroll, unknown, string>({

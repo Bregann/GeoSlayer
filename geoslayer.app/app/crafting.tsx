@@ -15,6 +15,7 @@ import {
   type Recipe,
 } from '@/helpers/crafting';
 import { progressionStyles as styles } from '@/styles/progression';
+import { QueryKeys } from '@/helpers/QueryKeys';
 
 interface RecipeList {
   recipes: Recipe[];
@@ -34,12 +35,12 @@ export default function CraftingScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const recipes = useQuery<RecipeList>({
-    queryKey: ['player', 'recipes'],
+    queryKey: [QueryKeys.Recipes],
     queryFn: async () => (await authApiClient.get<RecipeList>('/api/Crafting/GetRecipes')).data,
   });
 
   const queue = useQuery<Craft[]>({
-    queryKey: ['player', 'craftQueue'],
+    queryKey: [QueryKeys.CraftQueue],
     queryFn: async () => (await authApiClient.get<Craft[]>('/api/Crafting/GetQueue')).data,
   });
 
@@ -50,9 +51,9 @@ export default function CraftingScreen() {
   };
 
   const refresh = () => {
-    queryClient.invalidateQueries({ queryKey: ['player', 'recipes'] });
-    queryClient.invalidateQueries({ queryKey: ['player', 'craftQueue'] });
-    queryClient.invalidateQueries({ queryKey: ['player', 'inventory'] });
+    queryClient.invalidateQueries({ queryKey: [QueryKeys.Recipes] });
+    queryClient.invalidateQueries({ queryKey: [QueryKeys.CraftQueue] });
+    queryClient.invalidateQueries({ queryKey: [QueryKeys.Inventory] });
   };
 
   const start = useMutation<Craft, unknown, string>({

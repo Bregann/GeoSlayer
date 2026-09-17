@@ -14,6 +14,7 @@ import {
 } from '@/helpers/inventory';
 import { progressionStyles as styles } from '@/styles/progression';
 import type { Inventory } from '@/types/inventory';
+import { QueryKeys } from '@/helpers/QueryKeys';
 
 /**
  * Inventory screen (Stage 03 task 5).
@@ -24,7 +25,7 @@ import type { Inventory } from '@/types/inventory';
  */
 export default function InventoryScreen() {
   const { data, isLoading, isError, error } = useQuery<Inventory>({
-    queryKey: ['player', 'inventory'],
+    queryKey: [QueryKeys.Inventory],
     queryFn: async () => {
       const response = await authApiClient.get<Inventory>('/api/Player/GetInventory');
       return response.data;

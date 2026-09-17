@@ -18,6 +18,7 @@ import {
 } from '@/helpers/expeditions';
 import { type Worker } from '@/helpers/idle';
 import { progressionStyles as styles } from '@/styles/progression';
+import { QueryKeys } from '@/helpers/QueryKeys';
 
 /**
  * Worker Expeditions (DESIGN.md §5.4).
@@ -36,19 +37,19 @@ export default function ExpeditionsScreen() {
   const [selected, setSelected] = useState<number | null>(null);
 
   const expeditions = useQuery<Expedition[]>({
-    queryKey: ['player', 'expeditions'],
+    queryKey: [QueryKeys.Expeditions],
     queryFn: async () => (await authApiClient.get<Expedition[]>('/api/Retention/GetExpeditions')).data,
   });
 
   const destinations = useQuery<ExpeditionDestination[]>({
-    queryKey: ['player', 'expeditions', 'destinations'],
+    queryKey: [QueryKeys.ExpeditionDestinations],
     queryFn: async () =>
       (await authApiClient.get<ExpeditionDestination[]>('/api/Retention/GetDestinations'))
         .data,
   });
 
   const workers = useQuery<Worker[]>({
-    queryKey: ['player', 'workers'],
+    queryKey: [QueryKeys.Workers],
     queryFn: async () => (await authApiClient.get<Worker[]>('/api/Idle/GetWorkers')).data,
   });
 
@@ -64,8 +65,13 @@ export default function ExpeditionsScreen() {
     onSuccess: () => {
       setError(null);
       setSelected(null);
-      queryClient.invalidateQueries({ queryKey: ['player', 'expeditions'] });
-      queryClient.invalidateQueries({ queryKey: ['player', 'workers'] });
+      queryClient.invalidateQueries({ queryKey: [QueryKeys.Expeditions] });
+      queryClient.invalidateQueries({ queryKey: [QueryKeys.Workers] });
+
+      // Destinations carry IsAvailable, which this dispatch just changed for the POI we
+      // sent to. Invalidated explicitly: it used to ride along on the Expeditions prefix
+      // when the key was ['player', 'expeditions', 'destinations'], and no longer does.
+      queryClient.invalidateQueries({ queryKey: [QueryKeys.ExpeditionDestinations] });
     },
     onError: (err: unknown) => setError(failureMessage(err)),
   });
