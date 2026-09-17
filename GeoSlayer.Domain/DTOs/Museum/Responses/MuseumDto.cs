@@ -15,14 +15,14 @@ namespace GeoSlayer.Domain.DTOs.Museum.Responses
     /// <summary>One plinth, found or empty.</summary>
     public class MuseumEntryDto
     {
-        public string Key { get; set; } = null!;
+        public required string Key { get; set; }
         public MuseumWing Wing { get; set; }
-        public string Name { get; set; } = null!;
-        public string Description { get; set; } = null!;
+        public required string Name { get; set; }
+        public required string Description { get; set; }
         public MuseumRarity Rarity { get; set; }
 
         /// <summary>Shown on an empty plinth, so a gap is a direction rather than a mystery.</summary>
-        public string UnlockCondition { get; set; } = null!;
+        public required string UnlockCondition { get; set; }
 
         public bool IsFound { get; set; }
 
@@ -41,7 +41,7 @@ namespace GeoSlayer.Domain.DTOs.Museum.Responses
     public class MuseumWingDto
     {
         public MuseumWing Wing { get; set; }
-        public string Name { get; set; } = null!;
+        public required string Name { get; set; }
         public int Found { get; set; }
         public int Total { get; set; }
         public bool IsComplete { get; set; }

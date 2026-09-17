@@ -6,8 +6,8 @@ namespace GeoSlayer.Domain.DTOs.Materials.Responses
     public class MaterialGainDto
     {
         public int MaterialId { get; set; }
-        public string Key { get; set; } = null!;
-        public string Name { get; set; } = null!;
+        public required string Key { get; set; }
+        public required string Name { get; set; }
         public int Tier { get; set; }
         public MaterialCategory Category { get; set; }
 

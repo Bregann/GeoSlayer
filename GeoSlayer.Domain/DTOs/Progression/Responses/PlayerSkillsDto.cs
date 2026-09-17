@@ -18,7 +18,7 @@ namespace GeoSlayer.Domain.DTOs.Progression.Responses
     public class SkillDto
     {
         public SkillType SkillType { get; set; }
-        public string Name { get; set; } = null!;
+        public required string Name { get; set; }
         public long Xp { get; set; }
         public int Level { get; set; }
 
@@ -42,8 +42,8 @@ namespace GeoSlayer.Domain.DTOs.Progression.Responses
         /// <summary>The ladder's display label. Named to match <see cref="UnlockEventDto"/>,
         /// which carries the same value — the two differing was a live source of blank
         /// labels in the app.</summary>
-        public string DisplayName { get; set; } = null!;
-        public string Payload { get; set; } = null!;
+        public required string DisplayName { get; set; }
+        public required string Payload { get; set; }
         public UnlockType UnlockType { get; set; }
         public int UnlocksAtAdventurerLevel { get; set; }
     }

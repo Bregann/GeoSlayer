@@ -8,7 +8,7 @@ namespace GeoSlayer.Domain.DTOs.Clues.Responses
     {
         public int StepIndex { get; set; }
         public ClueStepType StepType { get; set; }
-        public string RiddleText { get; set; } = null!;
+        public required string RiddleText { get; set; }
 
         /// <summary>
         /// The search area for a coordinate step — never the exact answer.

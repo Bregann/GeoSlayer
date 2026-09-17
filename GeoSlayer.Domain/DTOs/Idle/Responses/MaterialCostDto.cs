@@ -7,8 +7,8 @@ namespace GeoSlayer.Domain.DTOs.Idle.Responses
     public class MaterialCostDto
     {
         public int MaterialId { get; set; }
-        public string Key { get; set; } = null!;
-        public string Name { get; set; } = null!;
+        public required string Key { get; set; }
+        public required string Name { get; set; }
         public int Quantity { get; set; }
         public long Held { get; set; }
     }

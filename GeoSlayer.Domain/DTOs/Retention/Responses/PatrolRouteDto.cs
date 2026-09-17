@@ -6,7 +6,7 @@ namespace GeoSlayer.Domain.DTOs.Retention.Responses
     public class PatrolRouteDto
     {
         public int Id { get; set; }
-        public string Name { get; set; } = null!;
+        public required string Name { get; set; }
         public int WaypointCount { get; set; }
         public int CompletionCount { get; set; }
         public DateTime? LastCompletedUtc { get; set; }

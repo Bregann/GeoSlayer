@@ -40,8 +40,8 @@ namespace GeoSlayer.Domain.DTOs.Crafting.Responses
     public class RecipeInputDto
     {
         public int MaterialId { get; set; }
-        public string Key { get; set; } = null!;
-        public string Name { get; set; } = null!;
+        public required string Key { get; set; }
+        public required string Name { get; set; }
         public int Quantity { get; set; }
         public long Held { get; set; }
         public bool HasEnough { get; set; }
@@ -52,11 +52,11 @@ namespace GeoSlayer.Domain.DTOs.Crafting.Responses
 
     public class RecipeDto
     {
-        public string Key { get; set; } = null!;
-        public string Name { get; set; } = null!;
-        public string Description { get; set; } = null!;
+        public required string Key { get; set; }
+        public required string Name { get; set; }
+        public required string Description { get; set; }
         public SkillType SkillType { get; set; }
-        public string SkillName { get; set; } = null!;
+        public required string SkillName { get; set; }
         public int LevelRequired { get; set; }
         public double DurationSeconds { get; set; }
         public double XpReward { get; set; }

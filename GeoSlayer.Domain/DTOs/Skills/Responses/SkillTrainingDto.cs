@@ -7,7 +7,7 @@ namespace GeoSlayer.Domain.DTOs.Skills.Responses
     public class SkillTrainingDto
     {
         public SkillType SkillType { get; set; }
-        public string Name { get; set; } = null!;
+        public required string Name { get; set; }
         public long SkillXpEarned { get; set; }
         public long AdventurerXpEarned { get; set; }
         public int Level { get; set; }

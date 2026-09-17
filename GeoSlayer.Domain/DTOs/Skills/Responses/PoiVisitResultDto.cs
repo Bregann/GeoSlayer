@@ -15,7 +15,7 @@ namespace GeoSlayer.Domain.DTOs.Skills.Responses
         public Guid SessionToken { get; set; }
 
         public int PoiId { get; set; }
-        public string PoiName { get; set; } = null!;
+        public required string PoiName { get; set; }
         public SkillType Skill { get; set; }
 
         public long SkillXpEarned { get; set; }

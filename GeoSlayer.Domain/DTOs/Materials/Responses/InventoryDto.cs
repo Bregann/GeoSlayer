@@ -15,8 +15,8 @@ namespace GeoSlayer.Domain.DTOs.Materials.Responses
     public class InventoryItemDto
     {
         public int MaterialId { get; set; }
-        public string Key { get; set; } = null!;
-        public string Name { get; set; } = null!;
+        public required string Key { get; set; }
+        public required string Name { get; set; }
         public int Tier { get; set; }
         public MaterialCategory Category { get; set; }
         public SkillType? SkillType { get; set; }
@@ -33,7 +33,7 @@ namespace GeoSlayer.Domain.DTOs.Materials.Responses
     public class InventoryCategoryDto
     {
         public MaterialCategory Category { get; set; }
-        public string Name { get; set; } = null!;
+        public required string Name { get; set; }
         public List<InventoryItemDto> Items { get; set; } = [];
     }
 }

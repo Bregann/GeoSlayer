@@ -16,10 +16,10 @@ namespace GeoSlayer.Domain.DTOs.Progression.Responses
 
     public class UpgradeDto
     {
-        public string Key { get; set; } = null!;
-        public string Name { get; set; } = null!;
-        public string Category { get; set; } = null!;
-        public string Description { get; set; } = null!;
+        public required string Key { get; set; }
+        public required string Name { get; set; }
+        public required string Category { get; set; }
+        public required string Description { get; set; }
         public int Rank { get; set; }
         public int MaxRank { get; set; }
         public double EffectPerRank { get; set; }

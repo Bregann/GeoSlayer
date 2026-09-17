@@ -7,7 +7,7 @@ namespace GeoSlayer.Domain.DTOs.Idle.Responses
     public class ClaimDto
     {
         public int Id { get; set; }
-        public string Name { get; set; } = null!;
+        public required string Name { get; set; }
         public int CentreGridLat { get; set; }
         public int CentreGridLng { get; set; }
         public int Size { get; set; }

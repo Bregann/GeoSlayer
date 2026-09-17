@@ -25,7 +25,7 @@ namespace GeoSlayer.Domain.DTOs.Idle.Responses
     public class UpkeepLineDto
     {
         public int MaterialId { get; set; }
-        public string Name { get; set; } = null!;
+        public required string Name { get; set; }
         public int Quantity { get; set; }
     }
 }

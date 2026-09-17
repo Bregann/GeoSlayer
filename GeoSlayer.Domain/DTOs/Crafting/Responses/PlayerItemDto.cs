@@ -7,9 +7,9 @@ namespace GeoSlayer.Domain.DTOs.Crafting.Responses
     {
         public int Id { get; set; }
         public int ItemId { get; set; }
-        public string Key { get; set; } = null!;
-        public string Name { get; set; } = null!;
-        public string Description { get; set; } = null!;
+        public required string Key { get; set; }
+        public required string Name { get; set; }
+        public required string Description { get; set; }
         public ItemKind Kind { get; set; }
         public ItemSlot Slot { get; set; }
         public ItemModifier Modifier { get; set; }
@@ -20,7 +20,7 @@ namespace GeoSlayer.Domain.DTOs.Crafting.Responses
         /// item has one — a tool that gates a tier *and* gathers faster must say both, or the
         /// screen undersells it.
         /// </summary>
-        public string ModifierText { get; set; } = null!;
+        public required string ModifierText { get; set; }
 
         public ItemModifier? SecondaryModifier { get; set; }
         public double SecondaryModifierValue { get; set; }

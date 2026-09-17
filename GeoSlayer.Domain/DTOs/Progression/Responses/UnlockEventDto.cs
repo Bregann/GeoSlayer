@@ -7,7 +7,7 @@ namespace GeoSlayer.Domain.DTOs.Progression.Responses
     {
         public int AdventurerLevel { get; set; }
         public UnlockType UnlockType { get; set; }
-        public string Payload { get; set; } = null!;
-        public string DisplayName { get; set; } = null!;
+        public required string Payload { get; set; }
+        public required string DisplayName { get; set; }
     }
 }

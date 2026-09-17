@@ -7,7 +7,7 @@ namespace GeoSlayer.Domain.DTOs.Idle.Responses
     public class WorkerDto
     {
         public int Id { get; set; }
-        public string Name { get; set; } = null!;
+        public required string Name { get; set; }
         public int Tier { get; set; }
         public int? ClaimId { get; set; }
         public string? ClaimName { get; set; }

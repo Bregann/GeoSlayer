@@ -13,9 +13,9 @@ namespace GeoSlayer.Domain.DTOs.Retention.Responses
     public class ExpeditionDestinationDto
     {
         public int PoiId { get; set; }
-        public string Name { get; set; } = null!;
+        public required string Name { get; set; }
         public SkillType Skill { get; set; }
-        public string SkillName { get; set; } = null!;
+        public required string SkillName { get; set; }
 
         /// <summary>When the player first found it — the reason it is on this list.</summary>
         public DateTime FirstVisitUtc { get; set; }

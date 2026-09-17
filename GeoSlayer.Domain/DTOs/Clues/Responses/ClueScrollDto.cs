@@ -8,7 +8,7 @@ namespace GeoSlayer.Domain.DTOs.Clues.Responses
     {
         public int Id { get; set; }
         public ClueTier Tier { get; set; }
-        public string TierName { get; set; } = null!;
+        public required string TierName { get; set; }
         public int CurrentStep { get; set; }
         public int StepCount { get; set; }
         public bool IsComplete { get; set; }

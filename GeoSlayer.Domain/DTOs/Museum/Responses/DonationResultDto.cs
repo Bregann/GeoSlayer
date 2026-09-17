@@ -4,7 +4,7 @@ namespace GeoSlayer.Domain.DTOs.Museum.Responses
 {
     public class DonationResultDto
     {
-        public string Key { get; set; } = null!;
+        public required string Key { get; set; }
         public int Donated { get; set; }
         public long CurationEarned { get; set; }
         public long TotalCuration { get; set; }

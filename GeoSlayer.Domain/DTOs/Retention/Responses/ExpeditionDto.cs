@@ -8,7 +8,7 @@ namespace GeoSlayer.Domain.DTOs.Retention.Responses
         public int Id { get; set; }
         public int WorkerId { get; set; }
         public int PoiId { get; set; }
-        public string PoiName { get; set; } = null!;
+        public required string PoiName { get; set; }
         public DateTime DispatchedUtc { get; set; }
         public DateTime ReturnsUtc { get; set; }
         public double DistanceMetres { get; set; }

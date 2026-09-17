@@ -6,7 +6,7 @@ namespace GeoSlayer.Domain.DTOs.Retention.Responses
     public class PatrolCompletionDto
     {
         public int RouteId { get; set; }
-        public string Name { get; set; } = null!;
+        public required string Name { get; set; }
         public int UpkeepAwarded { get; set; }
         public List<MaterialGainDto> Materials { get; set; } = [];
     }

@@ -5,8 +5,8 @@ namespace GeoSlayer.Domain.DTOs.Museum.Responses
     /// <summary>What a first-find produced, for the acquisition celebration.</summary>
     public class MuseumAcquisitionDto
     {
-        public string Key { get; set; } = null!;
-        public string Name { get; set; } = null!;
+        public required string Key { get; set; }
+        public required string Name { get; set; }
         public MuseumWing Wing { get; set; }
         public MuseumRarity Rarity { get; set; }
         public string? AcquiredAtName { get; set; }
