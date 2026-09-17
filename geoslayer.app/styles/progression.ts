@@ -429,6 +429,37 @@ export const museumStyles = StyleSheet.create({
  * Violet to match the banked-cell layer, and placed top-left so it does not fight the
  * pickup toast at the bottom.
  */
+/**
+ * Surge banner (§5.6). Amber rather than transit's violet: a surge is a live, expiring
+ * opportunity and needs to be distinguishable at a glance from banked transit, which sits
+ * directly above it.
+ */
+export const surgeStyles = StyleSheet.create({
+  container: {
+    position: 'absolute',
+    top: 214,
+    left: 12,
+    maxWidth: 240,
+    backgroundColor: 'rgba(10, 10, 30, 0.9)',
+    borderWidth: 1,
+    borderColor: GOLD,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    gap: 2,
+  },
+  title: {
+    color: GOLD,
+    fontSize: 11,
+    fontWeight: 'bold',
+    fontFamily: 'monospace',
+  },
+  hint: {
+    color: '#c8c8e0',
+    fontSize: 10,
+    fontFamily: 'monospace',
+  },
+});
+
 export const transitStyles = StyleSheet.create({
   container: {
     position: 'absolute',

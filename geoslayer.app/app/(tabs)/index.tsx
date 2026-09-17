@@ -36,8 +36,9 @@ import {
   transitSummary,
   type BankedTransit,
 } from '@/helpers/transit';
+import { surgeSummary, surgeHint, type Surge } from '@/helpers/surges';
 import { mapScreenStyles as styles, overviewStyles } from '@/styles/mapScreen';
-import { pickupStyles, transitStyles } from '@/styles/progression';
+import { pickupStyles, surgeStyles, transitStyles } from '@/styles/progression';
 import type { CellDto, Coord, NearbyPoi, SyncData } from '@/types/map';
 import type { UnlockEvent } from '@/types/progression';
 import { UnlockCelebration } from '@/components/unlockCelebration';
@@ -76,6 +77,7 @@ export default function MapScreen() {
   const [visitCounts, setVisitCounts] = useState<Record<number, number>>({});
   const [welcomeBack, setWelcomeBack] = useState<OfflineAccrual | null>(null);
   const [bankedTransit, setBankedTransit] = useState<BankedTransit[]>([]);
+  const [surges, setSurges] = useState<Surge[]>([]);
 
   // Pickups fade themselves; requiring a tap to clear ambient feedback would be a chore
   // on a walk. Overflow lingers longer because it costs the player something.
@@ -183,6 +185,15 @@ export default function MapScreen() {
             if (transit.status < 400) setBankedTransit(transit.data);
           } catch {
             // Non-fatal: the map simply keeps the last known set.
+          }
+
+          // Surges are local and time-limited, so they are refetched on each sync
+          // rather than cached — a stale surge banner is worse than none.
+          try {
+            const active = await authApiClient.get<Surge[]>('/api/retention/surges');
+            if (active.status < 400) setSurges(active.data);
+          } catch {
+            // Non-fatal: the banner simply does not update this sync.
           }
 
           const redemption = redemptionSummary(data.transitRedemption);
@@ -474,6 +485,15 @@ export default function MapScreen() {
           {expiryNudge(bankedTransit) && (
             <Text style={transitStyles.nudge}>{expiryNudge(bankedTransit)}</Text>
           )}
+        </View>
+      )}
+
+      {/* Active surges (§5.6). On the map because a surge expires: a player who only sees
+          it in a menu has already missed it. Renders nothing when none are running. */}
+      {surgeSummary(surges) && (
+        <View style={surgeStyles.container}>
+          <Text style={surgeStyles.title}>{surgeSummary(surges)}</Text>
+          <Text style={surgeStyles.hint}>{surgeHint(surges)}</Text>
         </View>
       )}
 
