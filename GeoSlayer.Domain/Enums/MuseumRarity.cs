@@ -1,10 +1,11 @@
-namespace GeoSlayer.Domain.Enums;
-
-/// <summary>How hard an entry is to find. Drives presentation, not mechanics.</summary>
-public enum MuseumRarity
+namespace GeoSlayer.Domain.Enums
 {
-    Common,
-    Uncommon,
-    Rare,
-    Legendary,
+    /// <summary>How hard an entry is to find. Drives presentation, not mechanics.</summary>
+    public enum MuseumRarity
+    {
+        Common,
+        Uncommon,
+        Rare,
+        Legendary,
+    }
 }

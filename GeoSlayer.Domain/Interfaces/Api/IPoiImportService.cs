@@ -1,6 +1,7 @@
-namespace GeoSlayer.Domain.Interfaces.Api;
-
-public interface IPoiImportService
+namespace GeoSlayer.Domain.Interfaces.Api
 {
-    Task ImportCellPois(double cellLat, double cellLng);
+    public interface IPoiImportService
+    {
+        Task ImportCellPois(double cellLat, double cellLng);
+    }
 }

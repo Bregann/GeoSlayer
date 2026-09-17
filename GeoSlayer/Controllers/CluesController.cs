@@ -8,54 +8,55 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace GeoSlayer.Controllers;
-
-/// <summary>Clue scrolls (Stage 13, DESIGN.md §5B).</summary>
-[ApiController]
-[Authorize]
-[Route("api/[controller]")]
-public class CluesController(
-    AppDbContext db,
-    IClueService clues,
-    IUserContextHelper userContextHelper) : ControllerBase
+namespace GeoSlayer.Controllers
 {
-    [HttpGet]
-    public async Task<ActionResult<List<ClueScrollDto>>> GetScrolls(CancellationToken ct) =>
-        Ok(await clues.GetScrolls(await CurrentPlayerId(ct), ct));
-
-    [HttpPost("{tier}")]
-    public async Task<ActionResult<ClueScrollDto>> Generate(ClueTier tier, CancellationToken ct)
+    /// <summary>Clue scrolls (Stage 13, DESIGN.md §5B).</summary>
+    [ApiController]
+    [Authorize]
+    [Route("api/[controller]/[action]")]
+    public class CluesController(
+        AppDbContext db,
+        IClueService clues,
+        IUserContextHelper userContextHelper) : ControllerBase
     {
-        var scroll = await clues.GenerateScroll(await CurrentPlayerId(ct), tier, ct);
+        [HttpGet]
+        public async Task<ActionResult<List<ClueScrollDto>>> GetScrolls(CancellationToken ct) =>
+            Ok(await clues.GetScrolls(await CurrentPlayerId(ct), ct));
 
-        // Too little territory to place steps. Better a clear "not yet" than a scroll
-        // whose steps sit somewhere the player has never been.
-        return scroll is null
-            ? BadRequest("Explore a little more ground first — there is nowhere to send you yet.")
-            : Ok(scroll);
-    }
+        [HttpPost]
+        public async Task<ActionResult<ClueScrollDto>> Generate([FromQuery] ClueTier tier, CancellationToken ct)
+        {
+            var scroll = await clues.GenerateScroll(await CurrentPlayerId(ct), tier, ct);
 
-    /// <summary>
-    /// Attempt the current step. Arrival is checked server-side against the player's last
-    /// verified position; the request carries no coordinates.
-    /// </summary>
-    [HttpPost("{id:int}/attempt")]
-    public async Task<ActionResult<ClueProgressDto>> Attempt(int id, CancellationToken ct) =>
-        Ok(await clues.AttemptStep(await CurrentPlayerId(ct), id, ct));
+            // Too little territory to place steps. Better a clear "not yet" than a scroll
+            // whose steps sit somewhere the player has never been.
+            return scroll is null
+                ? BadRequest("Explore a little more ground first — there is nowhere to send you yet.")
+                : Ok(scroll);
+        }
 
-    [HttpPost("{id:int}/skip")]
-    public async Task<ActionResult<ClueProgressDto>> Skip(int id, CancellationToken ct) =>
-        Ok(await clues.SkipStep(await CurrentPlayerId(ct), id, ct));
+        /// <summary>
+        /// Attempt the current step. Arrival is checked server-side against the player's last
+        /// verified position; the request carries no coordinates.
+        /// </summary>
+        [HttpPost]
+        public async Task<ActionResult<ClueProgressDto>> Attempt([FromQuery] int id, CancellationToken ct) =>
+            Ok(await clues.AttemptStep(await CurrentPlayerId(ct), id, ct));
 
-    private async Task<int> CurrentPlayerId(CancellationToken ct)
-    {
-        var userId = userContextHelper.GetUserId();
+        [HttpPost]
+        public async Task<ActionResult<ClueProgressDto>> Skip([FromQuery] int id, CancellationToken ct) =>
+            Ok(await clues.SkipStep(await CurrentPlayerId(ct), id, ct));
 
-        var playerId = await db.Players
-            .Where(p => p.UserId == userId)
-            .Select(p => (int?)p.Id)
-            .FirstOrDefaultAsync(ct);
+        private async Task<int> CurrentPlayerId(CancellationToken ct)
+        {
+            var userId = userContextHelper.GetUserId();
 
-        return playerId ?? throw new NotFoundException("Player not found");
+            var playerId = await db.Players
+                .Where(p => p.UserId == userId)
+                .Select(p => (int?)p.Id)
+                .FirstOrDefaultAsync(ct);
+
+            return playerId ?? throw new NotFoundException("Player not found");
+        }
     }
 }

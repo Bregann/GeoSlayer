@@ -58,6 +58,10 @@ builder.Services.AddAuthorization();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
+// Every controller and JourneyService take this; without it the container fails
+// validation at startup and the API cannot boot at all.
+builder.Services.AddScoped<IUserContextHelper, UserContextHelper>();
+
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IPoiImportService, PoiImportService>();
 builder.Services.AddScoped<IProgressionService, ProgressionService>();
