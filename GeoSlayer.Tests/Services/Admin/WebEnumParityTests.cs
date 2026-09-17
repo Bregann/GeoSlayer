@@ -83,5 +83,14 @@ namespace GeoSlayer.Tests.Services.Admin
 
         [Test]
         public void SkillTypes_MatchTheEnum() => AssertMatches<SkillType>("SkillTypes");
+
+        [Test]
+        public void MuseumWings_MatchTheEnum() => AssertMatches<MuseumWing>("MuseumWings");
+
+        [Test]
+        public void MuseumRarities_MatchTheEnum() => AssertMatches<MuseumRarity>("MuseumRarities");
+
+        [Test]
+        public void UnlockTypes_MatchTheEnum() => AssertMatches<UnlockType>("UnlockTypes");
     }
 }

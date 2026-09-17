@@ -116,6 +116,16 @@ namespace GeoSlayer.Domain.Interfaces.Api.Admin
         Task<AdminGameSettingDto> SaveGameSetting(
             string adminUserId, SaveGameSettingRequest request, CancellationToken ct);
 
+        /// <summary>Every Museum entry, with how many players have found it.</summary>
+        Task<List<AdminMuseumEntryDto>> GetMuseumEntries(CancellationToken ct);
+
+        /// <summary>Create or update a Museum entry definition.</summary>
+        Task<AdminMuseumEntryDto> SaveMuseumEntry(
+            string adminUserId, SaveMuseumEntryRequest request, CancellationToken ct);
+
+        /// <summary>Delete a Museum entry, refusing when players have already found it.</summary>
+        Task DeleteMuseumEntry(string adminUserId, int entryId, CancellationToken ct);
+
         /// <summary>The audit trail, newest first.</summary>
         Task<List<AdminAuditDto>> GetAuditTrail(int limit, CancellationToken ct);
     }

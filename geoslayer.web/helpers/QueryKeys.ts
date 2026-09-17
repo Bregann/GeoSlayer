@@ -11,5 +11,8 @@ export enum QueryKeys {
   Materials = 'materials',
   Recipes = 'recipes',
   Encounters = 'encounters',
+  Progression = 'progression',
+  MuseumEntries = 'museumEntries',
+  GameSettings = 'gameSettings',
   AuditTrail = 'auditTrail',
 }

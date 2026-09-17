@@ -3,10 +3,13 @@
 import { AppShell, Burger, Group, NavLink, Text } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import {
+  IconAdjustments,
+  IconBuildingBank,
   IconClipboardList,
   IconHammer,
   IconPick,
   IconShieldBolt,
+  IconStairs,
   IconSword,
 } from '@tabler/icons-react'
 import Link from 'next/link'
@@ -28,6 +31,9 @@ const NAV = [
   { href: '/materials', label: 'Materials', icon: IconPick },
   { href: '/recipes', label: 'Recipes', icon: IconHammer },
   { href: '/encounters', label: 'Encounters', icon: IconShieldBolt },
+  { href: '/progression', label: 'Progression', icon: IconStairs },
+  { href: '/museum', label: 'Museum', icon: IconBuildingBank },
+  { href: '/settings', label: 'Tuning', icon: IconAdjustments },
   { href: '/audit', label: 'Audit trail', icon: IconClipboardList },
 ]
 

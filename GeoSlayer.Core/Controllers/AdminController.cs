@@ -227,6 +227,25 @@ namespace GeoSlayer.Core.Controllers
             [FromBody] SaveGameSettingRequest request, CancellationToken ct) =>
             Ok(await admin.SaveGameSetting(CurrentUserId(), request, ct));
 
+        /// <summary>Every Museum entry, with how many players have found it.</summary>
+        [HttpGet]
+        public async Task<ActionResult<List<AdminMuseumEntryDto>>> GetMuseumEntries(CancellationToken ct) =>
+            Ok(await admin.GetMuseumEntries(ct));
+
+        /// <summary>Create or update a Museum entry definition.</summary>
+        [HttpPost]
+        public async Task<ActionResult<AdminMuseumEntryDto>> SaveMuseumEntry(
+            [FromBody] SaveMuseumEntryRequest request, CancellationToken ct) =>
+            Ok(await admin.SaveMuseumEntry(CurrentUserId(), request, ct));
+
+        /// <summary>Delete a Museum entry.</summary>
+        [HttpDelete]
+        public async Task<ActionResult> DeleteMuseumEntry([FromQuery] int entryId, CancellationToken ct)
+        {
+            await admin.DeleteMuseumEntry(CurrentUserId(), entryId, ct);
+            return Ok();
+        }
+
         /// <summary>The audit trail, newest first.</summary>
         [HttpGet]
         public async Task<ActionResult<List<AdminAuditDto>>> GetAuditTrail(

@@ -68,6 +68,21 @@ export const SkillTypes = [
   'Foraging',
 ] as const
 
+export const MuseumWings = [
+  'Cartography',
+  'Landmarks',
+  'Naturalist',
+  'Skills',
+  'Rarities',
+  'Feats',
+  'Relics',
+  'Expeditions',
+] as const
+
+export const MuseumRarities = ['Common', 'Uncommon', 'Rare', 'Legendary'] as const
+
+export const UnlockTypes = ['Skill', 'System'] as const
+
 /** Options shaped for a Mantine Select. */
 export const asOptions = (names: readonly string[]) =>
   names.map((label, value) => ({ value: String(value), label }))

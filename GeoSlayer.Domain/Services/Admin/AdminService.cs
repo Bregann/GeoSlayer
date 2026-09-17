@@ -941,6 +941,121 @@ namespace GeoSlayer.Domain.Services.Admin
             return ToDto(setting);
         }
 
+        // ── Museum (task 8) ─────────────────────────────────────────────
+
+        public async Task<List<AdminMuseumEntryDto>> GetMuseumEntries(CancellationToken ct)
+        {
+            var entries = await db.MuseumEntryDefinitions
+                .OrderBy(e => e.Wing)
+                .ThenBy(e => e.SortOrder)
+                .ToListAsync(ct);
+
+            // One grouped query rather than a count per row — the Museum has hundreds of
+            // entries and this listing is the whole table.
+            var foundCounts = await db.PlayerMuseumEntries
+                .GroupBy(e => e.EntryKey)
+                .Select(g => new { Key = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.Key, x => x.Count, ct);
+
+            var warnings = MuseumValidation.Warn(entries).ToList();
+
+            return [.. entries.Select(e => ToDto(e, foundCounts.GetValueOrDefault(e.Key), warnings))];
+        }
+
+        private static AdminMuseumEntryDto ToDto(
+            MuseumEntryDefinition entry, int foundBy, List<string> setWarnings) => new()
+            {
+                Id = entry.Id,
+                Key = entry.Key,
+                Name = entry.Name,
+                Description = entry.Description,
+                Wing = entry.Wing,
+                Rarity = entry.Rarity,
+                UnlockCondition = entry.UnlockCondition,
+                SortOrder = entry.SortOrder,
+                FoundBy = foundBy,
+                SetWarnings = setWarnings,
+            };
+
+        public async Task<AdminMuseumEntryDto> SaveMuseumEntry(
+            string adminUserId, SaveMuseumEntryRequest request, CancellationToken ct)
+        {
+            var isNew = request.Id is null;
+
+            var entry = isNew
+                ? new MuseumEntryDefinition
+                {
+                    Key = request.Key,
+                    Name = request.Name,
+                    Description = request.Description,
+                    UnlockCondition = request.UnlockCondition,
+                }
+                : await db.MuseumEntryDefinitions.FirstOrDefaultAsync(e => e.Id == request.Id, ct)
+                  ?? throw new NotFoundException($"Museum entry {request.Id} not found.");
+
+            entry.Key = request.Key;
+            entry.Name = request.Name;
+            entry.Description = request.Description;
+            entry.Wing = request.Wing;
+            entry.Rarity = request.Rarity;
+            entry.UnlockCondition = request.UnlockCondition;
+            entry.SortOrder = request.SortOrder;
+
+            var others = await db.MuseumEntryDefinitions
+                .Where(e => e.Id != (request.Id ?? 0))
+                .AsNoTracking()
+                .ToListAsync(ct);
+
+            var rejection = MuseumValidation.Reject(entry, others);
+
+            if (rejection is not null)
+            {
+                db.ChangeTracker.Clear();
+
+                throw new BadRequestException(rejection);
+            }
+
+            if (isNew)
+            {
+                db.MuseumEntryDefinitions.Add(entry);
+            }
+
+            await db.SaveChangesAsync(ct);
+
+            await Audit(adminUserId, "MuseumEntry", entry.Id.ToString(),
+                isNew ? "Created" : "Updated",
+                $"{entry.Key}: {entry.Wing}, {entry.Rarity}", ct);
+
+            var resulting = await db.MuseumEntryDefinitions.AsNoTracking().ToListAsync(ct);
+            var foundBy = await db.PlayerMuseumEntries.CountAsync(e => e.EntryKey == entry.Key, ct);
+
+            return ToDto(entry, foundBy, [.. MuseumValidation.Warn(resulting)]);
+        }
+
+        public async Task DeleteMuseumEntry(string adminUserId, int entryId, CancellationToken ct)
+        {
+            var entry = await db.MuseumEntryDefinitions.FirstOrDefaultAsync(e => e.Id == entryId, ct)
+                ?? throw new NotFoundException($"Museum entry {entryId} not found.");
+
+            // Refused rather than cascaded. A found entry is something a player collected —
+            // deleting the definition takes it off their shelf, and §5A.1 makes the
+            // collection the entire point of the system.
+            var foundBy = await db.PlayerMuseumEntries.CountAsync(e => e.EntryKey == entry.Key, ct);
+
+            if (foundBy > 0)
+            {
+                throw new BadRequestException(
+                    $"{foundBy} player{(foundBy == 1 ? " has" : "s have")} found '{entry.Key}'. "
+                    + "Deleting it would take it off their shelf.");
+            }
+
+            db.MuseumEntryDefinitions.Remove(entry);
+            await db.SaveChangesAsync(ct);
+
+            await Audit(adminUserId, "MuseumEntry", entryId.ToString(), "Deleted",
+                $"{entry.Key} ({entry.Name})", ct);
+        }
+
         // ── Audit (task 9) ──────────────────────────────────────────────
 
         public async Task<List<AdminAuditDto>> GetAuditTrail(int limit, CancellationToken ct)
