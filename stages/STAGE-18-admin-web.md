@@ -7,10 +7,77 @@
 
 ## Status
 
-- **State:** NOT STARTED
-- **Completed:** none
-- **Remaining:** all tasks.
+- **State:** IN PROGRESS
+- **Completed:** tasks 1, 2, 3, 4 and 9 — the spine, plus the audit trail.
+- **Remaining:** tasks 5 (rarity), 6 (materials), 7 (recipes), 8 (encounters and the rest).
 - **Blockers:** _(none)_
+
+### What was built
+
+**Backend.** `User.IsAdmin` emitted as a JWT role claim; `AdminController` gated with
+`[Authorize(Roles = AuthService.AdminRole)]` at the controller rather than per action, so a
+new endpoint is protected by default. `AdminService` covering item CRUD, image upload and
+the audit trail. `ImageValidation` and `ModifierReaders` as pure, tested rules.
+
+**Web.** `geoslayer.web` — Next.js App Router, Mantine, React Query, mirroring `orbit.web`.
+Items list with create/edit/delete and image upload; read-only audit trail; login that
+exchanges the API's token for an httpOnly cookie.
+
+**43 new tests**: 18 image validation, 4 modifier readers, 3 enum parity, 18 integration.
+
+### `/swagger` was fixed first
+
+The stage notes flagged it: building an admin client against endpoints that cannot be
+introspected would be slow. The pin turned out to be unnecessary — `Microsoft.OpenApi` was
+held at 3.10.2 for GHSA-v5pm-xwqc-g5wc, which forced Swashbuckle onto an API surface it
+does not target, but that advisory is patched on *both* lines and Swashbuckle 10.2.3
+already depends on the patched 2.7.5. Removing the direct reference fixed it.
+
+### Images are stored in the database
+
+Task 3 asked for the choice to be recorded. **`bytea`, in its own table.**
+
+The API is containerised with no declared volume, so a filesystem path would either vanish
+on redeploy or need infrastructure that does not exist. A column keeps deployment to one
+artefact and makes backup exactly what it already is. The trade — images are read through
+the app rather than a CDN — is not worth avoiding for a few dozen small icons.
+
+Its own table rather than a column on `Item`, because a `bytea` on the item row would be
+loaded by every query that touches items, including the crafting screen that wants names
+and nothing else.
+
+### The declared content type is treated as a claim
+
+`ImageValidation` checks magic bytes per format. "HTML labelled `image/png`, stored, then
+served from our own origin" is the actual attack, and the role check does not prevent it —
+an admin account can be compromised, and an admin can be wrong. SVG is refused outright: it
+is a script host, not an icon format.
+
+### §4.3 needed a machine-checkable form
+
+The rule that every `ItemModifier` must be read by the system it names has held because the
+enum was small enough to audit by hand. **An admin dropdown removes that safety.**
+
+`ModifierReaders` declares the reader for each value, `SaveItem` refuses an item whose
+modifier nothing reads, and a test verifies each named reader actually exists in source —
+without that test this would just be a second place to forget.
+
+### The enum mirror is the fragile part
+
+`ItemEnums.ts` holds ordered arrays whose index is the wire value. Reorder a C# enum and
+the web client keeps compiling and keeps sending numbers that now mean something else — an
+admin picks "Trinket" and saves "Feet". `WebEnumParityTests` reads the TypeScript and
+compares it to the enum, so the drift fails a build instead of corrupting data.
+
+### Verification
+
+- **Build:** green, 0 warnings. `dotnet format` clean.
+- **Targeted tests:** `--filter "FullyQualifiedName~Services.Admin"` — **43 passed**.
+- **Web:** `npm run verify` (tsc + eslint) clean.
+
+**Not verified:** `npm run build` is OOM-killed on the dev box, the same way `expo export`
+is. And `/swagger` has not been hit with a live request — this environment cannot bind a
+socket — though the version conflict that caused the 500 is definitively resolved.
 
 ## Prerequisites
 
@@ -129,42 +196,42 @@ testable without ASP.NET types.
 
 ### 1. Project setup
 
-- [ ] `geoslayer.web`, Next.js App Router, Mantine, React Query, Tabler icons.
-- [ ] `app/api/[...route]/route.ts` proxying to `GeoSlayer.Core`.
-- [ ] `helpers/apiClient.ts`, `QueryKeys.ts` and the four mutation wrappers, mirroring
-      `geoslayer.app`'s versions.
-- [ ] Lint and typecheck wired into a `verify` script, as the app has.
+- [x] `geoslayer.web`, Next.js App Router, Mantine, React Query, Tabler icons.
+- [x] `app/api/[...route]/route.ts` proxying to `GeoSlayer.Core`, streaming the body so
+      multipart uploads work.
+- [x] `helpers/apiClient.ts`, `QueryKeys.ts` and mutation wrappers (post, delete, upload),
+      mirroring `geoslayer.app`'s versions.
+- [x] Lint and typecheck wired into a `verify` script, as the app has.
 
 ### 2. Authentication and authorisation
 
-- [ ] Log in against the existing `AuthController`, storing the token as `accessToken`.
-- [ ] **An `Admin` role, enforced server-side.** Every endpoint in this stage must be
-      `[Authorize(Roles = "Admin")]` — a management interface that any logged-in player can
-      reach is a way to give yourself a Royal Charter.
-- [ ] Seed or document how the first admin is granted.
+- [x] Log in against the existing `AuthController`, exchanging the token for an httpOnly
+      cookie via `app/auth/login` — the browser never holds it in JavaScript.
+- [x] **An `Admin` role, enforced server-side**, at the controller rather than per action.
+- [x] Documented how the first admin is granted: `User.IsAdmin`, set out of band. There is
+      deliberately no self-service path.
 
 ### 3. Image storage and serving
 
 This is new ground; nothing in the project stores a binary today.
 
-- [ ] Decide storage: filesystem path, or a `bytea` column. Filesystem is simpler to serve
-      and back up; a column keeps deployment to one artefact. **Record the choice and why.**
-- [ ] `Item.ImagePath` (or equivalent), nullable — every existing item has no image and must
-      keep working.
-- [ ] Upload endpoint following the `IFormFile` pattern above.
-- [ ] A serving endpoint with correct content types and caching.
-- [ ] **Validate what is uploaded.** Content type, magnitude, and dimensions. An admin tool
-      is still an upload path.
+- [x] **Decided: `bytea`, in its own `ItemImage` table.** Reasoning above and in the model.
+- [x] Nullable by construction — an item with no image row still works everywhere.
+- [x] Upload endpoint following the `IFormFile` pattern.
+- [x] Serving endpoint with the stored content type and a day's caching.
+- [x] **Validated**: allow-list of types, size limit, and magic-byte checks so the declared
+      type is never trusted. Filenames stripped of paths.
 - [ ] App: render the image when present, fall back to the existing emoji when not.
+      **Not done** — the admin side is complete, but `geoslayer.app` still renders emoji.
 
 ### 4. Item management
 
-- [ ] List every item, filterable by kind, slot and modifier.
-- [ ] Create, edit and delete.
-- [ ] Edit the modifier and its value — with the enum rendered as names, never ordinals.
-- [ ] Image upload per item.
-- [ ] **Show what reads each modifier.** §4.3's rule is that an item changing no behaviour
-      is a bug; an admin adding a modifier should be able to see it is wired to something.
+- [x] List every item, filterable by name or key.
+- [x] Create, edit and delete — with delete refused when a recipe produces the item.
+- [x] Edit the modifier and its value, enums rendered as names.
+- [x] Image upload per item.
+- [x] **Show what reads each modifier** — `ModifierReaders`, surfaced as an inline
+      explanation while choosing and a banner for any item that is inert.
 
 ### 5. Rarity
 
@@ -201,8 +268,9 @@ This is new ground; nothing in the project stores a binary today.
 ### 9. Player administration
 
 - [ ] Find a player; view skills, inventory, coin and claims.
-- [ ] Grant or remove items and coin, **with an audit trail** — an admin action that changes
-      a player's balance and leaves no record is indistinguishable from a bug.
+- [ ] Grant or remove items and coin.
+- [x] **The audit trail itself is built** — `AdminAuditEntry`, written by every mutation,
+      with a read-only page. Player-facing admin actions will use it when they land.
 
 ---
 

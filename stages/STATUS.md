@@ -1,9 +1,11 @@
 # Build status
 
-**Stages 01–17 are `DONE`. Stage 18 (admin web) is the only one outstanding.**
+**Stages 01–17 are `DONE`. Stage 18 (admin web) is in progress.**
 
 Every acceptance criterion in the *game* is met. Stage 18 is a management interface, not
-gameplay — see `stages/STAGE-18-admin-web.md`.
+gameplay. Its spine is built — admin auth, item management, image upload and the audit
+trail, with a `geoslayer.web` Next.js/Mantine client mirroring `orbit.web`. Materials,
+recipes, encounters, rarity and player admin remain. See `stages/STAGE-18-admin-web.md`.
 
 Stage 16 (Combat encounters) was added after the scope question was decided — see
 `DESIGN.md` §5C. A follow-up pass closed the last three unmet criteria (Cryptic clues,
@@ -36,7 +38,7 @@ Single source of truth for where the build is. Update this when a stage complete
 | 15 | Remaining skills | DONE |
 | 16 | Combat encounters | DONE |
 | 17 | Coin economy | DONE |
-| 18 | Admin web interface | NOT STARTED |
+| 18 | Admin web interface | IN PROGRESS |
 
 States: `NOT STARTED` → `IN PROGRESS` → `DONE` (or `BLOCKED`, with a reason).
 
@@ -477,7 +479,9 @@ API over HTTP — which is what caught four POSTs pointing at the wrong endpoint
 route migration, something no helper unit test could have seen.
 
 Do **not** run `npx expo export` on the dev box: it exhausts the 1.9 GB of RAM and takes
-the machine down.
+the machine down. **`npm run build` in `geoslayer.web` has the same problem** — it was
+OOM-killed during Stage 18. Use `npm run verify` (typecheck + lint), which passes, and
+build on a machine with more headroom.
 
 The caveat that stood through Stages 02–15 is closed. What remains is *visual* and
 *behavioural* review on a real device — layout, whether the framing reads right — not
