@@ -100,4 +100,68 @@ public static class DistrictMatching
 
         return (best, best?.OutputBonus ?? 0);
     }
+
+    /// <summary>What a group still needs to satisfy a definition.</summary>
+    public readonly record struct Shortfall(
+        DistrictDefinition Definition,
+        List<TerrainType> MissingTerrains,
+        int MissingClaims);
+
+    /// <summary>
+    /// The District a player is closest to forming, when they have none.
+    ///
+    /// <para>"No District" is otherwise a dead end. §5.5 requires varied terrain on
+    /// purpose, so a player holding nine identical Claims has no way to discover that the
+    /// variety is the problem — the status just reads empty. This names the nearest target
+    /// and what it is short of.</para>
+    ///
+    /// <para>Closest means fewest missing terrains, then fewest missing Claims, then the
+    /// larger bonus. Terrain is weighted first because claiming new ground of a terrain you
+    /// lack is the harder ask, so it is the more useful thing to tell someone.</para>
+    /// </summary>
+    public static Shortfall? NearestMiss(
+        IReadOnlyList<ClaimNode> claims,
+        IReadOnlyList<DistrictDefinition> definitions)
+    {
+        // Measured against the best single group rather than the whole holding: Claims on
+        // opposite sides of a city can never combine, so counting them together would
+        // promise a District that is unreachable where the player actually is.
+        var groups = ContiguousGroups(claims);
+
+        Shortfall? nearest = null;
+
+        foreach (var definition in definitions)
+        {
+            foreach (var group in groups.DefaultIfEmpty([]))
+            {
+                if (Satisfies(group, definition)) continue;
+
+                var combined = group.Aggregate(TerrainType.Open, (acc, c) => acc | c.Terrain);
+
+                var missing = Enum.GetValues<TerrainType>()
+                    .Where(t => t != TerrainType.Open
+                             && definition.RequiredTerrains.HasFlag(t)
+                             && !combined.HasFlag(t))
+                    .ToList();
+
+                var shortBy = Math.Max(0, definition.MinimumClaims - group.Count);
+                var candidate = new Shortfall(definition, missing, shortBy);
+
+                if (nearest is null || IsCloser(candidate, nearest.Value)) nearest = candidate;
+            }
+        }
+
+        return nearest;
+    }
+
+    private static bool IsCloser(Shortfall candidate, Shortfall incumbent)
+    {
+        if (candidate.MissingTerrains.Count != incumbent.MissingTerrains.Count)
+            return candidate.MissingTerrains.Count < incumbent.MissingTerrains.Count;
+
+        if (candidate.MissingClaims != incumbent.MissingClaims)
+            return candidate.MissingClaims < incumbent.MissingClaims;
+
+        return candidate.Definition.OutputBonus > incumbent.Definition.OutputBonus;
+    }
 }

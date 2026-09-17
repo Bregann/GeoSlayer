@@ -8,7 +8,7 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "test": "node helpers/__tests__/xpCurve.test.mjs && node helpers/__tests__/progression.test.mjs && node helpers/__tests__/inventory.test.mjs && node helpers/__tests__/poiVisit.test.mjs && node helpers/__tests__/idle.test.mjs && node helpers/__tests__/crafting.test.mjs && node helpers/__tests__/museum.test.mjs && node helpers/__tests__/clues.test.mjs && node helpers/__tests__/transit.test.mjs && node helpers/__tests__/expeditions.test.mjs && node helpers/__tests__/surges.test.mjs",
+    "test": "node helpers/__tests__/xpCurve.test.mjs && node helpers/__tests__/progression.test.mjs && node helpers/__tests__/inventory.test.mjs && node helpers/__tests__/poiVisit.test.mjs && node helpers/__tests__/idle.test.mjs && node helpers/__tests__/crafting.test.mjs && node helpers/__tests__/museum.test.mjs && node helpers/__tests__/clues.test.mjs && node helpers/__tests__/transit.test.mjs && node helpers/__tests__/expeditions.test.mjs && node helpers/__tests__/surges.test.mjs && node helpers/__tests__/districts.test.mjs",
     "typecheck": "tsc --noEmit",
     "verify": "npm run typecheck && npm run lint && npm test"
   },

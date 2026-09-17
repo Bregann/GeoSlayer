@@ -642,6 +642,92 @@ public class RetentionIntegrationTests : DatabaseIntegrationTestBase
     }
 
     [Test]
+    public async Task WithNoDistrict_TheStatusNamesWhatIsMissing()
+    {
+        // The dead-end case. §5.5 requires varied terrain on purpose, so a player holding
+        // identical Claims cannot tell from an empty status that variety is the problem.
+        await AddClaim(200, 200, TerrainType.Woodland);
+        await AddClaim(203, 200, TerrainType.Woodland);
+
+        var status = await _sut.GetDistrictStatus(_player.Id, Ct);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(status.DistrictKey, Is.Null);
+            Assert.That(status.NearestName, Is.Not.Null);
+            Assert.That(status.MissingTerrains, Is.Not.Empty);
+            Assert.That(status.MissingTerrains, Does.Not.Contain(nameof(TerrainType.Woodland)),
+                "terrain already held should not be reported as missing");
+        });
+    }
+
+    [Test]
+    public async Task TheNearestMiss_PrefersTheDistrictNeedingLeastNewTerrain()
+    {
+        // Woodland + Water is one terrain from Riverside, but three from Harbour. Telling
+        // the player about Harbour would be accurate and useless.
+        await AddClaim(210, 210, TerrainType.Woodland);
+
+        var status = await _sut.GetDistrictStatus(_player.Id, Ct);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(status.NearestName, Is.EqualTo("Riverside"));
+            Assert.That(status.MissingTerrains, Is.EqualTo(new[] { nameof(TerrainType.Water) }));
+        });
+    }
+
+    [Test]
+    public async Task WithADistrictFormed_NoShortfallIsReported()
+    {
+        // Once they have one, the distance to some other District is noise.
+        await AddClaim(220, 220, TerrainType.Woodland);
+        await AddClaim(223, 220, TerrainType.Water);
+
+        var status = await _sut.GetDistrictStatus(_player.Id, Ct);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(status.DistrictKey, Is.Not.Null);
+            Assert.That(status.NearestName, Is.Null);
+            Assert.That(status.MissingTerrains, Is.Empty);
+        });
+    }
+
+    [Test]
+    public async Task WithNoClaimsAtAll_TheShortfallStillGuides()
+    {
+        // A new player has nothing contiguous to measure against, and is exactly who most
+        // needs telling what a District is for.
+        var status = await _sut.GetDistrictStatus(_player.Id, Ct);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(status.ClaimCount, Is.Zero);
+            Assert.That(status.NearestName, Is.Not.Null);
+            Assert.That(status.MissingTerrains, Is.Not.Empty);
+        });
+    }
+
+    [Test]
+    public async Task ScatteredClaims_AreNotCountedTogetherAsProgress()
+    {
+        // Claims on opposite sides of a city can never combine. Measuring the shortfall
+        // across the whole holding would promise a District that is unreachable.
+        await AddClaim(500, 500, TerrainType.Woodland);
+        await AddClaim(1500, 1500, TerrainType.Water);
+
+        var status = await _sut.GetDistrictStatus(_player.Id, Ct);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(status.DistrictKey, Is.Null);
+            Assert.That(status.MissingTerrains, Is.Not.Empty,
+                "neither group holds both terrains, so something must still be missing");
+        });
+    }
+
+    [Test]
     public async Task NonContiguousVariedClaims_GrantNothing()
     {
         // Variety alone is not enough — the Claims must touch, or a scattered holding

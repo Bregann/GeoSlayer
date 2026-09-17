@@ -526,7 +526,7 @@ public class RetentionService(
 
         var (definition, bonus) = DistrictMatching.BestMatch(nodes, definitions);
 
-        return new DistrictStatusDto
+        var status = new DistrictStatusDto
         {
             DistrictKey = definition?.Key,
             Name = definition?.Name,
@@ -534,6 +534,23 @@ public class RetentionService(
             OutputBonus = bonus,
             ClaimCount = nodes.Count,
         };
+
+        // Only when they have none: with a District formed, the shortfall to some other
+        // one is noise. Without it, "no District" gives the player nothing to act on.
+        if (definition is null)
+        {
+            var nearest = DistrictMatching.NearestMiss(nodes, definitions);
+
+            if (nearest is not null)
+            {
+                status.NearestName = nearest.Value.Definition.Name;
+                status.MissingTerrains = nearest.Value.MissingTerrains
+                    .Select(t => t.ToString()).ToList();
+                status.MissingClaims = nearest.Value.MissingClaims;
+            }
+        }
+
+        return status;
     }
 
     // ── Surges (§5.6) ───────────────────────────────────────────────

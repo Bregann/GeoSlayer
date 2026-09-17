@@ -4,6 +4,12 @@ import { useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 import { authApiClient } from '@/helpers/apiClient';
+import {
+  districtHint,
+  districtTitle,
+  hasDistrict,
+  type DistrictStatus,
+} from '@/helpers/districts';
 import { hoursUntilCap, terrainNote, workerStatus, type Worker } from '@/helpers/idle';
 import { formatDuration } from '@/helpers/idle';
 import { progressionStyles as styles } from '@/styles/progression';
@@ -36,6 +42,14 @@ export default function WorkersScreen() {
   const claims = useQuery<Claim[]>({
     queryKey: ['player', 'claims'],
     queryFn: async () => (await authApiClient.get<Claim[]>('/api/idle/claims')).data,
+  });
+
+  // Districts are a passive bonus on how Claims cluster (§5.5), so they belong with the
+  // Claims rather than on a screen of their own.
+  const district = useQuery<DistrictStatus>({
+    queryKey: ['player', 'district'],
+    queryFn: async () =>
+      (await authApiClient.get<DistrictStatus>('/api/retention/district')).data,
   });
 
   const skills = useQuery<PlayerSkills>({
@@ -97,6 +111,21 @@ export default function WorkersScreen() {
       {!isLoading && (
         <ScrollView contentContainerStyle={styles.scroll}>
           {error && <Text style={styles.errorText}>{error}</Text>}
+
+          {/* District status. The unformed case is the one that matters: §5.5's variety
+              rule is otherwise invisible, and the player just sees nothing happen. */}
+          <View style={styles.card}>
+            <View style={styles.cardRow}>
+              <Text style={styles.cardName}>🏘️ {districtTitle(district.data)}</Text>
+              {hasDistrict(district.data) && (
+                <Text style={styles.cardLevel}>
+                  {district.data?.claimCount} claims
+                </Text>
+              )}
+            </View>
+
+            <Text style={styles.effectText}>{districtHint(district.data)}</Text>
+          </View>
 
           {(workers.data ?? []).map((worker) => {
             const note = terrainNote(worker);
