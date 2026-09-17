@@ -10,5 +10,6 @@ export enum QueryKeys {
   Items = 'items',
   Materials = 'materials',
   Recipes = 'recipes',
+  Encounters = 'encounters',
   AuditTrail = 'auditTrail',
 }

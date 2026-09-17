@@ -8,7 +8,8 @@
 ## Status
 
 - **State:** IN PROGRESS
-- **Completed:** tasks 1, 2, 3, 4, 6, 7 and the audit-trail half of 9. Task 5 dropped.
+- **Completed:** tasks 1, 2, 3, 4, 6, 7, the encounter half of 8, and the audit-trail
+  half of 9. Task 5 dropped.
 - **Remaining:** task 8 (encounters, Museum, progression, surges) and the player half
   of task 9. Task 5 (rarity) was **dropped deliberately** — see below.
 - **Blockers:** _(none)_
@@ -294,10 +295,27 @@ usually to change a quantity there and then.
 
 ### 8. Encounters, clues and the rest
 
-- [ ] `EncounterDefinition` management.
+- [x] `EncounterDefinition` management — **with §5C.2 enforced at runtime.**
 - [ ] Museum entry definitions and set bonuses.
 - [ ] Progression: unlock ladder, upgrade definitions and costs.
 - [ ] Surge and expedition tuning.
+
+**The encounter half carried the stage's hardest invariant.**
+
+§5C.2 — historic POIs are a boost, never the only venue — was proved by Stage 16 over seed
+data. An admin deleting one roaming encounter, or flipping it to a training ground, breaks
+it at runtime while the build stays green. The symptom would be a player quietly unable to
+train Combat past a tier, which is close to undiagnosable from a bug report.
+
+So `EncounterValidation.RejectSet` checks **the set the save would produce**, not the row
+being edited — otherwise an edit passes because the old row still covers the tier. Both save
+and delete run it. Tests cover the obvious break (delete the sole roaming encounter at a
+tier) and the subtle one (flip it to a training ground, so the tier still exists but only on
+historic ground).
+
+The coverage strip at the top of the screen exists for the same reason: the rule is
+invisible in a flat table, where you would have to read every row and hold seven tiers in
+your head to notice a gap.
 
 ### 9. Player administration
 

@@ -542,6 +542,129 @@ namespace GeoSlayer.Domain.Services.Admin
                 $"{recipe.Key} ({recipe.Name})", ct);
         }
 
+        // ── Encounters (task 8) ─────────────────────────────────────────
+
+        public async Task<List<AdminEncounterDto>> GetEncounters(CancellationToken ct)
+        {
+            var definitions = await db.EncounterDefinitions
+                .OrderBy(e => e.Tier)
+                .ThenBy(e => e.MinCombatLevel)
+                .ToListAsync(ct);
+
+            // Set-level, so every row carries the same list. §5C.2 constrains the whole
+            // ladder — a single definition is never wrong on its own.
+            var warnings = EncounterValidation.Warn(definitions).ToList();
+
+            return [.. definitions.Select(e => ToDto(e, warnings))];
+        }
+
+        private static AdminEncounterDto ToDto(
+            EncounterDefinition definition, List<string> setWarnings) => new()
+            {
+                Id = definition.Id,
+                Key = definition.Key,
+                Name = definition.Name,
+                Description = definition.Description,
+                Tier = definition.Tier,
+                MinCombatLevel = definition.MinCombatLevel,
+                IsTrainingGround = definition.IsTrainingGround,
+                SetWarnings = setWarnings,
+            };
+
+        public async Task<AdminEncounterDto> SaveEncounter(
+            string adminUserId, SaveEncounterRequest request, CancellationToken ct)
+        {
+            var isNew = request.Id is null;
+
+            var definition = isNew
+                ? new EncounterDefinition
+                {
+                    Key = request.Key,
+                    Name = request.Name,
+                    Description = request.Description,
+                }
+                : await db.EncounterDefinitions.FirstOrDefaultAsync(e => e.Id == request.Id, ct)
+                  ?? throw new NotFoundException($"Encounter {request.Id} not found.");
+
+            definition.Key = request.Key;
+            definition.Name = request.Name;
+            definition.Description = request.Description;
+            definition.Tier = request.Tier;
+            definition.MinCombatLevel = request.MinCombatLevel;
+            definition.IsTrainingGround = request.IsTrainingGround;
+
+            var others = await db.EncounterDefinitions
+                .Where(e => e.Id != (request.Id ?? 0))
+                .AsNoTracking()
+                .ToListAsync(ct);
+
+            var rejection = EncounterValidation.Reject(definition, others);
+
+            // Checked against the set this save would *produce*, not the one that exists —
+            // otherwise an edit that breaks the ladder passes because the old row still
+            // covers the tier.
+            rejection ??= EncounterValidation.RejectSet([.. others, definition]);
+
+            if (rejection is not null)
+            {
+                // The entity was mutated in place; discard it or the bad values ride along
+                // on the next unrelated SaveChanges.
+                db.ChangeTracker.Clear();
+
+                throw new BadRequestException(rejection);
+            }
+
+            if (isNew)
+            {
+                db.EncounterDefinitions.Add(definition);
+            }
+
+            await db.SaveChangesAsync(ct);
+
+            await Audit(adminUserId, "Encounter", definition.Id.ToString(),
+                isNew ? "Created" : "Updated",
+                $"{definition.Key}: tier {definition.Tier} at Combat {definition.MinCombatLevel}" +
+                $"{(definition.IsTrainingGround ? ", training ground" : ", roaming")}", ct);
+
+            var resulting = await db.EncounterDefinitions.AsNoTracking().ToListAsync(ct);
+
+            return ToDto(definition, [.. EncounterValidation.Warn(resulting)]);
+        }
+
+        public async Task DeleteEncounter(string adminUserId, int encounterId, CancellationToken ct)
+        {
+            var definition = await db.EncounterDefinitions
+                .FirstOrDefaultAsync(e => e.Id == encounterId, ct)
+                ?? throw new NotFoundException($"Encounter {encounterId} not found.");
+
+            // Deletion breaks §5C.2 just as easily as an edit does — removing the only
+            // roaming encounter at a tier locks every castle-less player out of it.
+            var remaining = await db.EncounterDefinitions
+                .Where(e => e.Id != encounterId)
+                .AsNoTracking()
+                .ToListAsync(ct);
+
+            var rejection = EncounterValidation.RejectSet(remaining);
+
+            if (rejection is not null)
+            {
+                throw new BadRequestException(rejection);
+            }
+
+            // Player encounters reference the definition by key rather than by id, so
+            // in-flight ones do not dangle — they simply stop resolving, which
+            // EncounterService already handles as a missing definition.
+            var live = await db.PlayerEncounters
+                .CountAsync(e => e.DefinitionKey == definition.Key && e.ResolvedUtc == null, ct);
+
+            db.EncounterDefinitions.Remove(definition);
+            await db.SaveChangesAsync(ct);
+
+            await Audit(adminUserId, "Encounter", encounterId.ToString(), "Deleted",
+                $"{definition.Key} ({definition.Name}); {live} unresolved player encounter" +
+                $"{(live == 1 ? "" : "s")} referenced it", ct);
+        }
+
         // ── Audit (task 9) ──────────────────────────────────────────────
 
         public async Task<List<AdminAuditDto>> GetAuditTrail(int limit, CancellationToken ct)

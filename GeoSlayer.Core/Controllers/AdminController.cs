@@ -149,6 +149,30 @@ namespace GeoSlayer.Core.Controllers
             return Ok();
         }
 
+        /// <summary>Every encounter definition, with any set-level warnings.</summary>
+        [HttpGet]
+        public async Task<ActionResult<List<AdminEncounterDto>>> GetEncounters(CancellationToken ct) =>
+            Ok(await admin.GetEncounters(ct));
+
+        /// <summary>
+        /// Create or update an encounter definition.
+        ///
+        /// <para>Refused when the resulting set would leave a Combat tier reachable only on
+        /// historic ground (§5C.2).</para>
+        /// </summary>
+        [HttpPost]
+        public async Task<ActionResult<AdminEncounterDto>> SaveEncounter(
+            [FromBody] SaveEncounterRequest request, CancellationToken ct) =>
+            Ok(await admin.SaveEncounter(CurrentUserId(), request, ct));
+
+        /// <summary>Delete an encounter definition.</summary>
+        [HttpDelete]
+        public async Task<ActionResult> DeleteEncounter([FromQuery] int encounterId, CancellationToken ct)
+        {
+            await admin.DeleteEncounter(CurrentUserId(), encounterId, ct);
+            return Ok();
+        }
+
         /// <summary>The audit trail, newest first.</summary>
         [HttpGet]
         public async Task<ActionResult<List<AdminAuditDto>>> GetAuditTrail(

@@ -35,6 +35,7 @@ namespace GeoSlayer.Tests.Services.Admin
             // are only meaningful against a real ladder.
             await TestDatabaseSeedHelper.SeedMaterialDefinitions(DbContext);
             await TestDatabaseSeedHelper.SeedSkillDefinitions(DbContext);
+            await TestDatabaseSeedHelper.SeedEncounterDefinitions(DbContext);
 
             _sut = new AdminService(DbContext);
         }
@@ -627,6 +628,144 @@ namespace GeoSlayer.Tests.Services.Admin
                 .ToList();
 
             Assert.That(forRecipe, Does.Contain("Created").And.Contains("Deleted"));
+        }
+
+        // ── Encounters (task 8) ─────────────────────────────────────────
+
+        [Test]
+        public async Task TheSeededEncounters_LoadWithNoSetWarnings()
+        {
+            // If the shipped ladder cannot pass its own validator, one of the two is wrong.
+            var encounters = await _sut.GetEncounters(Ct);
+
+            Assert.That(encounters, Is.Not.Empty);
+            Assert.That(encounters[0].SetWarnings, Is.Empty);
+        }
+
+        [Test]
+        public async Task ARoamingEncounterCoveringANewTier_CanBeAdded()
+        {
+            var added = await _sut.SaveEncounter(_admin.Id, new SaveEncounterRequest
+            {
+                Key = "roaming_extra",
+                Name = "Something Else",
+                Tier = 3,
+                MinCombatLevel = 20,
+            }, Ct);
+
+            Assert.That(added.Id, Is.GreaterThan(0));
+        }
+
+        [Test]
+        public async Task DeletingTheOnlyRoamingEncounterAtATier_IsRefused()
+        {
+            // §5C.2, at runtime. Removing it would leave every castle-less player unable to
+            // train Combat past that tier — a symptom close to undiagnosable from a bug
+            // report, which is exactly why it is refused rather than warned about.
+            var tiers = await DbContext.EncounterDefinitions
+                .Where(e => !e.IsTrainingGround)
+                .GroupBy(e => e.Tier)
+                .Select(g => new { Tier = g.Key, Count = g.Count(), Id = g.Min(e => e.Id) })
+                .ToListAsync();
+
+            var soleAtTier = tiers.First(t => t.Count == 1);
+
+            Assert.That(
+                async () => await _sut.DeleteEncounter(_admin.Id, soleAtTier.Id, Ct),
+                Throws.TypeOf<BadRequestException>());
+
+            Assert.That(await DbContext.EncounterDefinitions.AnyAsync(e => e.Id == soleAtTier.Id),
+                Is.True, "a refused delete must leave the row alone");
+        }
+
+        [Test]
+        public async Task FlippingTheOnlyRoamingEncounterToATrainingGround_IsRefused()
+        {
+            // The subtler version of the same failure: the tier still exists, but only on
+            // historic ground. Checked against the set the save would produce, not the one
+            // that exists — otherwise the old row still covers the tier and it passes.
+            var tiers = await DbContext.EncounterDefinitions
+                .Where(e => !e.IsTrainingGround)
+                .GroupBy(e => e.Tier)
+                .Select(g => new { Count = g.Count(), Id = g.Min(e => e.Id) })
+                .ToListAsync();
+
+            var sole = tiers.First(t => t.Count == 1);
+            var definition = await DbContext.EncounterDefinitions.AsNoTracking()
+                .FirstAsync(e => e.Id == sole.Id);
+
+            Assert.That(
+                async () => await _sut.SaveEncounter(_admin.Id, new SaveEncounterRequest
+                {
+                    Id = definition.Id,
+                    Key = definition.Key,
+                    Name = definition.Name,
+                    Tier = definition.Tier,
+                    MinCombatLevel = definition.MinCombatLevel,
+                    IsTrainingGround = true,
+                }, Ct),
+                Throws.TypeOf<BadRequestException>());
+
+            DbContext.ChangeTracker.Clear();
+
+            var reloaded = await DbContext.EncounterDefinitions.FirstAsync(e => e.Id == definition.Id);
+
+            Assert.That(reloaded.IsTrainingGround, Is.False,
+                "the rejected edit must not have been persisted");
+        }
+
+        [Test]
+        public async Task ATrainingGroundCanBeDeleted_BecauseRoamingStillCoversTheTier()
+        {
+            var ground = await _sut.SaveEncounter(_admin.Id, new SaveEncounterRequest
+            {
+                Key = "spare_castle",
+                Name = "A Spare Ruin",
+                Tier = 3,
+                MinCombatLevel = 20,
+                IsTrainingGround = true,
+            }, Ct);
+
+            await _sut.DeleteEncounter(_admin.Id, ground.Id, Ct);
+
+            Assert.That(await DbContext.EncounterDefinitions.AnyAsync(e => e.Id == ground.Id), Is.False);
+        }
+
+        [Test]
+        public async Task GatingTierOne_IsRefused()
+        {
+            // §5C.1: a level-1 player must meet something.
+            Assert.That(
+                async () => await _sut.SaveEncounter(_admin.Id, new SaveEncounterRequest
+                {
+                    Key = "gated_starter",
+                    Name = "Gated",
+                    Tier = 1,
+                    MinCombatLevel = 25,
+                }, Ct),
+                Throws.TypeOf<BadRequestException>());
+        }
+
+        [Test]
+        public async Task EncounterMutations_AreAudited()
+        {
+            var created = await _sut.SaveEncounter(_admin.Id, new SaveEncounterRequest
+            {
+                Key = "audited_fight",
+                Name = "Audited",
+                Tier = 4,
+                MinCombatLevel = 35,
+                IsTrainingGround = true,
+            }, Ct);
+
+            await _sut.DeleteEncounter(_admin.Id, created.Id, Ct);
+
+            var forEncounter = (await _sut.GetAuditTrail(50, Ct))
+                .Where(e => e.EntityType == "Encounter")
+                .Select(e => e.Action)
+                .ToList();
+
+            Assert.That(forEncounter, Does.Contain("Created").And.Contains("Deleted"));
         }
 
         // ── Audit trail (task 9) ────────────────────────────────────────
