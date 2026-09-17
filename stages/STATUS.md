@@ -340,18 +340,20 @@ Needs a human with a phone (carried from the stage file):
 `TraceValidator` now rejects only implausible speed (>400 km/h, a forged path); everything
 below banks as Uncharted Transit.
 
-All five retention systems are backend-complete and tested. **No app surfaces were built
-for any of them** — this is the largest app gap in the project:
+All five retention systems are backend-complete and tested, and **all five now have app
+surfaces** — the largest app gap in the project is closed:
 
-- **Banked transit on the map.** `GET /api/retention/transit` returns each cell's bounds
-  for exactly this; nothing draws them. §7.1 wants it as "a distinct visual state", and
-  without it the whole mechanic is invisible — a commuter banks cells and never learns why.
-- **Expeditions screen.** Dispatch is API-only; nothing lists visited POIs to choose from.
-- **Patrol routes.** No way to define one from a walked path, which is how §5.7 intends
-  them to be created.
-- **Surges on the map.** §5.6 asks for them "clearly signposted"; the sync response
-  carries them and nothing renders them.
-- **District status.** `GET /api/retention/district` works; nothing shows it.
+- **Banked transit on the map.** A violet dashed layer above the fog, opacity carrying the
+  speed grading. §7.1's "distinct visual state".
+- **Expeditions screen.** `app/expeditions.tsx`. Needed a new endpoint first —
+  `GET /api/retention/expeditions/destinations` — because nothing returned the visit log,
+  so the screen had no destinations to offer.
+- **Patrol routes.** `app/patrols.tsx`. Waypoints captured from the player's position
+  while walking, which is how §5.7 intends them to be created.
+- **Surges on the map.** An amber banner, refetched per sync. Renders nothing when none
+  are running, so it never becomes ignorable chrome.
+- **District status.** On the workers screen, beside the Claims. Extended server-side with
+  a nearest-miss shortfall, since "no District" was otherwise a dead end — see below.
 
 Worth a human eye:
 
@@ -377,7 +379,7 @@ npm run verify     # tsc --noEmit && expo lint && npm test
 - **`tsc --noEmit`: 0 errors** across every screen, component and helper — first run,
   nothing needed fixing.
 - **`expo lint`: clean.**
-- **`npx expo export --platform web`: 14 routes, 1,222 modules, no errors.** Every screen
+- **`npx expo export --platform web`: 16 routes, no errors.** Every screen
   static-renders, which is stronger than typechecking: a component that threw on mount
   would fail the export.
 
@@ -385,15 +387,25 @@ The caveat that stood through Stages 02–15 is closed. What remains is *visual*
 *behavioural* review on a real device — layout, whether the framing reads right — not
 whether the code is sound.
 
-### 2. Stage 14's systems are mostly still API-only
+### 2. ~~Stage 14's systems are mostly still API-only~~ — RESOLVED
 
-- ~~Banked transit is not drawn on the map.~~ **Built.** A violet dashed layer above the
-  fog, with an overlay reading "You passed through N places / Walk near them to reveal what
-  you missed." Opacity carries the speed grading, so a cycling-pace cell renders fainter
-  than a train-pace one. The redemption result surfaces in the pickup toast.
-- **Still API-only:** Expeditions, patrol routes, surges and District status. Expeditions
-  are the most valuable of these — Stage 14 calls them "highest value per unit of work",
-  and dispatch currently has no way to pick from the POIs you have visited.
+All four remaining surfaces were built: expeditions, patrols, surges and District status.
+Each got a tested helper in the established `.mjs` pattern; the app is now at **13 suites**
+and the web bundle at **16 routes**.
+
+Two of them turned out not to be pure UI work:
+
+- **Expeditions had no data source.** Dispatch existed, but nothing returned the POIs a
+  player had visited, so there was nothing to dispatch *to*. Added
+  `GetExpeditionDestinations` over the Stage 04 visit log.
+- **District status was a dead end.** §5.5 requires varied terrain on purpose, but a
+  player holding nine identical Claims saw only an empty status and could not learn that
+  variety was the problem. Added `DistrictMatching.NearestMiss` so the status names what
+  it is short of.
+
+Worth a human eye: the patrols screen duplicates the server's 20-hour cooldown as
+`COOLDOWN_HOURS`. A test pins the client value, but nothing ties the two together — if the
+server rule moves, the client will quietly disagree.
 
 ### 3. Genuinely unmet acceptance criteria
 
