@@ -1,6 +1,7 @@
 # Build status
 
-**All 15 planned stages are `DONE`.** See the open questions and outstanding work below.
+**All 15 originally planned stages are `DONE`.** Stage 16 (Combat encounters) was added
+after the scope question was decided — see `DESIGN.md` §5C.
 
 Single source of truth for where the build is. Update this when a stage completes.
 
@@ -21,6 +22,7 @@ Single source of truth for where the build is. Update this when a stage complete
 | 13 | Clue scrolls | DONE |
 | 14 | Retention systems | DONE |
 | 15 | Remaining skills | DONE |
+| 16 | Combat encounters | NOT STARTED |
 
 States: `NOT STARTED` → `IN PROGRESS` → `DONE` (or `BLOCKED`, with a reason).
 
@@ -29,14 +31,18 @@ States: `NOT STARTED` → `IN PROGRESS` → `DONE` (or `BLOCKED`, with a reason)
 Stage 15's definition of done asks that `DESIGN.md` §9's open questions be recorded here
 rather than decided by an agent. **None of these should be settled without you.**
 
-- **Combat scope.** Shipped as a gathering skill — visit historic POIs, gain XP and
-  relics — which is the default Stage 15 states. A full encounter system is a different
-  game and its own stage. If you build one, the stage's own guidance is that castles
-  should be a *boost* rather than the only venue, since most players have none nearby.
+- ~~**Combat scope.**~~ **DECIDED:** encounters. Some spawn at random POIs, some are fixed
+  training grounds at historic sites. Written up as `DESIGN.md` §5C and scoped as
+  `STAGE-16-combat-encounters.md`. The geography rule is preserved — historic POIs are a
+  boost, never the only venue.
 - **Multiplayer.** Nothing in the build assumes other players exist. §9 lists it as open;
   the Museum's shareable profile (§5A.1) is the only hook that points that way.
 - **Monetisation.** Untouched, deliberately. It shapes the whole design and is not an
   agent's call.
+- **Trading's coin economy.** Flagged for decision rather than built: there is no currency
+  and no material→coin sink, and upkeep is paid in food alone. What coin is *for* should be
+  decided before it exists — a second currency with no job is worse than none. Recorded as
+  `DESIGN.md` §9.5.
 
 ## Blockers
 

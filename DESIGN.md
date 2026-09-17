@@ -932,6 +932,66 @@ walked.
 
 ---
 
+## 5C. Combat — encounters
+
+**Decided (Stage 15 follow-up).** Combat is an encounter system, not another gathering
+ladder. Two sources, deliberately different in character:
+
+### 5C.1 Two kinds of encounter
+
+| | **Roaming** | **Training grounds** |
+|---|---|---|
+| Where | Spawns at random POIs near the player | Fixed, at historic POIs |
+| Lifetime | Temporary — appears, expires if ignored | Permanent |
+| Feels like | An event you happened upon | A place you go back to |
+| Purpose | Rewards being out and about | Rewards knowing your area |
+
+**Roaming encounters** spawn server-side against POIs the player could plausibly reach,
+on the same pattern as Resource Surges (§5.6) — deterministic per cell per window, shared
+between players in the same place, cheap to generate. They expire. Missing one costs
+nothing.
+
+**Training grounds** are fixed to `historic=castle|fort|ruins|battlefield` and
+`military=*`. They do not expire, and they are the reliable route: the player who knows a
+ruin two streets away has somewhere to train whenever they choose.
+
+### 5C.2 The geography rule still applies
+
+This is the part that must not be got wrong, and §9's original note already said it:
+**historic POIs are a boost, never the only venue.**
+
+- Roaming encounters spawn at *any* POI category, so a player with no castle still meets
+  them.
+- Training grounds are better — reliable, repeatable, no waiting — which is the
+  compensating advantage for someone who has one.
+- A player with zero historic POIs trains Combat entirely through roaming encounters. It
+  is slower. It is never blocked.
+
+Same shape as every other skill: *what* you can reach depends on level, *how fast*
+depends on geography.
+
+### 5C.3 Resolution
+
+Auto-resolving, in keeping with the idle half. The player arrives, the encounter resolves
+against their Combat level and equipped gear, and yields XP and materials from the
+existing Combat ladder. No real-time input — the walk was the input.
+
+Difficulty scales with Combat level so an encounter stays worth attempting, and losing
+costs time rather than materials. §7.4's rule holds here too: nothing should punish a
+player for being away.
+
+### 5C.4 What this needs
+
+Its own stage, not a bolt-on:
+
+- `EncounterDefinition` (seeded), `PlayerEncounter`, spawn scheduling reusing the Surge
+  pattern.
+- Arrival validated by the same server-side position check as POI visits and clue steps
+  (§7.2) — an encounter must not become a spoofing vector.
+- The Combat ladder already exists and needs no change.
+
+---
+
 ## 6. Background & offline behaviour
 
 Covered in detail in the review, restated here as design requirements:
@@ -1143,13 +1203,7 @@ vertical slice of materials and one worker earlier.
 
 Things I'd want decided before Phase 3, flagged rather than assumed:
 
-1. **Is there combat?** `SkillType.Combat` exists and maps to castles/ruins. Is it a
-   gathering skill like the rest, or an actual encounter system? An idle game usually
-   wants idle combat (auto-resolving fights against territory-spawned enemies), which is
-   a large subsystem. The ladder (§3.1) defuses the access problem — everyone unlocks
-   Combat at ~30 regardless of nearby castles — so this is now purely a scope question
-   rather than a fairness one. If combat becomes a headline system, castles should be a
-   *boost*, not the only venue.
+1. ~~**Is there combat?**~~ **DECIDED — encounters. See §5C.**
 2. **Multiplayer?** Claims imply territory, territory implies contest. Shared-world claim
    competition is compelling but a big scope jump and a moderation burden. Single-player
    with leaderboards is the safe v1.
@@ -1157,6 +1211,11 @@ Things I'd want decided before Phase 3, flagged rather than assumed:
    the offline cap already does the pacing work.
 4. **Monetisation, if any?** It shapes the offline cap and worker slots more than
    anything else in this doc. Better decided early than retrofitted.
+
+5. **Trading's coin economy.** Stage 15 shipped Trading's tier ladder but not the
+   economy it implies — there is no currency, no material→coin sink and no price table.
+   Upkeep (§5.2) is currently paid in food alone. Deciding what coin is *for* before
+   adding it is the point: a second currency with no job is worse than none.
 
 ---
 
