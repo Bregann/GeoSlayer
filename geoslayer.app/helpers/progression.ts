@@ -1,3 +1,7 @@
+import type { LockedSkill } from '@/interfaces/api/progression/LockedSkill';
+import type { PlayerSkills } from '@/interfaces/api/progression/PlayerSkills';
+import type { Skill } from '@/interfaces/api/progression/Skill';
+import type { Upgrade } from '@/interfaces/api/progression/Upgrade';
 /**
  * Presentation logic for the skills and upgrade screens.
  *
@@ -8,7 +12,6 @@
  * choose how to arrange and label what it sent.
  */
 
-import type { LockedSkill, PlayerSkills, Skill, Upgrade } from '@/types/progression';
 
 /** Icon per skill, keyed by the server's SkillType name. */
 export const SKILL_ICONS: Record<string, string> = {

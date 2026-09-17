@@ -1,3 +1,4 @@
+import type { Surge } from '@/interfaces/api/retention/Surge';
 /**
  * Presentation logic for Surges (DESIGN.md §5.6).
  *
@@ -10,14 +11,6 @@
  * so nothing here is phrased as loss.
  */
 
-export interface Surge {
-  id: number;
-  description: string;
-  targetTerrain: string | number | null;
-  targetSkill: string | number | null;
-  multiplier: number;
-  endsUtc: string;
-}
 
 /** Minutes left, floored at zero. */
 export function minutesRemaining(surge: Surge, now: Date = new Date()): number {

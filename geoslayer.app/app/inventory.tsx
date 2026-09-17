@@ -3,18 +3,10 @@ import { router } from 'expo-router';
 import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 import { authApiClient } from '@/helpers/apiClient';
-import {
-  categoryIcon,
-  sortByUrgency,
-  stackLabel,
-  stackPercent,
-  stackWarning,
-  tierLabel,
-  totalUnits,
-} from '@/helpers/inventory';
+import { categoryIcon, sortByUrgency, stackLabel, stackPercent, stackWarning, tierLabel, totalUnits } from '@/helpers/inventory';
 import { progressionStyles as styles } from '@/styles/progression';
-import type { Inventory } from '@/types/inventory';
 import { QueryKeys } from '@/helpers/QueryKeys';
+import type { Inventory } from '@/interfaces/api/materials/Inventory';
 
 /**
  * Inventory screen (Stage 03 task 5).

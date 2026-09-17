@@ -1,3 +1,6 @@
+import type { Inventory } from '@/interfaces/api/materials/Inventory';
+import type { InventoryItem } from '@/interfaces/api/materials/InventoryItem';
+import type { MaterialGain } from '@/interfaces/api/materials/MaterialGain';
 /**
  * Presentation logic for the inventory screen (Stage 03 task 5).
  *
@@ -5,7 +8,6 @@
  * part of the app this environment can actually verify. The screen stays thin over it.
  */
 
-import type { Inventory, InventoryItem, MaterialGain } from '@/types/inventory';
 
 /** Icon per material category, matching the server's MaterialCategory ordinals. */
 export const CATEGORY_ICONS: Record<string, string> = {

@@ -4,17 +4,12 @@ import { ActivityIndicator, Modal, Text, TouchableOpacity, View } from 'react-na
 
 import { authApiClient } from '@/helpers/apiClient';
 import { formatPickups } from '@/helpers/inventory';
-import {
-  decayLabel,
-  previewXp,
-  summariseVisit,
-  visitBlockedReason,
-  type PoiVisitResult,
-} from '@/helpers/poiVisit';
+import { decayLabel, previewXp, summariseVisit, visitBlockedReason } from '@/helpers/poiVisit';
 import { poiModalStyles as styles } from '@/styles/mapScreen';
 import { visitStyles } from '@/styles/progression';
 import { SKILL_ICONS } from '@/styles/poiMarker';
-import type { NearbyPoi } from '@/types/map';
+import type { NearbyPoi } from '@/interfaces/api/journey/NearbyPoi';
+import type { PoiVisitResult } from '@/interfaces/api/journey/PoiVisitResult';
 
 interface Props {
   poi: NearbyPoi | null;

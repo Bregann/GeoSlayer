@@ -1,69 +1,17 @@
+import type { Craft } from '@/interfaces/api/crafting/Craft';
+import type { PlayerItem } from '@/interfaces/api/crafting/PlayerItem';
+import type { Recipe } from '@/interfaces/api/crafting/Recipe';
+import type { RecipeInput } from '@/interfaces/api/crafting/RecipeInput';
 /**
  * Presentation logic for the crafting and equipment screens (Stage 06 task 4).
  *
  * Pure and dependency-free, like the other helpers.
  */
 
-export type RecipeLockReason =
-  | 'None'
-  | 'SkillLocked'
-  | 'LevelLocked'
-  | 'TravelGated'
-  | 'MissingMaterials';
 
-export interface RecipeInput {
-  materialId: number;
-  key: string;
-  name: string;
-  quantity: number;
-  held: number;
-  hasEnough: boolean;
-  /** Only obtainable from POI visits — "go somewhere new", not "keep playing". */
-  isTravelGated: boolean;
-}
 
-export interface Recipe {
-  key: string;
-  name: string;
-  description: string;
-  skillName: string;
-  levelRequired: number;
-  durationSeconds: number;
-  xpReward: number;
-  outputName: string | null;
-  outputQuantity: number;
-  outputKind: string | null;
-  inputs: RecipeInput[];
-  canCraft: boolean;
-  lockReason: RecipeLockReason | number;
-  lockText: string | null;
-}
 
-export interface Craft {
-  id: number;
-  recipeKey: string;
-  recipeName: string;
-  startedUtc: string;
-  completesUtc: string;
-  isComplete: boolean;
-  secondsRemaining: number;
-}
 
-export interface PlayerItem {
-  id: number;
-  itemId: number;
-  key: string;
-  name: string;
-  description: string;
-  kind: string | number;
-  slot: string | number;
-  modifierText: string;
-  tier: number;
-  quantity: number;
-  isEquipped: boolean;
-  claimId: number | null;
-  claimName: string | null;
-}
 
 /** "5m" / "1h 30m" / "2h" — a craft duration at a glance. */
 export function formatDuration(seconds: number): string {

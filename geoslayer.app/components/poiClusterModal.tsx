@@ -2,7 +2,7 @@ import { Modal, Text, TouchableOpacity, View } from 'react-native';
 
 import { poiModalStyles as styles } from '@/styles/mapScreen';
 import { SKILL_ICONS } from '@/styles/poiMarker';
-import type { NearbyPoi } from '@/types/map';
+import type { NearbyPoi } from '@/interfaces/api/journey/NearbyPoi';
 
 interface Props {
   pois: NearbyPoi[] | null;

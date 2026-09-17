@@ -1,3 +1,5 @@
+import type { PatrolRoute } from '@/interfaces/api/retention/PatrolRoute';
+import type { PatrolWaypoint } from '@/interfaces/api/retention/PatrolWaypoint';
 /**
  * Presentation logic for Patrol Routes (DESIGN.md §5.7).
  *
@@ -7,20 +9,7 @@
  * you already walk, paying for the workers you already have.
  */
 
-export interface PatrolWaypoint {
-  latitude: number;
-  longitude: number;
-}
 
-export interface PatrolRoute {
-  id: number;
-  name: string;
-  waypointCount: number;
-  completionCount: number;
-  lastCompletedUtc: string | null;
-  upkeepReward: number;
-  waypoints: PatrolWaypoint[];
-}
 
 /** Matches the server's one-per-day rule in RetentionService. */
 export const COOLDOWN_HOURS = 20;

@@ -3,18 +3,10 @@ import { router } from 'expo-router';
 import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 import { authApiClient } from '@/helpers/apiClient';
-import {
-  groupLockedByLevel,
-  levelProgressPercent,
-  nextTierLabel,
-  nextUnlockSummary,
-  skillIcon,
-  sortSkillsByLevel,
-  xpRemaining,
-} from '@/helpers/progression';
+import { groupLockedByLevel, levelProgressPercent, nextTierLabel, nextUnlockSummary, skillIcon, sortSkillsByLevel, xpRemaining } from '@/helpers/progression';
 import { progressionStyles as styles } from '@/styles/progression';
-import type { PlayerSkills } from '@/types/progression';
 import { QueryKeys } from '@/helpers/QueryKeys';
+import type { PlayerSkills } from '@/interfaces/api/progression/PlayerSkills';
 
 /**
  * Skills screen (Stage 02 task 5, DESIGN.md §3.1c).

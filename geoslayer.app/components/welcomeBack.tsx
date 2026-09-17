@@ -1,7 +1,8 @@
 import { Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
-import { capWarning, formatDuration, type OfflineAccrual } from '@/helpers/idle';
+import { capWarning, formatDuration } from '@/helpers/idle';
 import { celebrationStyles, progressionStyles } from '@/styles/progression';
+import type { OfflineAccrual } from '@/interfaces/api/idle/OfflineAccrual';
 
 interface Props {
   accrual: OfflineAccrual | null;

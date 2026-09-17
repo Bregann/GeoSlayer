@@ -1,3 +1,7 @@
+import type { MuseumRarity } from '@/interfaces/api/museum/MuseumRarity';
+import type { Museum } from '@/interfaces/api/museum/Museum';
+import type { MuseumEntry } from '@/interfaces/api/museum/MuseumEntry';
+import type { MuseumWing } from '@/interfaces/api/museum/MuseumWing';
 /**
  * Presentation logic for the Museum (Stage 12 task 4).
  *
@@ -7,37 +11,9 @@
  * hid them would be the spreadsheet.
  */
 
-export type MuseumRarity = 'Common' | 'Uncommon' | 'Rare' | 'Legendary';
 
-export interface MuseumEntry {
-  key: string;
-  wing: string | number;
-  name: string;
-  description: string;
-  rarity: MuseumRarity | number;
-  unlockCondition: string;
-  isFound: boolean;
-  firstAcquiredUtc: string | null;
-  acquiredAtName: string | null;
-  quantity: number;
-  donatableQuantity: number;
-}
 
-export interface MuseumWing {
-  wing: string | number;
-  name: string;
-  found: number;
-  total: number;
-  isComplete: boolean;
-  entries: MuseumEntry[];
-}
 
-export interface Museum {
-  wings: MuseumWing[];
-  totalFound: number;
-  totalEntries: number;
-  curation: number;
-}
 
 const RARITY_NAMES = ['Common', 'Uncommon', 'Rare', 'Legendary'] as const;
 

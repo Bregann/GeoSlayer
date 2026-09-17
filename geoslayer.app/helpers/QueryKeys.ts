@@ -1,3 +1,5 @@
+import type { Inventory } from '@/interfaces/api/materials/Inventory';
+import type { Museum } from '@/interfaces/api/museum/Museum';
 /**
  * Centralised query keys for @tanstack/react-query.
  * Every useQuery / useMutation in the app should reference these keys rather

@@ -3,7 +3,7 @@ import { Modal, Text, TouchableOpacity, View } from 'react-native';
 
 import { skillIcon } from '@/helpers/progression';
 import { celebrationStyles as styles } from '@/styles/progression';
-import type { UnlockEvent } from '@/types/progression';
+import type { UnlockEvent } from '@/interfaces/api/progression/UnlockEvent';
 
 interface Props {
   unlocks: UnlockEvent[];

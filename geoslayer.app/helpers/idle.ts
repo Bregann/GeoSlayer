@@ -1,48 +1,14 @@
+import type { OfflineAccrual } from '@/interfaces/api/idle/OfflineAccrual';
+import type { Worker } from '@/interfaces/api/idle/Worker';
 /**
  * Presentation logic for the idle layer (Stage 05 tasks 4–5).
  *
  * Pure and dependency-free, like the other helpers.
  */
 
-import type { MaterialGain } from '@/types/inventory';
 
-export interface SkillAccrual {
-  skillType: number;
-  name: string;
-  xpEarned: number;
-  level: number;
-  levelledUp: boolean;
-}
 
-export interface OfflineAccrual {
-  hasAccrual: boolean;
-  hoursAccrued: number;
-  wasCapped: boolean;
-  offlineCapHours: number;
-  materials: MaterialGain[];
-  skills: SkillAccrual[];
-  unlocks: { displayName: string; payload: string; adventurerLevel: number }[];
-  adventurerXpEarned: number;
-  bonusPointsGranted: number;
-}
 
-export interface Worker {
-  id: number;
-  name: string;
-  tier: number;
-  claimId: number | null;
-  claimName: string | null;
-  assignedSkill: number | null;
-  assignedSkillName: string | null;
-  lastCollectedAtUtc: string;
-  xpPerHour: number;
-  materialsPerHour: number;
-  terrainMultiplier: number;
-  terrainMatches: boolean;
-  capReachedAtUtc: string;
-  isAtCap: boolean;
-  isIdle: boolean;
-}
 
 /**
  * Whether the welcome-back screen is worth showing.

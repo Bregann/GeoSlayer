@@ -1,4 +1,6 @@
-import type { Coord, CellDto, NearbyPoi, ClusteredPoi } from '@/types/map';
+import type { Coord, ClusteredPoi } from '@/types/map';
+import type { CellDto } from '@/interfaces/api/journey/CellDto';
+import type { NearbyPoi } from '@/interfaces/api/journey/NearbyPoi';
 
 // ── Haversine distance ────────────────────────────────────────────
 

@@ -5,20 +5,10 @@ import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'rea
 
 import { authApiClient } from '@/helpers/apiClient';
 import { useMutationPost } from '@/helpers/mutations/useMutationPost';
-import {
-  foundLabel,
-  overallPercent,
-  rarityColour,
-  rarityName,
-  sortEntries,
-  sortWings,
-  wingIcon,
-  wingPercent,
-  wingProgress,
-  type Museum,
-} from '@/helpers/museum';
+import { foundLabel, overallPercent, rarityColour, rarityName, sortEntries, sortWings, wingIcon, wingPercent, wingProgress } from '@/helpers/museum';
 import { museumStyles as styles, progressionStyles } from '@/styles/progression';
 import { QueryKeys } from '@/helpers/QueryKeys';
+import type { Museum } from '@/interfaces/api/museum/Museum';
 
 /**
  * The Museum (Stage 12 task 4, DESIGN.md §5A).

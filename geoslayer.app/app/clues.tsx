@@ -5,20 +5,11 @@ import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'rea
 
 import { authApiClient } from '@/helpers/apiClient';
 import { useMutationPost } from '@/helpers/mutations/useMutationPost';
-import {
-  availableTiers,
-  currentStep,
-  hasSearchArea,
-  skipBlockedReason,
-  sortScrolls,
-  stepProgress,
-  stepSummary,
-  tierIcon,
-  type ClueScroll,
-} from '@/helpers/clues';
+import { availableTiers, currentStep, hasSearchArea, skipBlockedReason, sortScrolls, stepProgress, stepSummary, tierIcon } from '@/helpers/clues';
 import { progressionStyles as styles } from '@/styles/progression';
-import type { Museum } from '@/helpers/museum';
 import { QueryKeys } from '@/helpers/QueryKeys';
+import type { ClueScroll } from '@/interfaces/api/clues/ClueScroll';
+import type { Museum } from '@/interfaces/api/museum/Museum';
 
 /**
  * Clue scrolls (Stage 13 task 5, DESIGN.md §5B).

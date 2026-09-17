@@ -1,3 +1,4 @@
+import type { PoiVisitResult } from '@/interfaces/api/journey/PoiVisitResult';
 /**
  * Presentation logic for POI visits (Stage 04 task 4).
  *
@@ -5,26 +6,7 @@
  * environment can actually verify.
  */
 
-import type { MaterialGain } from '@/types/inventory';
-import type { UnlockEvent } from '@/types/progression';
 
-export interface PoiVisitResult {
-  sessionToken: string;
-  poiId: number;
-  poiName: string;
-  skill: string;
-  skillXpEarned: number;
-  adventurerXpEarned: number;
-  skillLevel: number;
-  levelledUp: boolean;
-  isFirstVisit: boolean;
-  visitCount: number;
-  totalVisits: number;
-  /** 0.05-1.0 decay applied to this visit (DESIGN.md §3.4). */
-  decayMultiplier: number;
-  materials: MaterialGain[];
-  unlocks: UnlockEvent[];
-}
 
 /**
  * How the decay state reads to the player.

@@ -5,9 +5,10 @@ import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'rea
 
 import { authApiClient } from '@/helpers/apiClient';
 import { useMutationPost } from '@/helpers/mutations/useMutationPost';
-import { groupItemsByKind, needsClaim, type PlayerItem } from '@/helpers/crafting';
+import { groupItemsByKind, needsClaim } from '@/helpers/crafting';
 import { progressionStyles as styles } from '@/styles/progression';
 import { QueryKeys } from '@/helpers/QueryKeys';
+import type { PlayerItem } from '@/interfaces/api/crafting/PlayerItem';
 
 interface Claim {
   id: number;

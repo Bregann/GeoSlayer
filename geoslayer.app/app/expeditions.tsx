@@ -5,21 +5,12 @@ import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'rea
 
 import { authApiClient } from '@/helpers/apiClient';
 import { useMutationPost } from '@/helpers/mutations/useMutationPost';
-import {
-  destinationBlockedReason,
-  emptyStateMessage,
-  firstVisitLabel,
-  idleWorkerIds,
-  sortDestinations,
-  sortExpeditions,
-  timeRemaining,
-  tradeOffLabel,
-  type Expedition,
-  type ExpeditionDestination,
-} from '@/helpers/expeditions';
-import { type Worker } from '@/helpers/idle';
+import { destinationBlockedReason, emptyStateMessage, firstVisitLabel, idleWorkerIds, sortDestinations, sortExpeditions, timeRemaining, tradeOffLabel } from '@/helpers/expeditions';
 import { progressionStyles as styles } from '@/styles/progression';
 import { QueryKeys } from '@/helpers/QueryKeys';
+import type { Expedition } from '@/interfaces/api/retention/Expedition';
+import type { ExpeditionDestination } from '@/interfaces/api/retention/ExpeditionDestination';
+import type { Worker } from '@/interfaces/api/idle/Worker';
 
 /**
  * Worker Expeditions (DESIGN.md §5.4).

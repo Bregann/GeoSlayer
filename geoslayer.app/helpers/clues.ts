@@ -1,3 +1,5 @@
+import type { ClueScroll } from '@/interfaces/api/clues/ClueScroll';
+import type { ClueStep } from '@/interfaces/api/clues/ClueStep';
 /**
  * Presentation logic for clue scrolls (Stage 13 task 5).
  *
@@ -5,36 +7,8 @@
  * down, and that absence is deliberate.
  */
 
-export type ClueStepType =
-  | 'Direct' | 'Category' | 'Coordinate'
-  | 'Terrain' | 'Cryptic' | 'Relational' | 'Sequence';
 
-export interface ClueStep {
-  stepIndex: number;
-  stepType: ClueStepType | number;
-  riddleText: string;
-  /** Only a coordinate step has these — never the answer to a riddle. */
-  searchLat: number | null;
-  searchLng: number | null;
-  searchRadius: number | null;
-  isSolved: boolean;
-  wasSkipped: boolean;
-  solvedUtc: string | null;
-}
 
-export interface ClueScroll {
-  id: number;
-  tier: string | number;
-  tierName: string;
-  currentStep: number;
-  stepCount: number;
-  isComplete: boolean;
-  skipUsed: boolean;
-  skipCost: number;
-  startedUtc: string;
-  completedUtc: string | null;
-  steps: ClueStep[];
-}
 
 const TIER_NAMES = ['Wandering', 'Roaming', 'Pilgrim', 'Odyssey'] as const;
 

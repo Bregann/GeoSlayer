@@ -18,33 +18,24 @@ import { PoiMarker } from '@/components/poiMarker';
 import { MAP_STYLE_URL } from '@/constants/mapStyle';
 import { useAuth } from '@/contexts/authContext';
 import { authApiClient } from '@/helpers/apiClient';
-import {
-  drainBackgroundBreadcrumbs,
-  startBackgroundLocation,
-} from '@/helpers/backgroundLocation';
-import {
-  buildFogGeoJSON,
-  buildTransitGeoJSON,
-  clusterPois,
-  distanceMetres,
-  toBreadcrumbGeoJSON,
-} from '@/helpers/geo';
-import {
-  expiryNudge,
-  redemptionSummary,
-  transitHint,
-  transitSummary,
-  type BankedTransit,
-} from '@/helpers/transit';
-import { surgeSummary, surgeHint, type Surge } from '@/helpers/surges';
+import { drainBackgroundBreadcrumbs, startBackgroundLocation } from '@/helpers/backgroundLocation';
+import { buildFogGeoJSON, buildTransitGeoJSON, clusterPois, distanceMetres, toBreadcrumbGeoJSON } from '@/helpers/geo';
+import { expiryNudge, redemptionSummary, transitHint, transitSummary } from '@/helpers/transit';
+import { surgeSummary, surgeHint } from '@/helpers/surges';
 import { mapScreenStyles as styles, overviewStyles } from '@/styles/mapScreen';
 import { pickupStyles, surgeStyles, transitStyles } from '@/styles/progression';
-import type { CellDto, Coord, NearbyPoi, SyncData } from '@/types/map';
-import type { UnlockEvent } from '@/types/progression';
+import type { Coord } from '@/types/map';
 import { UnlockCelebration } from '@/components/unlockCelebration';
 import { formatPickups, hasOverflow } from '@/helpers/inventory';
-import { shouldShowWelcomeBack, type OfflineAccrual } from '@/helpers/idle';
+import { shouldShowWelcomeBack } from '@/helpers/idle';
 import { WelcomeBack } from '@/components/welcomeBack';
+import type { BankedTransit } from '@/interfaces/api/retention/BankedTransit';
+import type { CellDto } from '@/interfaces/api/journey/CellDto';
+import type { NearbyPoi } from '@/interfaces/api/journey/NearbyPoi';
+import type { OfflineAccrual } from '@/interfaces/api/idle/OfflineAccrual';
+import type { Surge } from '@/interfaces/api/retention/Surge';
+import type { SyncData } from '@/interfaces/api/journey/SyncData';
+import type { UnlockEvent } from '@/interfaces/api/progression/UnlockEvent';
 
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */

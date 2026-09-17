@@ -5,17 +5,13 @@ import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'rea
 
 import { authApiClient } from '@/helpers/apiClient';
 import { useMutationPost } from '@/helpers/mutations/useMutationPost';
-import {
-  districtHint,
-  districtTitle,
-  hasDistrict,
-  type DistrictStatus,
-} from '@/helpers/districts';
-import { hoursUntilCap, terrainNote, workerStatus, type Worker } from '@/helpers/idle';
-import { formatDuration } from '@/helpers/idle';
+import { districtHint, districtTitle, hasDistrict } from '@/helpers/districts';
+import { formatDuration, hoursUntilCap, terrainNote, workerStatus } from '@/helpers/idle';
 import { progressionStyles as styles } from '@/styles/progression';
-import type { PlayerSkills } from '@/types/progression';
 import { QueryKeys } from '@/helpers/QueryKeys';
+import type { DistrictStatus } from '@/interfaces/api/retention/DistrictStatus';
+import type { PlayerSkills } from '@/interfaces/api/progression/PlayerSkills';
+import type { Worker } from '@/interfaces/api/idle/Worker';
 
 interface Claim {
   id: number;

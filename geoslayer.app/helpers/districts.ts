@@ -1,3 +1,4 @@
+import type { DistrictStatus } from '@/interfaces/api/retention/DistrictStatus';
 /**
  * Presentation logic for Districts (DESIGN.md §5.5).
  *
@@ -8,16 +9,6 @@
  * exist mostly to make it say something actionable.
  */
 
-export interface DistrictStatus {
-  districtKey: string | null;
-  name: string | null;
-  description: string | null;
-  outputBonus: number;
-  claimCount: number;
-  nearestName: string | null;
-  missingTerrains: string[];
-  missingClaims: number;
-}
 
 /** Whether a District is currently formed. */
 export function hasDistrict(status: DistrictStatus | undefined): boolean {

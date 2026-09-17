@@ -6,18 +6,11 @@ import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'rea
 import { authApiClient } from '@/helpers/apiClient';
 import { useMutationDelete } from '@/helpers/mutations/useMutationDelete';
 import { useMutationPost } from '@/helpers/mutations/useMutationPost';
-import {
-  craftTimeRemaining,
-  formatDuration,
-  inputLabel,
-  isTravelGated,
-  lockBadge,
-  sortRecipes,
-  type Craft,
-  type Recipe,
-} from '@/helpers/crafting';
+import { craftTimeRemaining, formatDuration, inputLabel, isTravelGated, lockBadge, sortRecipes } from '@/helpers/crafting';
 import { progressionStyles as styles } from '@/styles/progression';
 import { QueryKeys } from '@/helpers/QueryKeys';
+import type { Craft } from '@/interfaces/api/crafting/Craft';
+import type { Recipe } from '@/interfaces/api/crafting/Recipe';
 
 interface RecipeList {
   recipes: Recipe[];

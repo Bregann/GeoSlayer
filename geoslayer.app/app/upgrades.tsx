@@ -5,16 +5,10 @@ import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } fr
 
 import { authApiClient } from '@/helpers/apiClient';
 import { useMutationPost } from '@/helpers/mutations/useMutationPost';
-import {
-  currentEffectLabel,
-  formatEffect,
-  groupUpgradesByCategory,
-  purchaseBlockedReason,
-  rankLabel,
-} from '@/helpers/progression';
+import { currentEffectLabel, formatEffect, groupUpgradesByCategory, purchaseBlockedReason, rankLabel } from '@/helpers/progression';
 import { progressionStyles as styles } from '@/styles/progression';
-import type { PlayerUpgrades } from '@/types/progression';
 import { QueryKeys } from '@/helpers/QueryKeys';
+import type { PlayerUpgrades } from '@/interfaces/api/progression/PlayerUpgrades';
 
 /**
  * Bonus Point upgrade screen (Stage 02 task 5, DESIGN.md §3.0a).

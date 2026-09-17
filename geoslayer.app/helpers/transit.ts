@@ -1,3 +1,5 @@
+import type { BankedTransit } from '@/interfaces/api/retention/BankedTransit';
+import type { TransitRedemption } from '@/interfaces/api/retention/TransitRedemption';
 /**
  * Presentation logic for Uncharted Transit (DESIGN.md §7.1).
  *
@@ -5,24 +7,7 @@
  * it did not reveal, and walking near it will. That is a sentence the UI has to say.
  */
 
-export interface BankedTransit {
-  gridLat: number;
-  gridLng: number;
-  south: number;
-  west: number;
-  north: number;
-  east: number;
-  /** Under 1 for a cycling-pace cell, which banked only partially. */
-  weight: number;
-  expiresUtc: string;
-}
 
-export interface TransitRedemption {
-  redeemed: number;
-  cellsRevealed: number;
-  remaining: number;
-  expired: number;
-}
 
 /**
  * The headline for the map overlay.

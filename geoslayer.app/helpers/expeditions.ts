@@ -1,3 +1,6 @@
+import type { Expedition } from '@/interfaces/api/retention/Expedition';
+import type { ExpeditionDestination } from '@/interfaces/api/retention/ExpeditionDestination';
+import type { Worker } from '@/interfaces/api/idle/Worker';
 /**
  * Presentation logic for Worker Expeditions (DESIGN.md §5.4).
  *
@@ -7,35 +10,12 @@
  * of targets.
  */
 
-export interface ExpeditionDestination {
-  poiId: number;
-  name: string;
-  skill: string | number;
-  skillName: string;
-  firstVisitUtc: string;
-  totalVisits: number;
-  distanceMetres: number;
-  durationHours: number;
-  estimatedMaterials: number;
-  isAvailable: boolean;
-}
 
 /** Only the field the expedition screen needs from a worker. */
 export interface WorkerRef {
   id: number;
 }
 
-export interface Expedition {
-  id: number;
-  workerId: number;
-  poiId: number;
-  poiName: string;
-  dispatchedUtc: string;
-  returnsUtc: string;
-  distanceMetres: number;
-  hasReturned: boolean;
-  secondsRemaining: number;
-}
 
 /** "2.4 km" / "340 m" — distance at a human scale. */
 export function formatDistance(metres: number): string {

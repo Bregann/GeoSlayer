@@ -1,55 +1,17 @@
-import type { MaterialGain } from './inventory';
-import type { OfflineAccrual } from '../helpers/idle';
-import type { TransitRedemption } from '../helpers/transit';
-import type { UnlockEvent } from './progression';
+import type { NearbyPoi } from '@/interfaces/api/journey/NearbyPoi';
 
+/**
+ * Client-side map types.
+ *
+ * API response shapes live in interfaces/api/; these two are the app's own — a device
+ * position fix, and the result of clustering markers for display.
+ */
 export interface Coord {
   latitude: number;
   longitude: number;
   timestamp: number;
   /** Horizontal accuracy in metres. Optional — older stored breadcrumbs lack it. */
   accuracy?: number | null;
-}
-
-export interface CellDto {
-  gridLat: number;
-  gridLng: number;
-  south: number;
-  west: number;
-  north: number;
-  east: number;
-}
-
-export interface SyncData {
-  newCells: CellDto[];
-  /** Cumulative Adventurer XP (DESIGN.md §3.0). */
-  xp: number;
-  /** Adventurer level. */
-  level: number;
-  /** Ladder rungs crossed by this sync, for the celebration (§3.1c). */
-  unlocks: UnlockEvent[];
-  /** Bonus Points granted by this sync's level-ups. */
-  bonusPointsGranted: number;
-  /** Materials picked up this sync (Stage 03). */
-  materials: MaterialGain[];
-  /** Cells banked as Uncharted Transit rather than revealed (Stage 14, §7.1). */
-  transitBanked: number;
-  /** Banked transit this walk redeemed, or null when none was. */
-  transitRedemption: TransitRedemption | null;
-  /** What workers produced while away, or null when nothing did (Stage 05). */
-  offlineAccrual: OfflineAccrual | null;
-  nearbyPois: NearbyPoi[];
-}
-
-export interface NearbyPoi {
-  id: number;
-  name: string;
-  skill: string;
-  latitude: number;
-  longitude: number;
-  xpReward: number;
-  distanceMetres: number;
-  inRange: boolean;
 }
 
 export interface ClusteredPoi extends NearbyPoi {

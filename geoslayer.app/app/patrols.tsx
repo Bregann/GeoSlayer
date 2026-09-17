@@ -13,19 +13,11 @@ import {
 
 import { authApiClient } from '@/helpers/apiClient';
 import { useMutationPost } from '@/helpers/mutations/useMutationPost';
-import {
-  completionLabel,
-  draftBlockedReason,
-  emptyStateMessage,
-  isReady,
-  routeStatus,
-  routeSummary,
-  sortRoutes,
-  type PatrolRoute,
-  type PatrolWaypoint,
-} from '@/helpers/patrols';
+import { completionLabel, draftBlockedReason, emptyStateMessage, isReady, routeStatus, routeSummary, sortRoutes } from '@/helpers/patrols';
 import { progressionStyles as styles } from '@/styles/progression';
 import { QueryKeys } from '@/helpers/QueryKeys';
+import type { PatrolRoute } from '@/interfaces/api/retention/PatrolRoute';
+import type { PatrolWaypoint } from '@/interfaces/api/retention/PatrolWaypoint';
 
 /**
  * Patrol Routes (DESIGN.md §5.7).
