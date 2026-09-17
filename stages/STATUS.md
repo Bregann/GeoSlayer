@@ -80,6 +80,11 @@ also leaves orphaned containers behind, which keep consuming resources until rem
 docker ps -q | xargs -r docker rm -f
 ```
 
+**The suite is flaky under load, not broken.** Three admin tests failed once during Stage
+18 on a run that took 4m50s, then passed twice in a row at 18s with no code change. The
+slow run is the tell: each test drops and recreates the database, so when the box is busy
+the container cannot keep up. Re-run before believing a failure, and check the duration.
+
 Prefer a targeted filter while working:
 
 ```bash

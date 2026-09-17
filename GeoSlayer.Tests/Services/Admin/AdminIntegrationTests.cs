@@ -30,6 +30,11 @@ namespace GeoSlayer.Tests.Services.Admin
             _admin.IsAdmin = true;
             await DbContext.SaveChangesAsync();
 
+            // Materials and drop tables are needed by the task 6 tests — the ladder rules
+            // are only meaningful against a real ladder.
+            await TestDatabaseSeedHelper.SeedMaterialDefinitions(DbContext);
+            await TestDatabaseSeedHelper.SeedSkillDefinitions(DbContext);
+
             _sut = new AdminService(DbContext);
         }
 
@@ -251,6 +256,138 @@ namespace GeoSlayer.Tests.Services.Admin
             await _sut.DeleteItem(_admin.Id, item.Id, Ct);
 
             Assert.That(await DbContext.ItemImages.AnyAsync(i => i.ItemId == item.Id), Is.False);
+        }
+
+        // ── Materials (task 6) ──────────────────────────────────────────
+
+        /// <summary>
+        /// A material on a ladder that does not exist yet.
+        ///
+        /// <para>Exploration is the only skill with no seeded ladder, and Coastal's seeded
+        /// materials are terrain drops with no skill attached — so this pair is free. Every
+        /// other skill already owns all seven rungs of its category, which is exactly what
+        /// <c>MaterialValidation</c> refuses to let a second material share.</para>
+        /// </summary>
+        private static SaveMaterialRequest NewMaterial(
+            string key = "test_find",
+            SkillType? skill = SkillType.Exploration,
+            MaterialCategory category = MaterialCategory.Coastal,
+            int tier = 6,
+            int level = 70,
+            double seconds = 40,
+            double xp = 150) => new()
+            {
+                Key = key,
+                Name = "Test Ore",
+                SkillType = skill,
+                Category = category,
+                Tier = tier,
+                LevelRequired = level,
+                BaseGatherSeconds = seconds,
+                XpPerUnit = xp,
+            };
+
+        [Test]
+        public async Task AMaterialCanBeCreated_AndCarriesItsDerivedValues()
+        {
+            var saved = await _sut.SaveMaterial(_admin.Id, NewMaterial(), Ct);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(saved.Id, Is.GreaterThan(0));
+
+                // Price is derived from tier and category (§5D.1), not stored — an admin
+                // should see the consequence of their choices rather than discover it.
+                Assert.That(saved.UnitPrice, Is.GreaterThan(0));
+                Assert.That(saved.XpPerSecond, Is.EqualTo(150.0 / 40).Within(0.001));
+            });
+        }
+
+        [Test]
+        public async Task AMaterialBreakingALadderRule_IsRejectedAndNotSaved()
+        {
+            // Mined already holds all seven Mining rungs, so claiming that category for a
+            // different skill is the shared-category violation. MaterialValidation covers
+            // the rule itself; this proves the service enforces it and stores nothing.
+            var broken = NewMaterial(
+                key: "intruder", skill: SkillType.Exploration, category: MaterialCategory.Mined);
+
+            Assert.That(
+                async () => await _sut.SaveMaterial(_admin.Id, broken, Ct),
+                Throws.TypeOf<BadRequestException>());
+
+            Assert.That(await DbContext.Materials.AnyAsync(m => m.Key == "intruder"), Is.False,
+                "a rejected material must not reach the database");
+        }
+
+        [Test]
+        public async Task ARejectedMaterial_DoesNotCorruptTheNextSave()
+        {
+            // The service mutates the tracked entity before validating, so a rejection has
+            // to clear the change tracker — otherwise the bad values ride along on the next
+            // unrelated SaveChanges.
+            var existing = await DbContext.Materials
+                .Where(m => m.SkillType == SkillType.Mining)
+                .OrderBy(m => m.Tier)
+                .FirstAsync();
+
+            var originalLevel = existing.LevelRequired;
+
+            // Tier 0 is off the ladder entirely, so this is refused whatever else is seeded.
+            var broken = NewMaterial(key: existing.Key, skill: SkillType.Mining,
+                category: MaterialCategory.Mined, tier: 0);
+            broken.Id = existing.Id;
+
+            Assert.That(
+                async () => await _sut.SaveMaterial(_admin.Id, broken, Ct),
+                Throws.TypeOf<BadRequestException>());
+
+            DbContext.ChangeTracker.Clear();
+
+            var reloaded = await DbContext.Materials.FirstAsync(m => m.Id == existing.Id);
+
+            Assert.That(reloaded.LevelRequired, Is.EqualTo(originalLevel),
+                "the rejected edit must not have been persisted");
+        }
+
+        [Test]
+        public async Task AMaterialInADropTable_CannotBeDeleted()
+        {
+            // Deleting it would leave the drop table pointing at nothing, surfacing as a
+            // crash during a sync rather than here where it can be explained.
+            var inTable = await DbContext.DropTableEntries
+                .Select(e => e.MaterialId)
+                .FirstAsync();
+
+            Assert.That(
+                async () => await _sut.DeleteMaterial(_admin.Id, inTable, Ct),
+                Throws.TypeOf<BadRequestException>());
+        }
+
+        [Test]
+        public async Task AnUnreferencedMaterialCanBeDeleted()
+        {
+            var created = await _sut.SaveMaterial(
+                _admin.Id, NewMaterial("orphan_find", tier: 7, level: 90, seconds: 60, xp: 240), Ct);
+
+            await _sut.DeleteMaterial(_admin.Id, created.Id, Ct);
+
+            Assert.That(await DbContext.Materials.AnyAsync(m => m.Id == created.Id), Is.False);
+        }
+
+        [Test]
+        public async Task MaterialMutations_AreAudited()
+        {
+            var created = await _sut.SaveMaterial(
+                _admin.Id, NewMaterial("audited_find", tier: 7, level: 90, seconds: 60, xp: 240), Ct);
+
+            await _sut.DeleteMaterial(_admin.Id, created.Id, Ct);
+
+            var trail = await _sut.GetAuditTrail(50, Ct);
+            var forMaterial = trail.Where(e => e.EntityType == "Material").ToList();
+
+            Assert.That(forMaterial.Select(e => e.Action),
+                Does.Contain("Created").And.Contains("Deleted"));
         }
 
         // ── Audit trail (task 9) ────────────────────────────────────────

@@ -33,6 +33,22 @@ namespace GeoSlayer.Domain.Interfaces.Api.Admin
         /// <summary>An item's image bytes and content type, or null when it has none.</summary>
         Task<(byte[] Data, string ContentType)?> GetItemImage(int itemId, CancellationToken ct);
 
+        /// <summary>Every material, with its derived price and XP rate.</summary>
+        Task<List<AdminMaterialDto>> GetMaterials(CancellationToken ct);
+
+        /// <summary>
+        /// Create or update a material.
+        ///
+        /// <para>Refuses anything the seed-data tests would reject — see
+        /// <c>MaterialValidation</c>. A test only runs in CI, so the rules have to be
+        /// restated where a runtime save can be stopped.</para>
+        /// </summary>
+        Task<AdminMaterialDto> SaveMaterial(
+            string adminUserId, SaveMaterialRequest request, CancellationToken ct);
+
+        /// <summary>Delete a material, refusing when anything still references it.</summary>
+        Task DeleteMaterial(string adminUserId, int materialId, CancellationToken ct);
+
         /// <summary>The audit trail, newest first.</summary>
         Task<List<AdminAuditDto>> GetAuditTrail(int limit, CancellationToken ct);
     }

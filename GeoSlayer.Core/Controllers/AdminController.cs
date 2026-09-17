@@ -101,6 +101,30 @@ namespace GeoSlayer.Core.Controllers
             return File(image.Value.Data, image.Value.ContentType);
         }
 
+        /// <summary>Every material, with its derived price and XP rate.</summary>
+        [HttpGet]
+        public async Task<ActionResult<List<AdminMaterialDto>>> GetMaterials(CancellationToken ct) =>
+            Ok(await admin.GetMaterials(ct));
+
+        /// <summary>
+        /// Create or update a material.
+        ///
+        /// <para>Refused when it would break an invariant the seed-data tests enforce —
+        /// the response says which one.</para>
+        /// </summary>
+        [HttpPost]
+        public async Task<ActionResult<AdminMaterialDto>> SaveMaterial(
+            [FromBody] SaveMaterialRequest request, CancellationToken ct) =>
+            Ok(await admin.SaveMaterial(CurrentUserId(), request, ct));
+
+        /// <summary>Delete a material.</summary>
+        [HttpDelete]
+        public async Task<ActionResult> DeleteMaterial([FromQuery] int materialId, CancellationToken ct)
+        {
+            await admin.DeleteMaterial(CurrentUserId(), materialId, ct);
+            return Ok();
+        }
+
         /// <summary>The audit trail, newest first.</summary>
         [HttpGet]
         public async Task<ActionResult<List<AdminAuditDto>>> GetAuditTrail(

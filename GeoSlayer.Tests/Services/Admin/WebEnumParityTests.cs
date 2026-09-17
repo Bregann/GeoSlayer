@@ -76,5 +76,12 @@ namespace GeoSlayer.Tests.Services.Admin
 
         [Test]
         public void ItemModifiers_MatchTheEnum() => AssertMatches<ItemModifier>("ItemModifiers");
+
+        [Test]
+        public void MaterialCategories_MatchTheEnum() =>
+            AssertMatches<MaterialCategory>("MaterialCategories");
+
+        [Test]
+        public void SkillTypes_MatchTheEnum() => AssertMatches<SkillType>("SkillTypes");
     }
 }

@@ -5,6 +5,7 @@ using GeoSlayer.Domain.DTOs.Admin.Responses;
 using GeoSlayer.Domain.Exceptions;
 using GeoSlayer.Domain.Interfaces.Api.Admin;
 using GeoSlayer.Domain.Services.Crafting;
+using GeoSlayer.Domain.Services.Economy;
 using Microsoft.EntityFrameworkCore;
 
 namespace GeoSlayer.Domain.Services.Admin
@@ -211,6 +212,131 @@ namespace GeoSlayer.Domain.Services.Admin
                 .FirstOrDefaultAsync(ct);
 
             return image is null ? null : (image.Data, image.ContentType);
+        }
+
+        // ── Materials (task 6) ──────────────────────────────────────────
+
+        public async Task<List<AdminMaterialDto>> GetMaterials(CancellationToken ct)
+        {
+            var materials = await db.Materials
+                .OrderBy(m => m.Category)
+                .ThenBy(m => m.Tier)
+                .ToListAsync(ct);
+
+            return [.. materials.Select(ToDto)];
+        }
+
+        private static AdminMaterialDto ToDto(Material material) => new()
+        {
+            Id = material.Id,
+            Key = material.Key,
+            Name = material.Name,
+            Category = material.Category,
+            SkillType = material.SkillType,
+            Tier = material.Tier,
+            LevelRequired = material.LevelRequired,
+            BaseGatherSeconds = material.BaseGatherSeconds,
+            XpPerUnit = material.XpPerUnit,
+            IsUnique = material.IsUnique,
+
+            // Derived rather than stored (§5D.1), so it is shown as a consequence of the
+            // tier and category rather than as something to edit.
+            UnitPrice = CoinPricing.UnitPrice(material.Tier, material.Category),
+
+            // The number §4.1a actually constrains — XP/hour must not fall as tiers rise.
+            XpPerSecond = material.BaseGatherSeconds > 0
+                ? Math.Round(material.XpPerUnit / material.BaseGatherSeconds, 4)
+                : 0,
+        };
+
+        public async Task<AdminMaterialDto> SaveMaterial(
+            string adminUserId, SaveMaterialRequest request, CancellationToken ct)
+        {
+            var isNew = request.Id is null;
+
+            var material = isNew
+                ? new Material { Key = request.Key, Name = request.Name }
+                : await db.Materials.FirstOrDefaultAsync(m => m.Id == request.Id, ct)
+                  ?? throw new NotFoundException($"Material {request.Id} not found.");
+
+            material.Key = request.Key;
+            material.Name = request.Name;
+            material.Category = request.Category;
+            material.SkillType = request.SkillType;
+            material.Tier = request.Tier;
+            material.LevelRequired = request.LevelRequired;
+            material.BaseGatherSeconds = request.BaseGatherSeconds;
+            material.XpPerUnit = request.XpPerUnit;
+            material.IsUnique = request.IsUnique;
+
+            // Validated against every *other* material, so editing one in place does not
+            // trip the uniqueness and tier rules against itself.
+            var others = await db.Materials
+                .Where(m => m.Id != (request.Id ?? 0))
+                .AsNoTracking()
+                .ToListAsync(ct);
+
+            var rejection = MaterialValidation.Reject(material, others);
+
+            if (rejection is not null)
+            {
+                // Cleared before throwing: the entity was mutated in place above, and
+                // leaving it tracked would let the bad values reach the database on the
+                // next unrelated SaveChanges.
+                db.ChangeTracker.Clear();
+
+                throw new BadRequestException(rejection);
+            }
+
+            if (isNew)
+            {
+                db.Materials.Add(material);
+            }
+
+            await db.SaveChangesAsync(ct);
+
+            await Audit(adminUserId, "Material", material.Id.ToString(),
+                isNew ? "Created" : "Updated",
+                $"{material.Key}: {material.Category} tier {material.Tier}, " +
+                $"level {material.LevelRequired}, {material.BaseGatherSeconds}s", ct);
+
+            return ToDto(material);
+        }
+
+        public async Task DeleteMaterial(string adminUserId, int materialId, CancellationToken ct)
+        {
+            var material = await db.Materials.FirstOrDefaultAsync(m => m.Id == materialId, ct)
+                ?? throw new NotFoundException($"Material {materialId} not found.");
+
+            // Each of these would leave a dangling reference that surfaces as a crash
+            // somewhere else in the game rather than here, where it can be explained.
+            if (await db.RecipeInputs.AnyAsync(i => i.MaterialId == materialId, ct))
+            {
+                throw new BadRequestException(
+                    $"'{material.Key}' is an input to a recipe. Change the recipe first.");
+            }
+
+            if (await db.Recipes.AnyAsync(r => r.OutputMaterialId == materialId, ct))
+            {
+                throw new BadRequestException(
+                    $"'{material.Key}' is produced by a recipe. Change the recipe first.");
+            }
+
+            if (await db.DropTableEntries.AnyAsync(e => e.MaterialId == materialId, ct))
+            {
+                throw new BadRequestException(
+                    $"'{material.Key}' is in a drop table. Remove it from the table first.");
+            }
+
+            var heldBy = await db.PlayerMaterials
+                .CountAsync(pm => pm.MaterialId == materialId && pm.Quantity > 0, ct);
+
+            db.Materials.Remove(material);
+            await db.SaveChangesAsync(ct);
+
+            await Audit(adminUserId, "Material", materialId.ToString(), "Deleted",
+                $"{material.Key} ({material.Name}); held by {heldBy} player" +
+                $"{(heldBy == 1 ? "" : "s")}", ct);
         }
 
         // ── Audit (task 9) ──────────────────────────────────────────────

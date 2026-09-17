@@ -2,7 +2,7 @@
 
 import { AppShell, Burger, Group, NavLink, Text } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
-import { IconClipboardList, IconSword } from '@tabler/icons-react'
+import { IconClipboardList, IconPick, IconSword } from '@tabler/icons-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
@@ -19,6 +19,7 @@ import { usePathname } from 'next/navigation'
 
 const NAV = [
   { href: '/items', label: 'Items', icon: IconSword },
+  { href: '/materials', label: 'Materials', icon: IconPick },
   { href: '/audit', label: 'Audit trail', icon: IconClipboardList },
 ]
 

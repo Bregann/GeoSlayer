@@ -22,6 +22,52 @@ export const ItemModifiers = [
   'CombatPowerLevels',
 ] as const
 
+export const MaterialCategories = [
+  'Dust',
+  'Woodland',
+  'Water',
+  'Farmland',
+  'Urban',
+  'Industrial',
+  'Rocky',
+  'Coastal',
+  'Foraged',
+  'Caught',
+  'Logged',
+  'Cooked',
+  'Mined',
+  'Grown',
+  'Traded',
+  'Sacred',
+  'Written',
+  'Remedy',
+  'Athletic',
+  'Brewed',
+  'Coin',
+  'Martial',
+  'Forged',
+  'Relic',
+] as const
+
+export const SkillTypes = [
+  'Prayer',
+  'Knowledge',
+  'Woodcutting',
+  'Fishing',
+  'Healing',
+  'Athletics',
+  'Tavern',
+  'Trading',
+  'Banking',
+  'Combat',
+  'Mining',
+  'Farming',
+  'Smithing',
+  'Cooking',
+  'Exploration',
+  'Foraging',
+] as const
+
 /** Options shaped for a Mantine Select. */
 export const asOptions = (names: readonly string[]) =>
   names.map((label, value) => ({ value: String(value), label }))
