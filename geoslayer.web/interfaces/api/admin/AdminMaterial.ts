@@ -17,4 +17,7 @@ export interface AdminMaterial {
 
   /** XP per gathering second: the number §4.1a constrains. */
   xpPerSecond: number
+
+  /** True when artwork has been uploaded for this material. */
+  hasSprite: boolean
 }

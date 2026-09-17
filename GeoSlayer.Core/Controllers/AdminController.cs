@@ -1,5 +1,6 @@
 using GeoSlayer.Domain.DTOs.Admin.Requests;
 using GeoSlayer.Domain.DTOs.Admin.Responses;
+using GeoSlayer.Domain.Enums;
 using GeoSlayer.Domain.Exceptions;
 using GeoSlayer.Domain.Interfaces.Api.Admin;
 using GeoSlayer.Domain.Interfaces.Helpers;
@@ -257,6 +258,62 @@ namespace GeoSlayer.Core.Controllers
         public async Task<ActionResult<AdminPlayerDto>> GetPlayer(
             [FromQuery] int playerId, CancellationToken ct) =>
             Ok(await admin.GetPlayer(playerId, ct));
+
+        /// <summary>
+        /// Upload or replace a sprite for an item, material, encounter or Museum entry.
+        /// </summary>
+        [HttpPost]
+        [RequestSizeLimit(4 * 1024 * 1024)]
+        public async Task<ActionResult> UploadSprite(
+            [FromForm] SpriteOwner ownerType, [FromForm] int ownerId, IFormFile file,
+            CancellationToken ct)
+        {
+            if (file is null || file.Length == 0)
+            {
+                throw new BadRequestException("No file provided.");
+            }
+
+            using var memory = new MemoryStream();
+            await file.CopyToAsync(memory, ct);
+
+            await admin.UploadSprite(
+                CurrentUserId(), ownerType, ownerId, memory.ToArray(),
+                file.ContentType, file.FileName, ct);
+
+            return Ok();
+        }
+
+        /// <summary>Remove a sprite.</summary>
+        [HttpDelete]
+        public async Task<ActionResult> DeleteSprite(
+            [FromQuery] SpriteOwner ownerType, [FromQuery] int ownerId, CancellationToken ct)
+        {
+            await admin.DeleteSprite(CurrentUserId(), ownerType, ownerId, ct);
+            return Ok();
+        }
+
+        /// <summary>
+        /// A sprite.
+        ///
+        /// <para><see cref="AllowAnonymous"/> for the same reason item images are: artwork is
+        /// not secret, it is rendered in the player app, and requiring a token would stop the
+        /// app using an ordinary image element.</para>
+        /// </summary>
+        [HttpGet]
+        [AllowAnonymous]
+        [ResponseCache(Duration = 86400, Location = ResponseCacheLocation.Any)]
+        public async Task<ActionResult> GetSprite(
+            [FromQuery] SpriteOwner ownerType, [FromQuery] int ownerId, CancellationToken ct)
+        {
+            var sprite = await admin.GetSprite(ownerType, ownerId, ct);
+
+            if (sprite is null)
+            {
+                return NotFound();
+            }
+
+            return File(sprite.Value.Data, sprite.Value.ContentType);
+        }
 
         /// <summary>The audit trail, newest first.</summary>
         [HttpGet]

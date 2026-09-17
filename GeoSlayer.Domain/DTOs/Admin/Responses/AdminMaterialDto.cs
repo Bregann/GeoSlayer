@@ -28,5 +28,8 @@ namespace GeoSlayer.Domain.DTOs.Admin.Responses
 
         /// <summary>XP per gathering second, the number §4.1a actually constrains.</summary>
         public double XpPerSecond { get; set; }
+
+        /// <summary>True when artwork has been uploaded for this material.</summary>
+        public bool HasSprite { get; set; }
     }
 }

@@ -2,6 +2,7 @@ using GeoSlayer.Domain.Database.Context;
 using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.DTOs.Admin.Requests;
 using GeoSlayer.Domain.DTOs.Admin.Responses;
+using GeoSlayer.Domain.Enums;
 using GeoSlayer.Domain.Exceptions;
 using GeoSlayer.Domain.Interfaces.Api.Admin;
 using GeoSlayer.Domain.Services.Crafting;
@@ -223,10 +224,12 @@ namespace GeoSlayer.Domain.Services.Admin
                 .ThenBy(m => m.Tier)
                 .ToListAsync(ct);
 
-            return [.. materials.Select(ToDto)];
+            var withSprites = await GetSpriteOwners(SpriteOwner.Material, ct);
+
+            return [.. materials.Select(m => ToDto(m, withSprites.Contains(m.Id)))];
         }
 
-        private static AdminMaterialDto ToDto(Material material) => new()
+        private static AdminMaterialDto ToDto(Material material, bool hasSprite = false) => new()
         {
             Id = material.Id,
             Key = material.Key,
@@ -247,6 +250,8 @@ namespace GeoSlayer.Domain.Services.Admin
             XpPerSecond = material.BaseGatherSeconds > 0
                 ? Math.Round(material.XpPerUnit / material.BaseGatherSeconds, 4)
                 : 0,
+
+            HasSprite = hasSprite,
         };
 
         public async Task<AdminMaterialDto> SaveMaterial(
@@ -1169,6 +1174,99 @@ namespace GeoSlayer.Domain.Services.Admin
                 Items = items,
             };
         }
+
+        // ── Sprites (task 6, generalised) ───────────────────────────────
+
+        public async Task UploadSprite(
+            string adminUserId, SpriteOwner ownerType, int ownerId,
+            byte[] data, string? contentType, string? fileName, CancellationToken ct)
+        {
+            // The owner must exist. Without this an admin could upload against a typo'd id
+            // and the sprite would sit invisible forever — a polymorphic key buys no
+            // referential integrity, so the check has to be explicit.
+            if (!await OwnerExists(ownerType, ownerId, ct))
+            {
+                throw new NotFoundException($"No {ownerType} with id {ownerId}.");
+            }
+
+            var rejection = ImageValidation.Reject(contentType, data);
+
+            if (rejection is not null)
+            {
+                throw new BadRequestException(rejection);
+            }
+
+            var existing = await db.Sprites
+                .FirstOrDefaultAsync(s => s.OwnerType == ownerType && s.OwnerId == ownerId, ct);
+
+            var replacing = existing is not null;
+            var sprite = existing ?? new Sprite { OwnerType = ownerType, OwnerId = ownerId };
+
+            sprite.Data = data;
+            sprite.ContentType = contentType!;
+            sprite.FileName = ImageValidation.SafeFileName(fileName, contentType!);
+            sprite.SizeBytes = data.Length;
+            sprite.UploadedUtc = DateTime.UtcNow;
+            sprite.UploadedByUserId = adminUserId;
+
+            if (!replacing)
+            {
+                db.Sprites.Add(sprite);
+            }
+
+            await db.SaveChangesAsync(ct);
+
+            await Audit(adminUserId, ownerType.ToString(), ownerId.ToString(),
+                replacing ? "SpriteReplaced" : "SpriteUploaded",
+                $"{sprite.FileName}, {data.Length / 1024}KB", ct);
+        }
+
+        public async Task DeleteSprite(
+            string adminUserId, SpriteOwner ownerType, int ownerId, CancellationToken ct)
+        {
+            var sprite = await db.Sprites
+                .FirstOrDefaultAsync(s => s.OwnerType == ownerType && s.OwnerId == ownerId, ct)
+                ?? throw new NotFoundException($"That {ownerType} has no sprite.");
+
+            db.Sprites.Remove(sprite);
+            await db.SaveChangesAsync(ct);
+
+            await Audit(adminUserId, ownerType.ToString(), ownerId.ToString(),
+                "SpriteDeleted", sprite.FileName, ct);
+        }
+
+        public async Task<(byte[] Data, string ContentType)?> GetSprite(
+            SpriteOwner ownerType, int ownerId, CancellationToken ct)
+        {
+            var sprite = await db.Sprites
+                .Where(s => s.OwnerType == ownerType && s.OwnerId == ownerId)
+                .Select(s => new { s.Data, s.ContentType })
+                .FirstOrDefaultAsync(ct);
+
+            return sprite is null ? null : (sprite.Data, sprite.ContentType);
+        }
+
+        public async Task<HashSet<int>> GetSpriteOwners(SpriteOwner ownerType, CancellationToken ct)
+        {
+            // Ids only — the blobs are never loaded to answer "which of these have art".
+            var owners = await db.Sprites
+                .Where(s => s.OwnerType == ownerType)
+                .Select(s => s.OwnerId)
+                .ToListAsync(ct);
+
+            return [.. owners];
+        }
+
+        /// <summary>Whether the thing a sprite would belong to actually exists.</summary>
+        private async Task<bool> OwnerExists(SpriteOwner ownerType, int ownerId, CancellationToken ct) =>
+            ownerType switch
+            {
+                SpriteOwner.Item => await db.Items.AnyAsync(x => x.Id == ownerId, ct),
+                SpriteOwner.Material => await db.Materials.AnyAsync(x => x.Id == ownerId, ct),
+                SpriteOwner.Encounter => await db.EncounterDefinitions.AnyAsync(x => x.Id == ownerId, ct),
+                SpriteOwner.MuseumEntry => await db.MuseumEntryDefinitions.AnyAsync(x => x.Id == ownerId, ct),
+                _ => false,
+            };
 
         // ── Audit (task 9) ──────────────────────────────────────────────
 

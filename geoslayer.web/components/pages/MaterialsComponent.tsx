@@ -6,6 +6,7 @@ import {
   Badge,
   Button,
   Group,
+  Image,
   Loader,
   Stack,
   Table,
@@ -15,18 +16,19 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
-import { IconPencil, IconPlus, IconSearch, IconTrash } from '@tabler/icons-react'
+import { IconPencil, IconPhoto, IconPlus, IconSearch, IconTrash } from '@tabler/icons-react'
 import { useQuery } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 
 import { DeleteConfirmationModal } from '@/components/common/DeleteConfirmationModal'
+import { SpriteModal } from '@/components/common/SpriteModal'
 import { EditMaterialModal } from '@/components/materials/EditMaterialModal'
 import { doQueryGet } from '@/helpers/apiClient'
 import { useMutationDelete } from '@/helpers/mutations/useMutationDelete'
 import { messageFrom, notifyError, notifySuccess } from '@/helpers/notificationHelper'
 import { QueryKeys } from '@/helpers/QueryKeys'
 import type { AdminMaterial } from '@/interfaces/api/admin/AdminMaterial'
-import { MaterialCategories, SkillTypes } from '@/interfaces/api/admin/ItemEnums'
+import { MaterialCategories, SkillTypes, spriteOwner } from '@/interfaces/api/admin/ItemEnums'
 
 /**
  * Material management (Stage 18 task 6).
@@ -41,9 +43,11 @@ export default function MaterialsComponent() {
   const [search, setSearch] = useState('')
   const [editing, setEditing] = useState<AdminMaterial | null>(null)
   const [deleting, setDeleting] = useState<AdminMaterial | null>(null)
+  const [spriting, setSpriting] = useState<AdminMaterial | null>(null)
 
   const [editOpen, { open: openEdit, close: closeEdit }] = useDisclosure(false)
   const [deleteOpen, { open: openDelete, close: closeDelete }] = useDisclosure(false)
+  const [spriteOpen, { open: openSprite, close: closeSprite }] = useDisclosure(false)
 
   const materials = useQuery<AdminMaterial[]>({
     queryKey: [QueryKeys.Materials],
@@ -117,6 +121,7 @@ export default function MaterialsComponent() {
         <Table striped highlightOnHover withTableBorder>
           <Table.Thead>
             <Table.Tr>
+              <Table.Th w={60}>Art</Table.Th>
               <Table.Th>Name</Table.Th>
               <Table.Th>Key</Table.Th>
               <Table.Th>Category</Table.Th>
@@ -127,13 +132,29 @@ export default function MaterialsComponent() {
               <Table.Th>XP/unit</Table.Th>
               <Table.Th>XP/sec</Table.Th>
               <Table.Th>Price</Table.Th>
-              <Table.Th w={90}></Table.Th>
+              <Table.Th w={130}></Table.Th>
             </Table.Tr>
           </Table.Thead>
 
           <Table.Tbody>
             {filtered.map((material) => (
               <Table.Tr key={material.id}>
+                <Table.Td>
+                  {material.hasSprite ? (
+                    <Image
+                      src={`/api/Admin/GetSprite?ownerType=${spriteOwner('Material')}&ownerId=${material.id}`}
+                      alt={material.name}
+                      w={28}
+                      h={28}
+                      fit="contain"
+                    />
+                  ) : (
+                    <Text c="dimmed" size="xs">
+                      —
+                    </Text>
+                  )}
+                </Table.Td>
+
                 <Table.Td>
                   <Group gap="xs">
                     <Text size="sm">{material.name}</Text>
@@ -181,6 +202,18 @@ export default function MaterialsComponent() {
 
                 <Table.Td>
                   <Group gap={4} justify="flex-end" wrap="nowrap">
+                    <Tooltip label="Sprite">
+                      <ActionIcon
+                        variant="subtle"
+                        onClick={() => {
+                          setSpriting(material)
+                          openSprite()
+                        }}
+                      >
+                        <IconPhoto size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+
                     <Tooltip label="Edit">
                       <ActionIcon
                         variant="subtle"
@@ -218,6 +251,18 @@ export default function MaterialsComponent() {
       )}
 
       <EditMaterialModal opened={editOpen} onClose={closeEdit} material={editing} />
+
+      {spriting && (
+        <SpriteModal
+          opened={spriteOpen}
+          onClose={closeSprite}
+          ownerType={spriteOwner('Material')}
+          ownerId={spriting.id}
+          ownerName={spriting.name}
+          hasSprite={spriting.hasSprite}
+          invalidate={[[QueryKeys.Materials], [QueryKeys.AuditTrail]]}
+        />
+      )}
 
       <DeleteConfirmationModal
         opened={deleteOpen}

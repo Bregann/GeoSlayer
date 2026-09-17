@@ -83,6 +83,24 @@ export const MuseumRarities = ['Common', 'Uncommon', 'Rare', 'Legendary'] as con
 
 export const UnlockTypes = ['Skill', 'System'] as const
 
+/**
+ * What a sprite belongs to.
+ *
+ * Ordinals are stored in the database, so this must never be reordered — an insert in the
+ * middle would repoint every existing sprite at a different kind of thing.
+ */
+export const SpriteOwners = ['Item', 'Material', 'Encounter', 'MuseumEntry'] as const
+
+/**
+ * The wire value for a sprite owner, by name.
+ *
+ * Used instead of a literal at call sites so the parity test protects them: hard-coding
+ * `ownerType={1}` would keep compiling if the enum were reordered, and would then upload
+ * material art against encounters.
+ */
+export const spriteOwner = (name: (typeof SpriteOwners)[number]): number =>
+  SpriteOwners.indexOf(name)
+
 /** Options shaped for a Mantine Select. */
 export const asOptions = (names: readonly string[]) =>
   names.map((label, value) => ({ value: String(value), label }))

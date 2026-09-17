@@ -1166,6 +1166,124 @@ namespace GeoSlayer.Tests.Services.Admin
             Assert.That((await _sut.GetAuditTrail(100, Ct)).Count, Is.EqualTo(before));
         }
 
+        // ── Sprites (task 6, generalised) ───────────────────────────────
+
+        [Test]
+        public async Task AMaterialSpriteCanBeUploadedAndRead()
+        {
+            // The generalisation working: what items already had, now for materials.
+            var material = await DbContext.Materials.FirstAsync();
+
+            await _sut.UploadSprite(
+                _admin.Id, SpriteOwner.Material, material.Id, Png(), "image/png", "ore.png", Ct);
+
+            var sprite = await _sut.GetSprite(SpriteOwner.Material, material.Id, Ct);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(sprite, Is.Not.Null);
+                Assert.That(sprite!.Value.ContentType, Is.EqualTo("image/png"));
+            });
+        }
+
+        [Test]
+        public async Task SpritesOfDifferentKinds_DoNotCollideOnId()
+        {
+            // The risk a polymorphic key introduces: item 1 and material 1 are different
+            // things, and must not share a sprite.
+            var item = await _sut.SaveItem(_admin.Id, NewItem("sprite_item"), Ct);
+            var material = await DbContext.Materials.FirstAsync();
+
+            await _sut.UploadSprite(
+                _admin.Id, SpriteOwner.Item, item.Id, Png(16), "image/png", "item.png", Ct);
+            await _sut.UploadSprite(
+                _admin.Id, SpriteOwner.Material, material.Id, Png(64), "image/png", "material.png", Ct);
+
+            var itemSprite = await DbContext.Sprites
+                .FirstAsync(s => s.OwnerType == SpriteOwner.Item && s.OwnerId == item.Id);
+            var materialSprite = await DbContext.Sprites
+                .FirstAsync(s => s.OwnerType == SpriteOwner.Material && s.OwnerId == material.Id);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(itemSprite.FileName, Is.EqualTo("item.png"));
+                Assert.That(materialSprite.FileName, Is.EqualTo("material.png"));
+            });
+        }
+
+        [Test]
+        public async Task UploadingASpriteAgain_ReplacesIt()
+        {
+            var material = await DbContext.Materials.FirstAsync();
+
+            await _sut.UploadSprite(
+                _admin.Id, SpriteOwner.Material, material.Id, Png(16), "image/png", "first.png", Ct);
+            await _sut.UploadSprite(
+                _admin.Id, SpriteOwner.Material, material.Id, Png(64), "image/png", "second.png", Ct);
+
+            var rows = await DbContext.Sprites
+                .CountAsync(s => s.OwnerType == SpriteOwner.Material && s.OwnerId == material.Id);
+
+            Assert.That(rows, Is.EqualTo(1));
+        }
+
+        [Test]
+        public async Task ASpriteForSomethingThatDoesNotExist_IsRejected()
+        {
+            // A polymorphic key buys no referential integrity, so the check has to be
+            // explicit — otherwise a typo'd id uploads a sprite that is invisible forever.
+            Assert.That(
+                async () => await _sut.UploadSprite(
+                    _admin.Id, SpriteOwner.Material, 999_999, Png(), "image/png", "x.png", Ct),
+                Throws.TypeOf<NotFoundException>());
+        }
+
+        [Test]
+        public async Task AnInvalidSprite_IsRejectedAndNothingIsStored()
+        {
+            var material = await DbContext.Materials.FirstAsync();
+            var html = "<html><script>alert(1)</script></html>"u8.ToArray();
+
+            Assert.That(
+                async () => await _sut.UploadSprite(
+                    _admin.Id, SpriteOwner.Material, material.Id, html, "image/png", "x.png", Ct),
+                Throws.TypeOf<BadRequestException>());
+
+            Assert.That(
+                await DbContext.Sprites.AnyAsync(s => s.OwnerId == material.Id),
+                Is.False);
+        }
+
+        [Test]
+        public async Task MaterialsReportWhetherTheyHaveArtwork()
+        {
+            var material = await DbContext.Materials.FirstAsync();
+
+            await _sut.UploadSprite(
+                _admin.Id, SpriteOwner.Material, material.Id, Png(), "image/png", "ore.png", Ct);
+
+            var listed = (await _sut.GetMaterials(Ct)).First(m => m.Id == material.Id);
+
+            Assert.That(listed.HasSprite, Is.True);
+        }
+
+        [Test]
+        public async Task SpriteMutations_AreAudited()
+        {
+            var material = await DbContext.Materials.FirstAsync();
+
+            await _sut.UploadSprite(
+                _admin.Id, SpriteOwner.Material, material.Id, Png(), "image/png", "ore.png", Ct);
+            await _sut.DeleteSprite(_admin.Id, SpriteOwner.Material, material.Id, Ct);
+
+            var actions = (await _sut.GetAuditTrail(50, Ct))
+                .Where(e => e.EntityType == "Material")
+                .Select(e => e.Action)
+                .ToList();
+
+            Assert.That(actions, Does.Contain("SpriteUploaded").And.Contains("SpriteDeleted"));
+        }
+
         // ── Audit trail (task 9) ────────────────────────────────────────
 
         [Test]

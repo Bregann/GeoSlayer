@@ -1,5 +1,6 @@
 using GeoSlayer.Domain.DTOs.Admin.Requests;
 using GeoSlayer.Domain.DTOs.Admin.Responses;
+using GeoSlayer.Domain.Enums;
 
 namespace GeoSlayer.Domain.Interfaces.Api.Admin
 {
@@ -137,6 +138,26 @@ namespace GeoSlayer.Domain.Interfaces.Api.Admin
 
         /// <summary>Everything about one player.</summary>
         Task<AdminPlayerDto> GetPlayer(int playerId, CancellationToken ct);
+
+        /// <summary>
+        /// Store or replace a sprite for anything the game draws an icon for.
+        ///
+        /// <para>Generalises the item-image path to materials, encounters and Museum
+        /// entries. Validates the bytes rather than the declared content type.</para>
+        /// </summary>
+        Task UploadSprite(
+            string adminUserId, SpriteOwner ownerType, int ownerId,
+            byte[] data, string? contentType, string? fileName, CancellationToken ct);
+
+        /// <summary>Remove a sprite.</summary>
+        Task DeleteSprite(string adminUserId, SpriteOwner ownerType, int ownerId, CancellationToken ct);
+
+        /// <summary>A sprite's bytes and content type, or null when there is none.</summary>
+        Task<(byte[] Data, string ContentType)?> GetSprite(
+            SpriteOwner ownerType, int ownerId, CancellationToken ct);
+
+        /// <summary>Which owners of a kind have a sprite, for list views.</summary>
+        Task<HashSet<int>> GetSpriteOwners(SpriteOwner ownerType, CancellationToken ct);
 
         /// <summary>The audit trail, newest first.</summary>
         Task<List<AdminAuditDto>> GetAuditTrail(int limit, CancellationToken ct);

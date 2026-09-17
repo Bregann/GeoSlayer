@@ -92,5 +92,8 @@ namespace GeoSlayer.Tests.Services.Admin
 
         [Test]
         public void UnlockTypes_MatchTheEnum() => AssertMatches<UnlockType>("UnlockTypes");
+
+        [Test]
+        public void SpriteOwners_MatchTheEnum() => AssertMatches<SpriteOwner>("SpriteOwners");
     }
 }

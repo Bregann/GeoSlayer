@@ -50,6 +50,7 @@ namespace GeoSlayer.Domain.Database.Context
         public DbSet<ItemImage> ItemImages { get; set; } = null!;
         public DbSet<AdminAuditEntry> AdminAuditEntries { get; set; } = null!;
         public DbSet<GameSetting> GameSettings { get; set; } = null!;
+        public DbSet<Sprite> Sprites { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -180,6 +181,12 @@ namespace GeoSlayer.Domain.Database.Context
                       .WithMany()
                       .HasForeignKey(e => e.ItemId)
                       .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<Sprite>(entity =>
+            {
+                // One sprite per thing — uploading again replaces rather than accumulating.
+                entity.HasIndex(e => new { e.OwnerType, e.OwnerId }).IsUnique();
             });
 
             modelBuilder.Entity<GameSetting>(entity =>
