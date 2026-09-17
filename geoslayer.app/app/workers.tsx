@@ -1,9 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 import { authApiClient } from '@/helpers/apiClient';
+import { useMutationPost } from '@/helpers/mutations/useMutationPost';
 import {
   districtHint,
   districtTitle,
@@ -31,7 +32,6 @@ interface Claim {
  * eligibility (§5.2), so nothing here filters skills by terrain.
  */
 export default function WorkersScreen() {
-  const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
 
@@ -64,25 +64,22 @@ export default function WorkersScreen() {
     return err instanceof Error ? err.message : 'Something went wrong';
   };
 
-  const refresh = () => {
-    queryClient.invalidateQueries({ queryKey: [QueryKeys.Workers] });
-    queryClient.invalidateQueries({ queryKey: [QueryKeys.Claims] });
-  };
-
-  const hire = useMutation<Worker, unknown, void>({
-    mutationFn: async () => (await authApiClient.post<Worker>('/api/Idle/HireWorker')).data,
-    onSuccess: () => { setError(null); refresh(); },
-    onError: (err: unknown) => setError(failureMessage(err)),
+  const hire = useMutationPost<void, Worker>({
+    url: '/api/Idle/HireWorker',
+    queryKey: [QueryKeys.Workers],
+    invalidateQuery: true,
+    alsoInvalidate: [[QueryKeys.Claims]],
+    onSuccess: () => setError(null),
+    onError: (err) => setError(failureMessage(err)),
   });
 
-  const assign = useMutation<Worker, unknown, { id: number; claimId: number; skill: number }>({
-    mutationFn: async (input) =>
-      (await authApiClient.post<Worker>(`/api/Idle/AssignWorker?id=${input.id}`, {
-        claimId: input.claimId,
-        skill: input.skill,
-      })).data,
-    onSuccess: () => { setError(null); setSelected(null); refresh(); },
-    onError: (err: unknown) => setError(failureMessage(err)),
+  const assign = useMutationPost<{ id: number; claimId: number; skill: number }, Worker>({
+    url: (input) => `/api/Idle/AssignWorker?id=${input.id}`,
+    queryKey: [QueryKeys.Workers],
+    invalidateQuery: true,
+    alsoInvalidate: [[QueryKeys.Claims]],
+    onSuccess: () => { setError(null); setSelected(null); },
+    onError: (err) => setError(failureMessage(err)),
   });
 
   const isLoading = workers.isLoading || claims.isLoading || skills.isLoading;

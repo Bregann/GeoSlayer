@@ -1,9 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 import { authApiClient } from '@/helpers/apiClient';
+import { useMutationPost } from '@/helpers/mutations/useMutationPost';
 import {
   destinationBlockedReason,
   emptyStateMessage,
@@ -32,7 +33,6 @@ import { QueryKeys } from '@/helpers/QueryKeys';
  * keeps the idle layer from punishing you for sleeping (§7.4).
  */
 export default function ExpeditionsScreen() {
-  const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
 
@@ -59,21 +59,16 @@ export default function ExpeditionsScreen() {
     return err instanceof Error ? err.message : 'Something went wrong';
   };
 
-  const dispatch = useMutation<Expedition, unknown, { workerId: number; poiId: number }>({
-    mutationFn: async (input) =>
-      (await authApiClient.post<Expedition>('/api/Retention/Dispatch', input)).data,
-    onSuccess: () => {
-      setError(null);
-      setSelected(null);
-      queryClient.invalidateQueries({ queryKey: [QueryKeys.Expeditions] });
-      queryClient.invalidateQueries({ queryKey: [QueryKeys.Workers] });
-
-      // Destinations carry IsAvailable, which this dispatch just changed for the POI we
-      // sent to. Invalidated explicitly: it used to ride along on the Expeditions prefix
-      // when the key was ['player', 'expeditions', 'destinations'], and no longer does.
-      queryClient.invalidateQueries({ queryKey: [QueryKeys.ExpeditionDestinations] });
-    },
-    onError: (err: unknown) => setError(failureMessage(err)),
+  const dispatch = useMutationPost<{ workerId: number; poiId: number }, Expedition>({
+    url: '/api/Retention/Dispatch',
+    queryKey: [QueryKeys.Expeditions],
+    invalidateQuery: true,
+    // Destinations carry IsAvailable, which this dispatch just changed for the POI we
+    // sent to. Invalidated explicitly: it used to ride along on the Expeditions prefix
+    // when the key was ['player', 'expeditions', 'destinations'], and no longer does.
+    alsoInvalidate: [[QueryKeys.Workers], [QueryKeys.ExpeditionDestinations]],
+    onSuccess: () => { setError(null); setSelected(null); },
+    onError: (err) => setError(failureMessage(err)),
   });
 
   const isLoading = expeditions.isLoading || destinations.isLoading || workers.isLoading;

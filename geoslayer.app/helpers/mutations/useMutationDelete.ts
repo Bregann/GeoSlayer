@@ -4,6 +4,8 @@ import { authApiClient } from '../apiClient'
 interface MutationDeleteOptions<TInput, TOutput> {
   url: string | ((_input: TInput) => string)
   queryKey: string[]
+  /** Extra keys to invalidate alongside queryKey. */
+  alsoInvalidate?: string[][]
   invalidateQuery: boolean
   onError?: (_error: Error) => void
   onSuccess?: (_data: TOutput | undefined) => void
@@ -26,6 +28,10 @@ export function useMutationDelete<TInput, TOutput>(options: MutationDeleteOption
     onSuccess: (data) => {
       if (options.onSuccess !== undefined) {
         options.onSuccess(data)
+      }
+
+      for (const key of options.alsoInvalidate ?? []) {
+        queryClient.invalidateQueries({ queryKey: key })
       }
 
       if (options.invalidateQuery) {

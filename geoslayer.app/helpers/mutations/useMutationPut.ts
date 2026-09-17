@@ -4,6 +4,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 interface MutationPutOptions<TOutput> {
   url: string | ((_input: any) => string)
   queryKey: string[]
+  /** Extra keys to invalidate alongside queryKey. */
+  alsoInvalidate?: string[][]
   invalidateQuery: boolean
   onError?: (_error: Error) => void
   onSuccess?: (_data: TOutput | undefined) => void
@@ -26,6 +28,10 @@ export function useMutationPut<TInput, TOutput>(options: MutationPutOptions<TOut
     onSuccess: (data) => {
       if (options.onSuccess !== undefined) {
         options.onSuccess(data)
+      }
+
+      for (const key of options.alsoInvalidate ?? []) {
+        queryClient.invalidateQueries({ queryKey: key })
       }
 
       if (options.invalidateQuery) {

@@ -1,9 +1,11 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 import { authApiClient } from '@/helpers/apiClient';
+import { useMutationDelete } from '@/helpers/mutations/useMutationDelete';
+import { useMutationPost } from '@/helpers/mutations/useMutationPost';
 import {
   craftTimeRemaining,
   formatDuration,
@@ -31,7 +33,6 @@ interface RecipeList {
  * because "go somewhere new" and "keep playing" are different answers.
  */
 export default function CraftingScreen() {
-  const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
 
   const recipes = useQuery<RecipeList>({
@@ -50,25 +51,26 @@ export default function CraftingScreen() {
     return err instanceof Error ? err.message : 'Something went wrong';
   };
 
-  const refresh = () => {
-    queryClient.invalidateQueries({ queryKey: [QueryKeys.Recipes] });
-    queryClient.invalidateQueries({ queryKey: [QueryKeys.CraftQueue] });
-    queryClient.invalidateQueries({ queryKey: [QueryKeys.Inventory] });
-  };
+  // A craft moves materials out of the inventory and onto the queue, so all three
+  // views change together.
+  const alsoInvalidate = [[QueryKeys.CraftQueue], [QueryKeys.Inventory]];
 
-  const start = useMutation<Craft, unknown, string>({
-    mutationFn: async (key) =>
-      (await authApiClient.post<Craft>(`/api/Crafting/QueueCraft?key=${key}`)).data,
-    onSuccess: () => { setError(null); refresh(); },
-    onError: (err: unknown) => setError(failureMessage(err)),
+  const start = useMutationPost<string, Craft>({
+    url: (key) => `/api/Crafting/QueueCraft?key=${key}`,
+    queryKey: [QueryKeys.Recipes],
+    invalidateQuery: true,
+    alsoInvalidate,
+    onSuccess: () => setError(null),
+    onError: (err) => setError(failureMessage(err)),
   });
 
-  const cancel = useMutation<void, unknown, number>({
-    mutationFn: async (id) => {
-      await authApiClient.delete(`/api/Crafting/CancelCraft?id=${id}`);
-    },
-    onSuccess: () => { setError(null); refresh(); },
-    onError: (err: unknown) => setError(failureMessage(err)),
+  const cancel = useMutationDelete<number, void>({
+    url: (id) => `/api/Crafting/CancelCraft?id=${id}`,
+    queryKey: [QueryKeys.Recipes],
+    invalidateQuery: true,
+    alsoInvalidate,
+    onSuccess: () => setError(null),
+    onError: (err) => setError(failureMessage(err)),
   });
 
   const isLoading = recipes.isLoading || queue.isLoading;

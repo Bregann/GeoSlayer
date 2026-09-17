@@ -1,9 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 import { authApiClient } from '@/helpers/apiClient';
+import { useMutationPost } from '@/helpers/mutations/useMutationPost';
 import {
   currentEffectLabel,
   formatEffect,
@@ -23,7 +24,6 @@ import { QueryKeys } from '@/helpers/QueryKeys';
  * the new state, and a second round trip would let the points counter flicker.
  */
 export default function UpgradesScreen() {
-  const queryClient = useQueryClient();
   const [actionError, setActionError] = useState<string | null>(null);
 
   const queryKey = [QueryKeys.Upgrades];
@@ -51,36 +51,26 @@ export default function UpgradesScreen() {
     return err instanceof Error ? err.message : 'Something went wrong';
   };
 
-  const purchase = useMutation<PlayerUpgrades, unknown, string>({
-    mutationFn: async (key: string) => {
-      const response = await authApiClient.post<PlayerUpgrades>(
-        `/api/Player/PurchaseUpgrade?key=${key}`,
-      );
-      if (response.status >= 400) throw new Error(failureMessage(response.data));
-      return response.data;
-    },
-    onSuccess: (updated: PlayerUpgrades) => {
-      setActionError(null);
-      queryClient.setQueryData(queryKey, updated);
-      // Reveal Radius and Scholar change what a sync returns, so the skills view and
-      // anything reading player state must not keep a stale copy.
-      queryClient.invalidateQueries({ queryKey: [QueryKeys.Skills] });
-    },
-    onError: (err: unknown) => setActionError(failureMessage(err)),
+  // Both endpoints return the whole upgrades payload, so invalidateQuery is false and
+  // the wrapper writes the response straight into the cache instead of refetching.
+  // Reveal Radius and Scholar change what a sync returns, so the skills view and
+  // anything reading player state must not keep a stale copy.
+  const purchase = useMutationPost<string, PlayerUpgrades>({
+    url: (key) => `/api/Player/PurchaseUpgrade?key=${key}`,
+    queryKey,
+    invalidateQuery: false,
+    alsoInvalidate: [[QueryKeys.Skills]],
+    onSuccess: () => setActionError(null),
+    onError: (err) => setActionError(failureMessage(err)),
   });
 
-  const respec = useMutation<PlayerUpgrades, unknown, void>({
-    mutationFn: async () => {
-      const response = await authApiClient.post<PlayerUpgrades>('/api/Player/Respec');
-      if (response.status >= 400) throw new Error(failureMessage(response.data));
-      return response.data;
-    },
-    onSuccess: (updated: PlayerUpgrades) => {
-      setActionError(null);
-      queryClient.setQueryData(queryKey, updated);
-      queryClient.invalidateQueries({ queryKey: [QueryKeys.Skills] });
-    },
-    onError: (err: unknown) => setActionError(failureMessage(err)),
+  const respec = useMutationPost<void, PlayerUpgrades>({
+    url: '/api/Player/Respec',
+    queryKey,
+    invalidateQuery: false,
+    alsoInvalidate: [[QueryKeys.Skills]],
+    onSuccess: () => setActionError(null),
+    onError: (err) => setActionError(failureMessage(err)),
   });
 
   const confirmRespec = () => {

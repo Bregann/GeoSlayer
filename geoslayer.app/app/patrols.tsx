@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 
 import { authApiClient } from '@/helpers/apiClient';
+import { useMutationPost } from '@/helpers/mutations/useMutationPost';
 import {
   completionLabel,
   draftBlockedReason,
@@ -38,7 +39,6 @@ import { QueryKeys } from '@/helpers/QueryKeys';
  * interaction and the honest one.
  */
 export default function PatrolsScreen() {
-  const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [draft, setDraft] = useState<PatrolWaypoint[]>([]);
@@ -55,19 +55,12 @@ export default function PatrolsScreen() {
     return err instanceof Error ? err.message : 'Something went wrong';
   };
 
-  const create = useMutation<PatrolRoute, unknown, void>({
-    mutationFn: async () =>
-      (await authApiClient.post<PatrolRoute>('/api/Retention/CreatePatrol', {
-        name: name.trim() || 'Patrol',
-        waypoints: draft,
-      })).data,
-    onSuccess: () => {
-      setError(null);
-      setDraft([]);
-      setName('');
-      queryClient.invalidateQueries({ queryKey: [QueryKeys.Patrols] });
-    },
-    onError: (err: unknown) => setError(failureMessage(err)),
+  const create = useMutationPost<{ name: string; waypoints: PatrolWaypoint[] }, PatrolRoute>({
+    url: '/api/Retention/CreatePatrol',
+    queryKey: [QueryKeys.Patrols],
+    invalidateQuery: true,
+    onSuccess: () => { setError(null); setDraft([]); setName(''); },
+    onError: (err) => setError(failureMessage(err)),
   });
 
   const addWaypoint = async () => {
@@ -185,7 +178,7 @@ export default function PatrolsScreen() {
               <TouchableOpacity
                 style={styles.buyButton}
                 disabled={create.isPending}
-                onPress={() => create.mutate()}
+                onPress={() => create.mutate({ name: name.trim() || 'Patrol', waypoints: draft })}
               >
                 <Text style={styles.buyText}>SAVE ROUTE</Text>
               </TouchableOpacity>

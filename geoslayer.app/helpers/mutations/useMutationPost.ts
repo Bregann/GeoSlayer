@@ -1,15 +1,17 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { authApiClient } from '../apiClient'
 
-interface MutationPostOptions<TOutput> {
-  url: string | ((_input: any) => string)
+interface MutationPostOptions<TInput, TOutput> {
+  url: string | ((_input: TInput) => string)
   queryKey: string[]
+  /** Extra keys to invalidate alongside queryKey. */
+  alsoInvalidate?: string[][]
   invalidateQuery: boolean
   onError?: (_error: Error) => void
   onSuccess?: (_data: TOutput | undefined) => void
 }
 
-export function useMutationPost<TInput, TOutput>(options: MutationPostOptions<TOutput>) {
+export function useMutationPost<TInput, TOutput>(options: MutationPostOptions<TInput, TOutput>) {
   const queryClient = useQueryClient()
 
   return useMutation({
@@ -26,6 +28,10 @@ export function useMutationPost<TInput, TOutput>(options: MutationPostOptions<TO
     onSuccess: (data) => {
       if (options.onSuccess !== undefined) {
         options.onSuccess(data)
+      }
+
+      for (const key of options.alsoInvalidate ?? []) {
+        queryClient.invalidateQueries({ queryKey: key })
       }
 
       if (options.invalidateQuery) {

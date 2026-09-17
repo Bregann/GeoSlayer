@@ -41,6 +41,9 @@ export function PoiDetailModal({ poi, visitCount = 0, onClose, onVisited }: Prop
     setError(null);
   }, [poi?.id]);
 
+  // Deliberately not one of the useMutation* wrappers: a visit invalidates no cached
+  // query (the result is handed straight to the caller via onVisited), and the wrappers
+  // require a queryKey. Inventing one to satisfy the shape would be worse than this.
   const visit = useMutation<PoiVisitResult, unknown, number>({
     mutationFn: async (poiId: number) => {
       const response = await authApiClient.post<PoiVisitResult>(

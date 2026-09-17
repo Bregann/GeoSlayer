@@ -1,9 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 import { authApiClient } from '@/helpers/apiClient';
+import { useMutationPost } from '@/helpers/mutations/useMutationPost';
 import {
   availableTiers,
   currentStep,
@@ -27,7 +28,6 @@ import { QueryKeys } from '@/helpers/QueryKeys';
  * chain is meant to unfold one leg at a time.
  */
 export default function CluesScreen() {
-  const queryClient = useQueryClient();
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,33 +48,37 @@ export default function CluesScreen() {
     return err instanceof Error ? err.message : 'Something went wrong';
   };
 
-  const refresh = () => {
-    queryClient.invalidateQueries({ queryKey: [QueryKeys.Clues] });
-    queryClient.invalidateQueries({ queryKey: [QueryKeys.Museum] });
-  };
+  // Solving a step can fill a Museum plinth, so both views refresh together.
+  const alsoInvalidate = [[QueryKeys.Museum]];
 
-  const generate = useMutation<ClueScroll, unknown, string>({
-    mutationFn: async (tier) =>
-      (await authApiClient.post<ClueScroll>(`/api/Clues/Generate?tier=${tier}`)).data,
-    onSuccess: () => { setError(null); setMessage(null); refresh(); },
-    onError: (err: unknown) => setError(failureMessage(err)),
+  const generate = useMutationPost<string, ClueScroll>({
+    url: (tier) => `/api/Clues/Generate?tier=${tier}`,
+    queryKey: [QueryKeys.Clues],
+    invalidateQuery: true,
+    alsoInvalidate,
+    onSuccess: () => { setError(null); setMessage(null); },
+    onError: (err) => setError(failureMessage(err)),
   });
 
-  const attempt = useMutation<{ stepSolved: boolean; scrollComplete: boolean }, unknown, number>({
-    mutationFn: async (id) =>
-      (await authApiClient.post(`/api/Clues/Attempt?id=${id}`)).data as never,
+  const attempt = useMutationPost<number, { stepSolved: boolean; scrollComplete: boolean }>({
+    url: (id) => `/api/Clues/Attempt?id=${id}`,
+    queryKey: [QueryKeys.Clues],
+    invalidateQuery: true,
+    alsoInvalidate,
     onSuccess: (result) => {
       setError(null);
-      setMessage(result.scrollComplete ? 'Scroll complete!' : 'Found it. On to the next.');
-      refresh();
+      setMessage(result?.scrollComplete ? 'Scroll complete!' : 'Found it. On to the next.');
     },
-    onError: (err: unknown) => { setMessage(null); setError(failureMessage(err)); },
+    onError: (err) => { setMessage(null); setError(failureMessage(err)); },
   });
 
-  const skip = useMutation<unknown, unknown, number>({
-    mutationFn: async (id) => (await authApiClient.post(`/api/Clues/Skip?id=${id}`)).data,
-    onSuccess: () => { setError(null); setMessage('Step skipped.'); refresh(); },
-    onError: (err: unknown) => setError(failureMessage(err)),
+  const skip = useMutationPost<number, unknown>({
+    url: (id) => `/api/Clues/Skip?id=${id}`,
+    queryKey: [QueryKeys.Clues],
+    invalidateQuery: true,
+    alsoInvalidate,
+    onSuccess: () => { setError(null); setMessage('Step skipped.'); },
+    onError: (err) => setError(failureMessage(err)),
   });
 
   const curation = museum.data?.curation ?? 0;

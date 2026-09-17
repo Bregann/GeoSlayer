@@ -1,9 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 import { authApiClient } from '@/helpers/apiClient';
+import { useMutationPost } from '@/helpers/mutations/useMutationPost';
 import { groupItemsByKind, needsClaim, type PlayerItem } from '@/helpers/crafting';
 import { progressionStyles as styles } from '@/styles/progression';
 import { QueryKeys } from '@/helpers/QueryKeys';
@@ -21,7 +22,6 @@ interface Claim {
  * be able to see what a thing does before and after equipping it.
  */
 export default function EquipmentScreen() {
-  const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
   const [placing, setPlacing] = useState<number | null>(null);
 
@@ -41,22 +41,18 @@ export default function EquipmentScreen() {
     return err instanceof Error ? err.message : 'Something went wrong';
   };
 
-  const equip = useMutation<PlayerItem[], unknown, { id: number; equipped: boolean; claimId?: number }>({
-    mutationFn: async (input) =>
-      (await authApiClient.post<PlayerItem[]>(`/api/Crafting/SetEquipped?id=${input.id}`, {
-        equipped: input.equipped,
-        claimId: input.claimId ?? null,
-      })).data,
-    onSuccess: () => {
-      setError(null);
-      setPlacing(null);
-      queryClient.invalidateQueries({ queryKey: [QueryKeys.Items] });
-      // Gear changes reveal radius, XP, caps and offline time, so anything reading
-      // those must not keep a stale copy.
-      queryClient.invalidateQueries({ queryKey: [QueryKeys.Inventory] });
-      queryClient.invalidateQueries({ queryKey: [QueryKeys.Workers] });
-    },
-    onError: (err: unknown) => setError(failureMessage(err)),
+  const equip = useMutationPost<
+    { id: number; equipped: boolean; claimId: number | null },
+    PlayerItem[]
+  >({
+    url: (input) => `/api/Crafting/SetEquipped?id=${input.id}`,
+    queryKey: [QueryKeys.Items],
+    invalidateQuery: true,
+    // Gear changes reveal radius, XP, caps and offline time, so anything reading
+    // those must not keep a stale copy.
+    alsoInvalidate: [[QueryKeys.Inventory], [QueryKeys.Workers]],
+    onSuccess: () => { setError(null); setPlacing(null); },
+    onError: (err) => setError(failureMessage(err)),
   });
 
   return (
@@ -132,11 +128,11 @@ export default function EquipmentScreen() {
                     disabled={equip.isPending}
                     onPress={() => {
                       if (item.isEquipped) {
-                        equip.mutate({ id: item.id, equipped: false });
+                        equip.mutate({ id: item.id, equipped: false, claimId: null });
                       } else if (needsClaim(item)) {
                         setPlacing(placing === item.id ? null : item.id);
                       } else {
-                        equip.mutate({ id: item.id, equipped: true });
+                        equip.mutate({ id: item.id, equipped: true, claimId: null });
                       }
                     }}
                   >

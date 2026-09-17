@@ -1,9 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 import { authApiClient } from '@/helpers/apiClient';
+import { useMutationPost } from '@/helpers/mutations/useMutationPost';
 import {
   foundLabel,
   overallPercent,
@@ -36,11 +37,10 @@ export default function MuseumScreen() {
     queryFn: async () => (await authApiClient.get<Museum>('/api/Museum/GetMuseum')).data,
   });
 
-  const donate = useMutation<unknown, unknown, { key: string; quantity: number }>({
-    mutationFn: async (input) =>
-      (await authApiClient.post(`/api/Museum/Donate?key=${input.key}`, {
-        quantity: input.quantity,
-      })).data,
+  const donate = useMutationPost<{ key: string; quantity: number }, unknown>({
+    url: (input) => `/api/Museum/Donate?key=${input.key}`,
+    queryKey: [QueryKeys.Museum],
+    invalidateQuery: true,
     onSuccess: () => {
       setError(null);
       queryClient.invalidateQueries({ queryKey: [QueryKeys.Museum] });
