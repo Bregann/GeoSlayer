@@ -7,11 +7,11 @@
 
 ## Status
 
-- **State:** IN PROGRESS
-- **Completed:** tasks 1, 2, 3, 4, 6, 7, the encounter half of 8, and the audit-trail
-  half of 9. Task 5 dropped.
-- **Remaining:** task 8 (encounters, Museum, progression, surges) and the player half
-  of task 9. Task 5 (rarity) was **dropped deliberately** — see below.
+- **State:** IN PROGRESS — the spine is complete
+- **Completed:** tasks 1, 2, 3, 4, 6, 7, 8 and the read-only half of 9. Task 5 dropped.
+- **Remaining:** granting and removing player coin and items (the write half of task 9),
+  and edit UIs for progression and Museum, which currently have endpoints but read-only
+  screens.
 - **Blockers:** _(none)_
 
 ### What was built
@@ -296,9 +296,9 @@ usually to change a quantity there and then.
 ### 8. Encounters, clues and the rest
 
 - [x] `EncounterDefinition` management — **with §5C.2 enforced at runtime.**
-- [ ] Museum entry definitions and set bonuses.
-- [ ] Progression: unlock ladder, upgrade definitions and costs.
-- [ ] Surge and expedition tuning.
+- [x] Museum entry definitions and set bonuses.
+- [x] Progression: unlock ladder, upgrade definitions and costs.
+- [x] Surge and expedition tuning — via the `GameSetting` table below.
 
 **The encounter half carried the stage's hardest invariant.**
 
@@ -319,10 +319,45 @@ your head to notice a gap.
 
 ### 9. Player administration
 
-- [ ] Find a player; view skills, inventory, coin and claims.
-- [ ] Grant or remove items and coin.
+- [x] Find a player; view skills, inventory, coin, claims, workers and Museum finds.
+- [ ] Grant or remove items and coin. **Deliberately not built** — see below.
 - [x] **The audit trail itself is built** — `AdminAuditEntry`, written by every mutation,
-      with a read-only page. Player-facing admin actions will use it when they land.
+      with a read-only page.
+
+**The read/write split was a decision, not an omission.** Everything else in this stage
+edits seeded config, where a mistake is retunable. Granting coin or items edits *player
+state*, where a mistake is in someone's balance — a different risk class, left for a human
+rather than assumed.
+
+The view alone answers most support questions without anyone needing to change anything,
+which is why it was worth building first. Reads are **not** audited, and a test asserts
+that: the trail records changes, and logging every support lookup would bury the entries
+that matter.
+
+### 10. Tunable numbers — the `GameSetting` table
+
+Not in the original task list, and it turned out to be the thing that made the stage's
+premise true.
+
+DESIGN.md promises repeatedly that balance is "seeded data, so it can be retuned without a
+deploy". **That was already half true** — drops, XP ladders, materials, recipes, encounters
+and progression all live in tables and are read from there; the `SeedData` classes are
+one-time populators, not a runtime source. But a handful of numbers stayed in C#: the coin
+category multipliers, the base coin value, the junk-tier threshold, Athletics' XP per
+kilometre, Banking's sell-price per level, and the deposit interest rate.
+
+- [x] `GameSetting` table: key, value, shipped default, category, description, min, max.
+- [x] Cached singleton accessor, reloaded immediately on save — a setting that needed a
+      restart would be no better than the constant it replaced.
+- [x] Static hooks on `CoinPricing`, `BankingInterest` and `SkillSeedData` rather than
+      injected dependencies. These are pure functions called from nine places; threading an
+      interface through all of them would turn a formula into a service for no gain.
+- [x] **Numbers, not rules.** The formula that turns a tier into a price stays in
+      `CoinPricing` where it is pure and cheaply testable; only the multipliers move.
+- [x] Seeding changes no behaviour — every default is the value the constant already held,
+      and tests check that directly.
+- [x] Bounds enforced on save. An unbounded tuning value is a way to break the game from a
+      text box.
 
 ---
 
@@ -338,6 +373,7 @@ your head to notice a gap.
    enforces — it refuses with a reason.
 8. Every balance-affecting admin action is recorded with who, what and when.
 9. `npm run verify` passes on `geoslayer.web`.
+10. Every tunable number is editable without a deploy, and takes effect without a restart.
 
 ---
 

@@ -3,9 +3,14 @@
 **Stages 01–17 are `DONE`. Stage 18 (admin web) is in progress.**
 
 Every acceptance criterion in the *game* is met. Stage 18 is a management interface, not
-gameplay. Its spine is built — admin auth, item management, image upload and the audit
-trail, with a `geoslayer.web` Next.js/Mantine client mirroring `orbit.web`. Materials,
-recipes, encounters, rarity and player admin remain. See `stages/STAGE-18-admin-web.md`.
+gameplay. **Its spine is complete**: admin auth, items, materials, recipes, encounters,
+Museum, progression, sprites, a read-only player view, the audit trail, and a `GameSetting`
+table that makes the last hard-coded balance constants editable without a deploy. The
+client is `geoslayer.web`, Next.js/Mantine, mirroring `orbit.web`.
+
+What remains is granting/removing player coin and items — deliberately left for a human,
+since that touches player state rather than config — and edit UIs for progression and
+Museum, which have endpoints but read-only screens. See `stages/STAGE-18-admin-web.md`.
 
 Stage 16 (Combat encounters) was added after the scope question was decided — see
 `DESIGN.md` §5C. A follow-up pass closed the last three unmet criteria (Cryptic clues,
