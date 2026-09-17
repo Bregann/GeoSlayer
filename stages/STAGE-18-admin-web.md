@@ -8,9 +8,9 @@
 ## Status
 
 - **State:** IN PROGRESS
-- **Completed:** tasks 1, 2, 3, 4, 6 and the audit trail half of 9. Task 5 dropped.
-- **Remaining:** tasks 7 (recipes), 8 (encounters and the rest), 9 (player admin).
-  Task 5 (rarity) was **dropped deliberately** — see below.
+- **Completed:** tasks 1, 2, 3, 4, 6, 7 and the audit-trail half of 9. Task 5 dropped.
+- **Remaining:** task 8 (encounters, Museum, progression, surges) and the player half
+  of task 9. Task 5 (rarity) was **dropped deliberately** — see below.
 - **Blockers:** _(none)_
 
 ### What was built
@@ -271,9 +271,26 @@ rarity, or a drop rule tier cannot express.
 
 ### 7. Recipes
 
-- [ ] List, create, edit and delete recipes with their inputs.
-- [ ] Show the chain: which skill, which tier, what it consumes, what it produces.
-- [ ] Warn when a recipe would be a coin loss (§5D.1's produced-goods rule).
+- [x] List, create, edit and delete recipes with their inputs.
+- [x] Show the chain: skill, level, what it consumes, what it produces.
+- [x] Warn when a recipe would be a coin loss (§5D.1), **without blocking the save** — see
+      the split below.
+
+**The rule this task turned on: refuse what is broken, flag what is merely wrong.**
+
+`RecipeValidation.Reject` covers structural failures and stops the save — a recipe with no
+output is a timer that consumes materials and gives nothing back, one that consumes its own
+output is an infinite loop, a duplicated input makes the cost ambiguous. Each of those would
+surface as a crash or a silent wrong number somewhere else in the game.
+
+`RecipeValidation.Warn` covers everything else and blocks nothing. A loss-making recipe is
+the main case: §5D.1 expects produced goods to beat their parts, but an admin mid-tune has
+to be able to save something temporarily unattractive and come back to it. An interface that
+refused every questionable number would fight the person using it.
+
+Input cost uses the same derived pricing the shop does, so the warning cannot disagree with
+what a player would actually be paid. The edit form totals it live, because the fix is
+usually to change a quantity there and then.
 
 ### 8. Encounters, clues and the rest
 

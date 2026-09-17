@@ -49,6 +49,21 @@ namespace GeoSlayer.Domain.Interfaces.Api.Admin
         /// <summary>Delete a material, refusing when anything still references it.</summary>
         Task DeleteMaterial(string adminUserId, int materialId, CancellationToken ct);
 
+        /// <summary>Every recipe, with its cost, value and any warnings.</summary>
+        Task<List<AdminRecipeDto>> GetRecipes(CancellationToken ct);
+
+        /// <summary>
+        /// Create or update a recipe.
+        ///
+        /// <para>Refuses anything structurally broken; merely questionable numbers come back
+        /// as warnings on the result instead. See <c>RecipeValidation</c> for that split.</para>
+        /// </summary>
+        Task<AdminRecipeDto> SaveRecipe(
+            string adminUserId, SaveRecipeRequest request, CancellationToken ct);
+
+        /// <summary>Delete a recipe, and the inputs belonging to it.</summary>
+        Task DeleteRecipe(string adminUserId, int recipeId, CancellationToken ct);
+
         /// <summary>The audit trail, newest first.</summary>
         Task<List<AdminAuditDto>> GetAuditTrail(int limit, CancellationToken ct);
     }

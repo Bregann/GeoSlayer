@@ -125,6 +125,30 @@ namespace GeoSlayer.Core.Controllers
             return Ok();
         }
 
+        /// <summary>Every recipe, with its cost, value and any warnings.</summary>
+        [HttpGet]
+        public async Task<ActionResult<List<AdminRecipeDto>>> GetRecipes(CancellationToken ct) =>
+            Ok(await admin.GetRecipes(ct));
+
+        /// <summary>
+        /// Create or update a recipe.
+        ///
+        /// <para>Structurally broken recipes are refused; questionable numbers come back as
+        /// warnings on the result so an admin mid-tune is not fought by the interface.</para>
+        /// </summary>
+        [HttpPost]
+        public async Task<ActionResult<AdminRecipeDto>> SaveRecipe(
+            [FromBody] SaveRecipeRequest request, CancellationToken ct) =>
+            Ok(await admin.SaveRecipe(CurrentUserId(), request, ct));
+
+        /// <summary>Delete a recipe.</summary>
+        [HttpDelete]
+        public async Task<ActionResult> DeleteRecipe([FromQuery] int recipeId, CancellationToken ct)
+        {
+            await admin.DeleteRecipe(CurrentUserId(), recipeId, ct);
+            return Ok();
+        }
+
         /// <summary>The audit trail, newest first.</summary>
         [HttpGet]
         public async Task<ActionResult<List<AdminAuditDto>>> GetAuditTrail(

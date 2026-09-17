@@ -1,5 +1,6 @@
 using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.DTOs.Admin.Requests;
+using GeoSlayer.Domain.DTOs.Admin.Responses;
 using GeoSlayer.Domain.Enums;
 using GeoSlayer.Domain.Exceptions;
 using GeoSlayer.Domain.Services.Admin;
@@ -421,6 +422,211 @@ namespace GeoSlayer.Tests.Services.Admin
 
             Assert.That(forMaterial.Select(e => e.Action),
                 Does.Contain("Created").And.Contains("Deleted"));
+        }
+
+        // ── Recipes (task 7) ────────────────────────────────────────────
+
+        /// <summary>
+        /// A saveable recipe, creating its output item on first use.
+        ///
+        /// <para>Reuses the item when it already exists, because the update tests call this
+        /// twice for the same recipe and item keys are unique.</para>
+        /// </summary>
+        private async Task<SaveRecipeRequest> NewRecipe(string key = "test_craft")
+        {
+            var outputKey = $"{key}_output";
+
+            var existing = await DbContext.Items
+                .AsNoTracking()
+                .FirstOrDefaultAsync(i => i.Key == outputKey);
+
+            var item = existing is null
+                ? await _sut.SaveItem(_admin.Id, NewItem(outputKey), Ct)
+                : ToExistingItem(existing);
+
+            var input = await DbContext.Materials.FirstAsync(m => m.SkillType == SkillType.Mining);
+
+            return new SaveRecipeRequest
+            {
+                Key = key,
+                Name = "Test Craft",
+                Description = "",
+                SkillType = SkillType.Smithing,
+                LevelRequired = 5,
+                DurationSeconds = 600,
+                XpReward = 70,
+                OutputItemId = item.Id,
+                OutputQuantity = 1,
+                Inputs = [new SaveRecipeInputRequest { MaterialId = input.Id, Quantity = 4 }],
+            };
+        }
+
+        /// <summary>Just enough of an AdminItemDto for NewRecipe to read its id.</summary>
+        private static AdminItemDto ToExistingItem(Item item) => new()
+        {
+            Id = item.Id,
+            Key = item.Key,
+            Name = item.Name,
+            Description = item.Description,
+            ModifierText = "",
+        };
+
+        [Test]
+        public async Task ARecipeCanBeCreated_WithItsInputsAndCost()
+        {
+            var saved = await _sut.SaveRecipe(_admin.Id, await NewRecipe(), Ct);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(saved.Id, Is.GreaterThan(0));
+                Assert.That(saved.Inputs, Has.Count.EqualTo(1));
+
+                // Named, not bare ids — the chain is unreadable otherwise.
+                Assert.That(saved.Inputs[0].MaterialName, Is.Not.Empty);
+                Assert.That(saved.OutputName, Is.Not.Empty);
+
+                Assert.That(saved.InputCost, Is.GreaterThan(0));
+            });
+        }
+
+        [Test]
+        public async Task UpdatingARecipe_ReplacesItsInputsRatherThanAccumulating()
+        {
+            // Inputs are replaced wholesale, so a removed one must actually disappear —
+            // a phantom input is a cost the player still pays.
+            var created = await _sut.SaveRecipe(_admin.Id, await NewRecipe(), Ct);
+
+            var other = await DbContext.Materials
+                .Where(m => m.SkillType == SkillType.Mining)
+                .OrderByDescending(m => m.Tier)
+                .FirstAsync();
+
+            var update = await NewRecipe();
+            update.Id = created.Id;
+            update.Key = created.Key;
+            update.OutputItemId = created.OutputItemId;
+            update.Inputs = [new SaveRecipeInputRequest { MaterialId = other.Id, Quantity = 2 }];
+
+            var updated = await _sut.SaveRecipe(_admin.Id, update, Ct);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(updated.Inputs, Has.Count.EqualTo(1));
+                Assert.That(updated.Inputs[0].MaterialId, Is.EqualTo(other.Id));
+            });
+
+            var rows = await DbContext.RecipeInputs.CountAsync(i => i.RecipeId == created.Id);
+
+            Assert.That(rows, Is.EqualTo(1), "the old input row must be gone, not orphaned");
+        }
+
+        [Test]
+        public async Task ARecipeWithNoInputs_IsRejected()
+        {
+            var broken = await NewRecipe("no_inputs");
+            broken.Inputs = [];
+
+            Assert.That(
+                async () => await _sut.SaveRecipe(_admin.Id, broken, Ct),
+                Throws.TypeOf<BadRequestException>());
+
+            Assert.That(await DbContext.Recipes.AnyAsync(r => r.Key == "no_inputs"), Is.False);
+        }
+
+        [Test]
+        public async Task ARecipeReferencingAMissingMaterial_IsRejected()
+        {
+            // A dangling foreign key would otherwise surface as a database error with no
+            // useful message.
+            var broken = await NewRecipe("bad_input");
+            broken.Inputs = [new SaveRecipeInputRequest { MaterialId = 999_999, Quantity = 1 }];
+
+            Assert.That(
+                async () => await _sut.SaveRecipe(_admin.Id, broken, Ct),
+                Throws.TypeOf<BadRequestException>());
+        }
+
+        [Test]
+        public async Task ALossMakingRecipe_SavesButCarriesAWarning()
+        {
+            // The split that matters: structurally sound, economically silly. §5D.1 expects
+            // produced goods to beat their parts, but an admin mid-tune must be able to save.
+            var expensive = await DbContext.Materials
+                .Where(m => m.SkillType == SkillType.Mining)
+                .OrderByDescending(m => m.Tier)
+                .FirstAsync();
+
+            var cheap = await DbContext.Materials
+                .Where(m => m.SkillType == SkillType.Mining)
+                .OrderBy(m => m.Tier)
+                .FirstAsync();
+
+            var request = await NewRecipe("loss_maker");
+            request.OutputItemId = null;
+            request.OutputMaterialId = cheap.Id;
+            request.Inputs = [new SaveRecipeInputRequest { MaterialId = expensive.Id, Quantity = 10 }];
+
+            var saved = await _sut.SaveRecipe(_admin.Id, request, Ct);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(saved.Id, Is.GreaterThan(0), "it must still save");
+                Assert.That(saved.Warnings.Any(w => w.Contains("loses money")), Is.True);
+                Assert.That(saved.InputCost, Is.GreaterThan(saved.OutputValue));
+            });
+        }
+
+        [Test]
+        public async Task ARecipeWithQueuedCrafts_CannotBeDeleted()
+        {
+            // Deleting it would leave the queue pointing at nothing.
+            var created = await _sut.SaveRecipe(_admin.Id, await NewRecipe(), Ct);
+            var player = await DbContext.Players.FirstAsync();
+
+            DbContext.PlayerCrafts.Add(new PlayerCraft
+            {
+                PlayerId = player.Id,
+                RecipeId = created.Id,
+                RecipeKey = created.Key,
+                StartedUtc = DateTime.UtcNow,
+                CompletesUtc = DateTime.UtcNow.AddHours(1),
+                Collected = false,
+            });
+            await DbContext.SaveChangesAsync();
+
+            Assert.That(
+                async () => await _sut.DeleteRecipe(_admin.Id, created.Id, Ct),
+                Throws.TypeOf<BadRequestException>());
+        }
+
+        [Test]
+        public async Task DeletingARecipe_TakesItsInputsWithIt()
+        {
+            // A recipe owns its inputs outright — nothing else points at them — so cascading
+            // is correct here, unlike for an item or a material.
+            var created = await _sut.SaveRecipe(_admin.Id, await NewRecipe(), Ct);
+
+            await _sut.DeleteRecipe(_admin.Id, created.Id, Ct);
+
+            Assert.Multiple(async () =>
+            {
+                Assert.That(await DbContext.Recipes.AnyAsync(r => r.Id == created.Id), Is.False);
+                Assert.That(await DbContext.RecipeInputs.AnyAsync(i => i.RecipeId == created.Id), Is.False);
+            });
+        }
+
+        [Test]
+        public async Task RecipeMutations_AreAudited()
+        {
+            var created = await _sut.SaveRecipe(_admin.Id, await NewRecipe("audited_craft"), Ct);
+            await _sut.DeleteRecipe(_admin.Id, created.Id, Ct);
+
+            var forRecipe = (await _sut.GetAuditTrail(50, Ct))
+                .Where(e => e.EntityType == "Recipe")
+                .Select(e => e.Action)
+                .ToList();
+
+            Assert.That(forRecipe, Does.Contain("Created").And.Contains("Deleted"));
         }
 
         // ── Audit trail (task 9) ────────────────────────────────────────

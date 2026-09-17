@@ -339,6 +339,209 @@ namespace GeoSlayer.Domain.Services.Admin
                 $"{(heldBy == 1 ? "" : "s")}", ct);
         }
 
+        // ── Recipes (task 7) ────────────────────────────────────────────
+
+        public async Task<List<AdminRecipeDto>> GetRecipes(CancellationToken ct)
+        {
+            var recipes = await db.Recipes
+                .Include(r => r.Inputs).ThenInclude(i => i.Material)
+                .Include(r => r.OutputMaterial)
+                .Include(r => r.OutputItem)
+                .OrderBy(r => r.SkillType)
+                .ThenBy(r => r.LevelRequired)
+                .ToListAsync(ct);
+
+            return [.. recipes.Select(ToDto)];
+        }
+
+        private static AdminRecipeDto ToDto(Recipe recipe)
+        {
+            var inputCost = RecipeValidation.CostOf(
+                recipe.Inputs.Select(i => (i.Material, i.Quantity)));
+
+            // Only a material output has a coin value — an item's worth is its modifier,
+            // which no price can express.
+            var outputValue = recipe.OutputMaterial is null
+                ? 0
+                : CoinPricing.UnitPrice(recipe.OutputMaterial.Tier, recipe.OutputMaterial.Category)
+                  * recipe.OutputQuantity;
+
+            return new AdminRecipeDto
+            {
+                Id = recipe.Id,
+                Key = recipe.Key,
+                Name = recipe.Name,
+                Description = recipe.Description,
+                SkillType = recipe.SkillType,
+                LevelRequired = recipe.LevelRequired,
+                DurationSeconds = recipe.DurationSeconds,
+                XpReward = recipe.XpReward,
+                OutputMaterialId = recipe.OutputMaterialId,
+                OutputItemId = recipe.OutputItemId,
+                OutputQuantity = recipe.OutputQuantity,
+                OutputName = recipe.OutputItem?.Name ?? recipe.OutputMaterial?.Name,
+
+                Inputs = [.. recipe.Inputs.Select(i => new AdminRecipeInputDto
+                {
+                    MaterialId = i.MaterialId,
+                    MaterialKey = i.Material.Key,
+                    MaterialName = i.Material.Name,
+                    Quantity = i.Quantity,
+                })],
+
+                InputCost = inputCost,
+                OutputValue = outputValue,
+                Warnings = [.. RecipeValidation.Warn(recipe, inputCost, outputValue)],
+            };
+        }
+
+        public async Task<AdminRecipeDto> SaveRecipe(
+            string adminUserId, SaveRecipeRequest request, CancellationToken ct)
+        {
+            var isNew = request.Id is null;
+
+            var recipe = isNew
+                ? new Recipe { Key = request.Key, Name = request.Name, Description = request.Description }
+                : await db.Recipes
+                    .Include(r => r.Inputs)
+                    .FirstOrDefaultAsync(r => r.Id == request.Id, ct)
+                  ?? throw new NotFoundException($"Recipe {request.Id} not found.");
+
+            recipe.Key = request.Key;
+            recipe.Name = request.Name;
+            recipe.Description = request.Description;
+            recipe.SkillType = request.SkillType;
+            recipe.LevelRequired = request.LevelRequired;
+            recipe.DurationSeconds = request.DurationSeconds;
+            recipe.XpReward = request.XpReward;
+            recipe.OutputMaterialId = request.OutputMaterialId;
+            recipe.OutputItemId = request.OutputItemId;
+            recipe.OutputQuantity = request.OutputQuantity;
+
+            var inputs = request.Inputs
+                .Select(i => new RecipeInput { MaterialId = i.MaterialId, Quantity = i.Quantity })
+                .ToList();
+
+            var others = await db.Recipes
+                .Where(r => r.Id != (request.Id ?? 0))
+                .AsNoTracking()
+                .ToListAsync(ct);
+
+            var rejection = RecipeValidation.Reject(recipe, inputs, others);
+
+            if (rejection is not null)
+            {
+                // Same reasoning as SaveMaterial: the entity was mutated in place, so a
+                // rejection has to discard it or the bad values reach the database on the
+                // next unrelated save.
+                db.ChangeTracker.Clear();
+
+                throw new BadRequestException(rejection);
+            }
+
+            // Referenced ids are checked here rather than in the validator, which is pure —
+            // a dangling foreign key would otherwise surface as a database error with no
+            // useful message.
+            await AssertOutputExists(request, ct);
+            await AssertInputsExist(inputs, ct);
+
+            if (isNew)
+            {
+                db.Recipes.Add(recipe);
+            }
+            else
+            {
+                // Replaced wholesale rather than diffed: the set is small, and a diff that
+                // gets the removals wrong leaves phantom inputs a player still pays.
+                db.RecipeInputs.RemoveRange(recipe.Inputs);
+                recipe.Inputs.Clear();
+            }
+
+            foreach (var input in inputs)
+            {
+                recipe.Inputs.Add(input);
+            }
+
+            await db.SaveChangesAsync(ct);
+
+            await Audit(adminUserId, "Recipe", recipe.Id.ToString(),
+                isNew ? "Created" : "Updated",
+                $"{recipe.Key}: {recipe.SkillType} level {recipe.LevelRequired}, " +
+                $"{Math.Round(recipe.DurationSeconds)}s, {inputs.Count} input" +
+                $"{(inputs.Count == 1 ? "" : "s")}", ct);
+
+            // Reloaded so the DTO carries the material and item names the chain is read by.
+            var saved = await db.Recipes
+                .Include(r => r.Inputs).ThenInclude(i => i.Material)
+                .Include(r => r.OutputMaterial)
+                .Include(r => r.OutputItem)
+                .AsNoTracking()
+                .FirstAsync(r => r.Id == recipe.Id, ct);
+
+            return ToDto(saved);
+        }
+
+        private async Task AssertOutputExists(SaveRecipeRequest request, CancellationToken ct)
+        {
+            if (request.OutputMaterialId is int materialId
+                && !await db.Materials.AnyAsync(m => m.Id == materialId, ct))
+            {
+                throw new BadRequestException($"Output material {materialId} does not exist.");
+            }
+
+            if (request.OutputItemId is int itemId
+                && !await db.Items.AnyAsync(i => i.Id == itemId, ct))
+            {
+                throw new BadRequestException($"Output item {itemId} does not exist.");
+            }
+        }
+
+        private async Task AssertInputsExist(List<RecipeInput> inputs, CancellationToken ct)
+        {
+            var ids = inputs.Select(i => i.MaterialId).Distinct().ToList();
+
+            var found = await db.Materials
+                .Where(m => ids.Contains(m.Id))
+                .Select(m => m.Id)
+                .ToListAsync(ct);
+
+            var missing = ids.Except(found).ToList();
+
+            if (missing.Count > 0)
+            {
+                throw new BadRequestException(
+                    $"Input material{(missing.Count == 1 ? "" : "s")} " +
+                    $"{string.Join(", ", missing)} do not exist.");
+            }
+        }
+
+        public async Task DeleteRecipe(string adminUserId, int recipeId, CancellationToken ct)
+        {
+            var recipe = await db.Recipes
+                .Include(r => r.Inputs)
+                .FirstOrDefaultAsync(r => r.Id == recipeId, ct)
+                ?? throw new NotFoundException($"Recipe {recipeId} not found.");
+
+            // Unlike an item or a material, a recipe owns its inputs outright — nothing else
+            // points at them — so cascading here is correct rather than destructive.
+            var queued = await db.PlayerCrafts
+                .CountAsync(c => c.RecipeId == recipeId && !c.Collected, ct);
+
+            if (queued > 0)
+            {
+                throw new BadRequestException(
+                    $"{queued} player craft{(queued == 1 ? " is" : "s are")} still queued on " +
+                    $"'{recipe.Key}'. Let them finish, or the queue points at nothing.");
+            }
+
+            db.RecipeInputs.RemoveRange(recipe.Inputs);
+            db.Recipes.Remove(recipe);
+            await db.SaveChangesAsync(ct);
+
+            await Audit(adminUserId, "Recipe", recipeId.ToString(), "Deleted",
+                $"{recipe.Key} ({recipe.Name})", ct);
+        }
+
         // ── Audit (task 9) ──────────────────────────────────────────────
 
         public async Task<List<AdminAuditDto>> GetAuditTrail(int limit, CancellationToken ct)

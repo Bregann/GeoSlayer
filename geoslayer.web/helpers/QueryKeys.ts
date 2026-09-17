@@ -9,5 +9,6 @@ export enum QueryKeys {
   // ── Admin ──
   Items = 'items',
   Materials = 'materials',
+  Recipes = 'recipes',
   AuditTrail = 'auditTrail',
 }
