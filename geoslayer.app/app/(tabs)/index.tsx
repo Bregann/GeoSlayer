@@ -410,6 +410,8 @@ export default function MapScreen() {
         onInventory={() => router.push('/inventory')}
         onSkills={() => router.push('/skills')}
         onUpgrades={() => router.push('/upgrades')}
+        onCrafting={() => router.push('/crafting')}
+        onMuseum={() => router.push('/museum')}
       />
 
       {/* Material pickups from this sync (Stage 03 task 5) */}

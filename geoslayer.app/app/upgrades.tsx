@@ -111,6 +111,13 @@ export default function UpgradesScreen() {
           </TouchableOpacity>
         </View>
 
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.push('/workers')}
+        >
+          <Text style={styles.backText}>⛏️ WORKERS →</Text>
+        </TouchableOpacity>
+
         {data && (
           <View style={styles.pointsBanner}>
             <Text style={styles.adventurerLabel}>BONUS POINTS</Text>

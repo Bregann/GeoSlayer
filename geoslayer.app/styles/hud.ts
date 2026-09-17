@@ -87,7 +87,10 @@ export const hudStyles = StyleSheet.create({
   menuRow: {
     flexDirection: 'row',
     justifyContent: 'space-evenly',
-    gap: 12,
+    // Wraps rather than overflowing: the row started with two buttons and now carries
+    // five, and a fixed row would push the last off a narrow screen.
+    flexWrap: 'wrap',
+    gap: 8,
   },
   menuButton: {
     alignItems: 'center',
@@ -95,8 +98,8 @@ export const hudStyles = StyleSheet.create({
     backgroundColor: '#2a2a4e',
     borderWidth: PIXEL_BORDER,
     borderColor: '#4a4a7e',
-    width: 56,
-    height: 56,
+    width: 52,
+    height: 52,
   },
   menuIcon: {
     fontSize: 26,

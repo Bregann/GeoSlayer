@@ -82,6 +82,13 @@ export default function CraftingScreen() {
           </TouchableOpacity>
         </View>
 
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.push('/equipment')}
+        >
+          <Text style={styles.backText}>🎽 EQUIPMENT →</Text>
+        </TouchableOpacity>
+
         {recipes.data && (
           <Text style={styles.xpText}>
             {recipes.data.queuedCount} / {recipes.data.queueLimit} craft slots busy · crafts
