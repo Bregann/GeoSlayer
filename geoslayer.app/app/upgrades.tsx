@@ -30,7 +30,7 @@ export default function UpgradesScreen() {
   const { data, isLoading, isError, error } = useQuery<PlayerUpgrades>({
     queryKey,
     queryFn: async () => {
-      const response = await authApiClient.get<PlayerUpgrades>('/api/player/upgrades');
+      const response = await authApiClient.get<PlayerUpgrades>('/api/Player/GetUpgrades');
       return response.data;
     },
   });
@@ -53,7 +53,7 @@ export default function UpgradesScreen() {
   const purchase = useMutation<PlayerUpgrades, unknown, string>({
     mutationFn: async (key: string) => {
       const response = await authApiClient.post<PlayerUpgrades>(
-        `/api/player/upgrades/${key}/purchase`,
+        `/api/Player/PurchaseUpgrade?key=${key}`,
       );
       if (response.status >= 400) throw new Error(failureMessage(response.data));
       return response.data;
@@ -70,7 +70,7 @@ export default function UpgradesScreen() {
 
   const respec = useMutation<PlayerUpgrades, unknown, void>({
     mutationFn: async () => {
-      const response = await authApiClient.post<PlayerUpgrades>('/api/player/upgrades/respec');
+      const response = await authApiClient.post<PlayerUpgrades>('/api/Player/Respec');
       if (response.status >= 400) throw new Error(failureMessage(response.data));
       return response.data;
     },

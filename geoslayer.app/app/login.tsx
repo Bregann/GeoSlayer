@@ -28,7 +28,7 @@ export default function LoginScreen() {
     setLoading(true);
 
     try {
-      const res = await noAuthApiClient.post('/api/auth/login', {
+      const res = await noAuthApiClient.post('/api/Auth/Login', {
         username: username.trim(),
         password,
       });

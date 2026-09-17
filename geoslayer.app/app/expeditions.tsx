@@ -37,19 +37,19 @@ export default function ExpeditionsScreen() {
 
   const expeditions = useQuery<Expedition[]>({
     queryKey: ['player', 'expeditions'],
-    queryFn: async () => (await authApiClient.get<Expedition[]>('/api/retention/expeditions')).data,
+    queryFn: async () => (await authApiClient.get<Expedition[]>('/api/Retention/GetExpeditions')).data,
   });
 
   const destinations = useQuery<ExpeditionDestination[]>({
     queryKey: ['player', 'expeditions', 'destinations'],
     queryFn: async () =>
-      (await authApiClient.get<ExpeditionDestination[]>('/api/retention/expeditions/destinations'))
+      (await authApiClient.get<ExpeditionDestination[]>('/api/Retention/GetDestinations'))
         .data,
   });
 
   const workers = useQuery<Worker[]>({
     queryKey: ['player', 'workers'],
-    queryFn: async () => (await authApiClient.get<Worker[]>('/api/idle/workers')).data,
+    queryFn: async () => (await authApiClient.get<Worker[]>('/api/Idle/GetWorkers')).data,
   });
 
   const failureMessage = (err: unknown): string => {
@@ -60,7 +60,7 @@ export default function ExpeditionsScreen() {
 
   const dispatch = useMutation<Expedition, unknown, { workerId: number; poiId: number }>({
     mutationFn: async (input) =>
-      (await authApiClient.post<Expedition>('/api/retention/expeditions', input)).data,
+      (await authApiClient.post<Expedition>('/api/Retention/Dispatch', input)).data,
     onSuccess: () => {
       setError(null);
       setSelected(null);

@@ -26,7 +26,7 @@ export default function SkillsScreen() {
   const { data, isLoading, isError, error } = useQuery<PlayerSkills>({
     queryKey: ['player', 'skills'],
     queryFn: async () => {
-      const response = await authApiClient.get<PlayerSkills>('/api/player/skills');
+      const response = await authApiClient.get<PlayerSkills>('/api/Player/GetSkills');
       return response.data;
     },
   });

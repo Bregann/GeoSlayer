@@ -86,7 +86,7 @@ authApiClient.interceptors.response.use(
 
       try {
         console.log('🔑 Refreshing token...')
-        const { data } = await noAuthApiClient.post('/api/Auth/RefreshAppToken', { refreshToken })
+        const { data } = await noAuthApiClient.post('/api/Auth/Refresh', { refreshToken })
 
         console.log('✅ Token refreshed successfully')
         await keychainHelper.setAccessToken(data.accessToken)

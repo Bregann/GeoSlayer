@@ -35,12 +35,12 @@ export default function CraftingScreen() {
 
   const recipes = useQuery<RecipeList>({
     queryKey: ['player', 'recipes'],
-    queryFn: async () => (await authApiClient.get<RecipeList>('/api/crafting/recipes')).data,
+    queryFn: async () => (await authApiClient.get<RecipeList>('/api/Crafting/GetRecipes')).data,
   });
 
   const queue = useQuery<Craft[]>({
     queryKey: ['player', 'craftQueue'],
-    queryFn: async () => (await authApiClient.get<Craft[]>('/api/crafting/queue')).data,
+    queryFn: async () => (await authApiClient.get<Craft[]>('/api/Crafting/GetQueue')).data,
   });
 
   const failureMessage = (err: unknown): string => {
@@ -57,14 +57,14 @@ export default function CraftingScreen() {
 
   const start = useMutation<Craft, unknown, string>({
     mutationFn: async (key) =>
-      (await authApiClient.post<Craft>(`/api/crafting/queue/${key}`)).data,
+      (await authApiClient.post<Craft>(`/api/Crafting/QueueCraft?key=${key}`)).data,
     onSuccess: () => { setError(null); refresh(); },
     onError: (err: unknown) => setError(failureMessage(err)),
   });
 
   const cancel = useMutation<void, unknown, number>({
     mutationFn: async (id) => {
-      await authApiClient.delete(`/api/crafting/queue/${id}`);
+      await authApiClient.delete(`/api/Crafting/CancelCraft?id=${id}`);
     },
     onSuccess: () => { setError(null); refresh(); },
     onError: (err: unknown) => setError(failureMessage(err)),

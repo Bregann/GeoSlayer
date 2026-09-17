@@ -138,7 +138,7 @@ async function postBatch(
   accessToken: string,
 ): Promise<number | null> {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/journey/sync`, {
+    const res = await fetch(`${API_BASE_URL}/api/Journey/Sync`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -32,12 +32,12 @@ export default function MuseumScreen() {
 
   const { data, isLoading, isError } = useQuery<Museum>({
     queryKey: ['player', 'museum'],
-    queryFn: async () => (await authApiClient.get<Museum>('/api/museum')).data,
+    queryFn: async () => (await authApiClient.get<Museum>('/api/Museum/GetMuseum')).data,
   });
 
   const donate = useMutation<unknown, unknown, { key: string; quantity: number }>({
     mutationFn: async (input) =>
-      (await authApiClient.post(`/api/museum/donate/${input.key}`, {
+      (await authApiClient.post(`/api/Museum/Donate?key=${input.key}`, {
         quantity: input.quantity,
       })).data,
     onSuccess: () => {

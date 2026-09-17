@@ -36,12 +36,12 @@ export default function WorkersScreen() {
 
   const workers = useQuery<Worker[]>({
     queryKey: ['player', 'workers'],
-    queryFn: async () => (await authApiClient.get<Worker[]>('/api/idle/workers')).data,
+    queryFn: async () => (await authApiClient.get<Worker[]>('/api/Idle/GetWorkers')).data,
   });
 
   const claims = useQuery<Claim[]>({
     queryKey: ['player', 'claims'],
-    queryFn: async () => (await authApiClient.get<Claim[]>('/api/idle/claims')).data,
+    queryFn: async () => (await authApiClient.get<Claim[]>('/api/Idle/GetClaims')).data,
   });
 
   // Districts are a passive bonus on how Claims cluster (§5.5), so they belong with the
@@ -49,12 +49,12 @@ export default function WorkersScreen() {
   const district = useQuery<DistrictStatus>({
     queryKey: ['player', 'district'],
     queryFn: async () =>
-      (await authApiClient.get<DistrictStatus>('/api/retention/district')).data,
+      (await authApiClient.get<DistrictStatus>('/api/Retention/GetDistrict')).data,
   });
 
   const skills = useQuery<PlayerSkills>({
     queryKey: ['player', 'skills'],
-    queryFn: async () => (await authApiClient.get<PlayerSkills>('/api/player/skills')).data,
+    queryFn: async () => (await authApiClient.get<PlayerSkills>('/api/Player/GetSkills')).data,
   });
 
   const failureMessage = (err: unknown): string => {
@@ -69,14 +69,14 @@ export default function WorkersScreen() {
   };
 
   const hire = useMutation<Worker, unknown, void>({
-    mutationFn: async () => (await authApiClient.post<Worker>('/api/idle/workers')).data,
+    mutationFn: async () => (await authApiClient.post<Worker>('/api/Idle/HireWorker')).data,
     onSuccess: () => { setError(null); refresh(); },
     onError: (err: unknown) => setError(failureMessage(err)),
   });
 
   const assign = useMutation<Worker, unknown, { id: number; claimId: number; skill: number }>({
     mutationFn: async (input) =>
-      (await authApiClient.post<Worker>(`/api/idle/workers/${input.id}/assign`, {
+      (await authApiClient.post<Worker>(`/api/Idle/AssignWorker?id=${input.id}`, {
         claimId: input.claimId,
         skill: input.skill,
       })).data,

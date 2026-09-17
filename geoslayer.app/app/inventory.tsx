@@ -26,7 +26,7 @@ export default function InventoryScreen() {
   const { data, isLoading, isError, error } = useQuery<Inventory>({
     queryKey: ['player', 'inventory'],
     queryFn: async () => {
-      const response = await authApiClient.get<Inventory>('/api/player/inventory');
+      const response = await authApiClient.get<Inventory>('/api/Player/GetInventory');
       return response.data;
     },
   });

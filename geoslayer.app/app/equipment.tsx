@@ -26,12 +26,12 @@ export default function EquipmentScreen() {
 
   const items = useQuery<PlayerItem[]>({
     queryKey: ['player', 'items'],
-    queryFn: async () => (await authApiClient.get<PlayerItem[]>('/api/crafting/items')).data,
+    queryFn: async () => (await authApiClient.get<PlayerItem[]>('/api/Crafting/GetItems')).data,
   });
 
   const claims = useQuery<Claim[]>({
     queryKey: ['player', 'claims'],
-    queryFn: async () => (await authApiClient.get<Claim[]>('/api/idle/claims')).data,
+    queryFn: async () => (await authApiClient.get<Claim[]>('/api/Idle/GetClaims')).data,
   });
 
   const failureMessage = (err: unknown): string => {
@@ -42,7 +42,7 @@ export default function EquipmentScreen() {
 
   const equip = useMutation<PlayerItem[], unknown, { id: number; equipped: boolean; claimId?: number }>({
     mutationFn: async (input) =>
-      (await authApiClient.post<PlayerItem[]>(`/api/crafting/items/${input.id}/equip`, {
+      (await authApiClient.post<PlayerItem[]>(`/api/Crafting/SetEquipped?id=${input.id}`, {
         equipped: input.equipped,
         claimId: input.claimId ?? null,
       })).data,

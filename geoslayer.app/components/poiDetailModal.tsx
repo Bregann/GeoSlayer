@@ -44,7 +44,7 @@ export function PoiDetailModal({ poi, visitCount = 0, onClose, onVisited }: Prop
   const visit = useMutation<PoiVisitResult, unknown, number>({
     mutationFn: async (poiId: number) => {
       const response = await authApiClient.post<PoiVisitResult>(
-        `/api/journey/poi/${poiId}/visit`,
+        `/api/Journey/VisitPoi?id=${poiId}`,
       );
 
       if (response.status >= 400) {

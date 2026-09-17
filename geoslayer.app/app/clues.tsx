@@ -32,13 +32,13 @@ export default function CluesScreen() {
 
   const scrolls = useQuery<ClueScroll[]>({
     queryKey: ['player', 'clues'],
-    queryFn: async () => (await authApiClient.get<ClueScroll[]>('/api/clues')).data,
+    queryFn: async () => (await authApiClient.get<ClueScroll[]>('/api/Clues/GetScrolls')).data,
   });
 
   // Curation funds skips, and lives on the Museum payload.
   const museum = useQuery<Museum>({
     queryKey: ['player', 'museum'],
-    queryFn: async () => (await authApiClient.get<Museum>('/api/museum')).data,
+    queryFn: async () => (await authApiClient.get<Museum>('/api/Museum/GetMuseum')).data,
   });
 
   const failureMessage = (err: unknown): string => {
@@ -54,14 +54,14 @@ export default function CluesScreen() {
 
   const generate = useMutation<ClueScroll, unknown, string>({
     mutationFn: async (tier) =>
-      (await authApiClient.post<ClueScroll>(`/api/clues/${tier}`)).data,
+      (await authApiClient.post<ClueScroll>(`/api/Clues/Generate?tier=${tier}`)).data,
     onSuccess: () => { setError(null); setMessage(null); refresh(); },
     onError: (err: unknown) => setError(failureMessage(err)),
   });
 
   const attempt = useMutation<{ stepSolved: boolean; scrollComplete: boolean }, unknown, number>({
     mutationFn: async (id) =>
-      (await authApiClient.post(`/api/clues/${id}/attempt`)).data as never,
+      (await authApiClient.post(`/api/Clues/Attempt?id=${id}`)).data as never,
     onSuccess: (result) => {
       setError(null);
       setMessage(result.scrollComplete ? 'Scroll complete!' : 'Found it. On to the next.');
@@ -71,7 +71,7 @@ export default function CluesScreen() {
   });
 
   const skip = useMutation<unknown, unknown, number>({
-    mutationFn: async (id) => (await authApiClient.post(`/api/clues/${id}/skip`)).data,
+    mutationFn: async (id) => (await authApiClient.post(`/api/Clues/Skip?id=${id}`)).data,
     onSuccess: () => { setError(null); setMessage('Step skipped.'); refresh(); },
     onError: (err: unknown) => setError(failureMessage(err)),
   });

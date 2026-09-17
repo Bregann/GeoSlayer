@@ -38,7 +38,7 @@ export async function refreshAccessToken(): Promise<string | null> {
       const refreshToken = await keychainHelper.getRefreshToken()
       if (refreshToken === null) return null
 
-      const { data, status } = await refreshClient.post('/api/Auth/RefreshAppToken', {
+      const { data, status } = await refreshClient.post('/api/Auth/Refresh', {
         refreshToken,
       })
 

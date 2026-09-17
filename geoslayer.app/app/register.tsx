@@ -31,7 +31,7 @@ export default function RegisterScreen() {
 
     try {
       // Register
-      const regRes = await noAuthApiClient.post('/api/auth/register', {
+      const regRes = await noAuthApiClient.post('/api/Auth/Register', {
         username: username.trim(),
         password,
         firstName: firstName.trim(),
@@ -44,7 +44,7 @@ export default function RegisterScreen() {
       }
 
       // Auto-login after registration
-      const loginRes = await noAuthApiClient.post('/api/auth/login', {
+      const loginRes = await noAuthApiClient.post('/api/Auth/Login', {
         username: username.trim(),
         password,
       });

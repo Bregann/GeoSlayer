@@ -123,7 +123,7 @@ export default function MapScreen() {
 
     (async () => {
       try {
-        const res = await authApiClient.get('/api/journey/revealed');
+        const res = await authApiClient.get('/api/Journey/GetRevealed');
         if (res.status < 400 && Array.isArray(res.data)) {
           setRevealedCells(res.data);
         }
@@ -138,7 +138,7 @@ export default function MapScreen() {
     async (loc: Coord) => {
       if (!player) return;
       try {
-        const res = await authApiClient.post('/api/journey/sync', {
+        const res = await authApiClient.post('/api/Journey/Sync', {
           positions: [
             {
               latitude: loc.latitude,
@@ -181,7 +181,7 @@ export default function MapScreen() {
           // Banked transit changes on almost every sync — either banked or redeemed —
           // so it is refetched rather than inferred from the response.
           try {
-            const transit = await authApiClient.get<BankedTransit[]>('/api/retention/transit');
+            const transit = await authApiClient.get<BankedTransit[]>('/api/Retention/GetTransit');
             if (transit.status < 400) setBankedTransit(transit.data);
           } catch {
             // Non-fatal: the map simply keeps the last known set.
@@ -190,7 +190,7 @@ export default function MapScreen() {
           // Surges are local and time-limited, so they are refetched on each sync
           // rather than cached — a stale surge banner is worse than none.
           try {
-            const active = await authApiClient.get<Surge[]>('/api/retention/surges');
+            const active = await authApiClient.get<Surge[]>('/api/Retention/GetSurges');
             if (active.status < 400) setSurges(active.data);
           } catch {
             // Non-fatal: the banner simply does not update this sync.

@@ -45,7 +45,7 @@ export default function PatrolsScreen() {
 
   const routes = useQuery<PatrolRoute[]>({
     queryKey: ['player', 'patrols'],
-    queryFn: async () => (await authApiClient.get<PatrolRoute[]>('/api/retention/patrols')).data,
+    queryFn: async () => (await authApiClient.get<PatrolRoute[]>('/api/Retention/GetPatrols')).data,
   });
 
   const failureMessage = (err: unknown): string => {
@@ -56,7 +56,7 @@ export default function PatrolsScreen() {
 
   const create = useMutation<PatrolRoute, unknown, void>({
     mutationFn: async () =>
-      (await authApiClient.post<PatrolRoute>('/api/retention/patrols', {
+      (await authApiClient.post<PatrolRoute>('/api/Retention/CreatePatrol', {
         name: name.trim() || 'Patrol',
         waypoints: draft,
       })).data,
