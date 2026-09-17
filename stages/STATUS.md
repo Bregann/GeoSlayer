@@ -1,7 +1,21 @@
 # Build status
 
-**All 16 stages are `DONE`.** Stage 16 (Combat encounters) was added after the scope
-question was decided — see `DESIGN.md` §5C.
+**Stages 01–17 are `DONE`. Stage 18 (admin web) is in progress.**
+
+Every acceptance criterion in the *game* is met. Stage 18 is a management interface, not
+gameplay. Its spine is built — admin auth, item management, image upload and the audit
+trail, with a `geoslayer.web` Next.js/Mantine client mirroring `orbit.web`. Materials,
+recipes, encounters, rarity and player admin remain. See `stages/STAGE-18-admin-web.md`.
+
+Stage 16 (Combat encounters) was added after the scope question was decided — see
+`DESIGN.md` §5C. A follow-up pass closed the last three unmet criteria (Cryptic clues,
+combat gear, encounters on the map) and built the two Stage 15 synergies that were
+described but not implemented. Stage 17 then resolved §9.5 by building the coin economy
+and removing stack caps.
+
+What remains unbuilt is listed under *Systems described but not built* below. See
+**Running the tests** for the current suite state — it is roughly 599 passing but has not
+been confirmed end to end since the last change.
 
 Single source of truth for where the build is. Update this when a stage completes.
 
@@ -23,6 +37,8 @@ Single source of truth for where the build is. Update this when a stage complete
 | 14 | Retention systems | DONE |
 | 15 | Remaining skills | DONE |
 | 16 | Combat encounters | DONE |
+| 17 | Coin economy | DONE |
+| 18 | Admin web interface | IN PROGRESS |
 
 States: `NOT STARTED` → `IN PROGRESS` → `DONE` (or `BLOCKED`, with a reason).
 
@@ -39,10 +55,47 @@ rather than decided by an agent. **None of these should be settled without you.*
   the Museum's shareable profile (§5A.1) is the only hook that points that way.
 - **Monetisation.** Untouched, deliberately. It shapes the whole design and is not an
   agent's call.
-- **Trading's coin economy.** Flagged for decision rather than built: there is no currency
-  and no material→coin sink, and upkeep is paid in food alone. What coin is *for* should be
-  decided before it exists — a second currency with no job is worse than none. Recorded as
-  `DESIGN.md` §9.5.
+- ~~**Trading's coin economy.**~~ **DECIDED and BUILT** (Stage 17, `DESIGN.md` §5D).
+  Coin is earned by selling materials while standing at a Trading POI; prices derive from
+  tier and category; Banking gained deposits and a deliberately tiny interest rate.
+
+  Stack caps were removed as part of it, reversing §7.4 — recorded there with the reasoning.
+
+  **Still open: what coin buys.** Upkeep is paid in food alone and nothing else has a coin
+  price. Coin currently stores value and makes a full satchel worth something, which is a
+  real job, but the sink should be designed rather than accreted.
+
+- ~~**Rarity**~~ **DECIDED: not building it** (Stage 18 task 5). Drop frequency is already
+  `DropTableEntry.Weight`; a cosmetic tier mapping adds no decision; and POI scarcity is
+  what `IsUnique` already means. An axis with no job is the §4.3 mistake — revisit only if
+  something concrete needs it.
+
+## Running the tests
+
+**The dev box cannot take repeated full-suite runs.** The suite spins up PostGIS via
+Testcontainers, and running it back-to-back has taken the machine down twice. A killed run
+also leaves orphaned containers behind, which keep consuming resources until removed:
+
+```bash
+docker ps -q | xargs -r docker rm -f
+```
+
+**The suite is flaky under load, not broken.** Three admin tests failed once during Stage
+18 on a run that took 4m50s, then passed twice in a row at 18s with no code change. The
+slow run is the tell: each test drops and recreates the database, so when the box is busy
+the container cannot keep up. Re-run before believing a failure, and check the duration.
+
+Prefer a targeted filter while working:
+
+```bash
+dotnet test --filter "FullyQualifiedName~Economy"
+```
+
+**Current state:** the last *full* run finished at **598/599**, with the one failure
+(`NoServiceCode_BranchesOnASpecificSkill`) fixed immediately afterwards via
+`EconomySeedData`. A targeted re-run of that test plus all Economy tests passed **44/44**.
+The full suite has not been run to completion since, so the total is **unverified** — expect
+~599 passing, but confirm before relying on it.
 
 ## Blockers
 
@@ -361,6 +414,52 @@ Worth a human eye:
   banked. Too generous and the commute becomes the efficient route; too stingy and the
   bank rots unused. All constants are in `TransitGrading`.
 
+### From Stage 17 (coin economy)
+
+**A re-import is not needed.** Nothing about coin depends on POI tags.
+
+Needs a human with a phone:
+
+- **Whether a shop detour feels worth making.** The whole design rests on selling being a
+  reason to walk somewhere rather than a menu. If players ignore it and hoard forever, the
+  price curve is not the problem — the errand is.
+- **Whether prices feel right.** Every category multiplier is reasoned from what that
+  category costs to reach, not playtested. All in `CoinPricing`.
+- **Whether interest reads as a nudge or as an insult.** It is deliberately tiny — 0.1%/hour,
+  bounded by the offline cap. A player who deposits 10,000 and returns to 40 might read that
+  badly. The framing in `helpers/economy.ts` `interestSummary` matters as much as the number.
+- **Whether removing stack caps lost a rhythm.** The bet is that the offline *time* cap does
+  all the pacing and caps only added busywork. Only real play shows whether the bag filling
+  up was providing something nobody noticed until it went.
+
+### From the criteria-closing pass
+
+**A re-import is needed before Cryptic clues appear.** `PointOfInterest.Tags` is empty for
+every POI already in the database, and the migration defaults it to `{}`. Cryptic
+generation reads that as "no distinguishing detail" and issues a Category step instead, so
+nothing breaks — but nothing improves either until `PoiImportService` runs again over a
+region. Re-importing backfills tags on existing rows (the update path writes them), so it
+is a re-run rather than a data migration.
+
+Needs a human with a phone:
+
+- **Walk a generated Cryptic clue.** The uniqueness check guarantees the riddle resolves
+  to one POI; it cannot guarantee a human finds that POI *recognisable* from the detail.
+  "Standing three storeys tall" is checkable from the pavement; "kept by [an operator]"
+  may only be on a sign inside. The allow-list in `PoiImportService.CrypticTagKeys` is
+  where to prune if a phrasing reads badly in the field.
+- **Whether encounter markers crowd the map.** Up to three roaming encounters plus training
+  grounds now draw on top of POI markers they share coordinates with. The diamond shape and
+  the layering are meant to keep that legible, but only a real neighbourhood with real POI
+  density shows whether it is.
+- **Whether the distance synergy rate feels right.** 12 XP/km is reasoned to be a
+  supplement rather than a route around exploring, and a test asserts it pays less than
+  covering new ground. Whether a runner doing laps of the same park feels rewarded or
+  short-changed is a judgement only play answers. Seeded in
+  `SkillSeedData.DistanceSynergyXpPerKilometre`.
+- **Whether combat gear is worth the Martial drops it costs.** Three items, at Smithing
+  15/40/75. The +levels values are reasoned from the 55–95% clamp, not playtested.
+
 ---
 
 ## Outstanding work, all stages
@@ -385,7 +484,9 @@ API over HTTP — which is what caught four POSTs pointing at the wrong endpoint
 route migration, something no helper unit test could have seen.
 
 Do **not** run `npx expo export` on the dev box: it exhausts the 1.9 GB of RAM and takes
-the machine down.
+the machine down. **`npm run build` in `geoslayer.web` has the same problem** — it was
+OOM-killed during Stage 18. Use `npm run verify` (typecheck + lint), which passes, and
+build on a machine with more headroom.
 
 The caveat that stood through Stages 02–15 is closed. What remains is *visual* and
 *behavioural* review on a real device — layout, whether the framing reads right — not
@@ -426,24 +527,56 @@ suite because tests construct services directly rather than through DI:
 - **The app called `/api/Auth/RefreshAppToken`**, which does not exist. Token refresh
   would have failed on first use.
 
-**Known issue:** `/swagger` returns 500. `GeoSlayer.Core.csproj` pins `Microsoft.OpenApi`
-3.10.2 for two CVEs and Swashbuckle 10.1.7 is incompatible with that version. A deliberate
-trade-off, but it means route changes must be verified by curling endpoints.
+~~**Known issue:** `/swagger` returns 500.~~ **Fixed** (Stage 18 prep).
 
-### 4. Genuinely unmet acceptance criteria
+The pin was never necessary. `GeoSlayer.Core.csproj` pinned `Microsoft.OpenApi` 3.10.2 for
+GHSA-v5pm-xwqc-g5wc, which forced Swashbuckle 10.1.7 to run against an API surface it does
+not target — hence the 500. But that advisory is patched on **both** lines, at 3.5.4 *and*
+at 2.7.5, and Swashbuckle 10.2.3 already depends on 2.7.5. Removing the direct reference and
+upgrading Swashbuckle gives a version that is both patched and compatible.
 
-- **Stage 13 criterion 5** — Cryptic clue generation. Needs raw OSM tags stored on import;
-  `PointOfInterest` keeps only a name, skill and location. An importer change.
-- **Stage 16 — gear does not affect combat resolution.** `WinChance` reads Combat level
-  alone; the stage asked for level *and* equipped gear. Needs a combat modifier on `Item`.
-- **Stage 16 — encounters are not drawn on the map.** They have their own screen. The DTO
-  already carries coordinates, so this is a map layer rather than API work.
+`dotnet list package --include-transitive` confirms `Microsoft.OpenApi 2.7.5`, and the build
+is clean with no NU1903 warnings. The SSH.NET pin stays — GHSA-q939-rpr3-3284 is patched
+only at 2026.0.0 and Testcontainers has not moved off the vulnerable version.
+
+**Caveat:** the version conflict is definitively gone, but `/swagger` has not been hit with
+a live request — this sandbox cannot bind a socket, so the API could not be booted here.
+Worth one `curl` on a real machine to close it out.
+
+### 4. ~~Genuinely unmet acceptance criteria~~ — ALL RESOLVED
+
+Every acceptance criterion in the project is now met.
+
+- ~~**Stage 13 criterion 5** — Cryptic clue generation.~~ **Built.** `PointOfInterest` now
+  carries a `Tags` jsonb column, filled at import from an allow-list of street-visible OSM
+  tags. `ClueCrypticTags` turns one into a riddle detail — but only when **no other
+  same-skill POI in the radius shares it**, which is the uniqueness guarantee the criterion
+  demanded and the reason it was deferred. No usable tag means a Category step, so a POI
+  imported before the column existed degrades rather than breaking.
+- ~~**Stage 16 — gear does not affect combat resolution.**~~ **Built.** New
+  `ItemModifier.CombatPowerLevels`, read by `WinChance` and `Resolve`. Expressed in
+  *levels* rather than a win-chance fraction so gear composes with the existing margin
+  rule and stays under the 55–95% clamp — a fully-geared player is favoured, never certain.
+  Three craftable items seeded, consuming Combat's own Martial drops.
+- ~~**Stage 16 — encounters are not drawn on the map.**~~ **Built.** `EncounterMarker`, a
+  diamond rather than a bubble so it does not read as a duplicate of the POI it sits on.
+  Colour carries urgency (amber under 30 minutes, muted for a permanent training ground)
+  rather than tier, since what a player needs to see at a glance is what is about to go.
 
 ### 5. Systems described but not built
 
-- **Trading's material→coin economy** (Stage 15). Needs a currency, sink and price table.
+- ~~**Trading's material→coin economy**~~ **Built** (Stage 17). See `DESIGN.md` §5D.
+  What coin *buys* remains open, deliberately.
 - **Craft-completion notifications** (Stage 06). No push infrastructure exists.
-- **Athletics distance synergy**, **Banking stack-cap upgrades** (Stage 15).
+- ~~**Athletics distance synergy**~~ **Built.** `SkillTrainingService` now takes the
+  distance actually walked, and pays the skills named in
+  `SkillSeedData.DistanceSynergySkills`. This is the one case where training runs with
+  **zero new cells** — a lap of a route already walked reveals nothing and is still a run,
+  which is exactly what the skill is named after. Distance is scaled by the same transit
+  grading the cells are, so a bus ride trains nothing.
+- ~~**Banking stack-cap upgrades**~~ **Built.** Banking level now feeds
+  `MaterialService.StackCapBonus` (0.5% per level, ~+49.5% at 99). Previously Banking
+  levelled without moving anything a player could feel.
 
 ### 6. Needs a human with a phone
 

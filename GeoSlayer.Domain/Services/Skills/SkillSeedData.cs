@@ -31,6 +31,58 @@ namespace GeoSlayer.Domain.Services.Skills
             (7, 90, 60, 240),
         ];
 
+        /// <summary>
+        /// Skills that also train from <b>distance walked</b>, not just ground covered
+        /// (Stage 15 — Athletics' distance synergy).
+        ///
+        /// <para>Every other skill trains per <i>cell</i>, which rewards covering new ground.
+        /// That makes a long run down a road already walked worth nothing, which is exactly
+        /// backwards for a skill about endurance. Distance synergy pays per kilometre
+        /// travelled regardless of novelty, so the skill's own logic matches what it is
+        /// named after.</para>
+        ///
+        /// <para>Declared here rather than compared in service code, for the same reason
+        /// <c>EncounterSeedData.Skill</c> is: <c>NoServiceCode_BranchesOnASpecificSkill</c>
+        /// exists to stop the eleven-fold copy-paste, and a set naming the skills once is the
+        /// shape that guard asks for. A second endurance skill is a row here.</para>
+        /// </summary>
+        public static IReadOnlySet<SkillType> DistanceSynergySkills { get; } =
+            new HashSet<SkillType> { SkillType.Athletics };
+
+        /// <summary>
+        /// XP per kilometre walked, for <see cref="DistanceSynergySkills"/>.
+        ///
+        /// <para>Deliberately modest. A brisk hour covers ~5 km, so this pays ~60 XP against
+        /// the several hundred the same hour earns from cells — a supplement that makes
+        /// re-walked ground worth something, not a route around exploring. §4.1a's rule that
+        /// geography must not disqualify anyone cuts both ways: a treadmill must not out-earn
+        /// a walk either, and distance here is measured from GPS movement, so it cannot be.</para>
+        /// </summary>
+        public const double DistanceSynergyXpPerKilometre = 12.0;
+
+        /// <summary>
+        /// Skills whose <b>level</b> raises what materials sell for (§5.4).
+        ///
+        /// <para>Originally stack caps; repointed when caps were removed. Banking is about
+        /// money, so moving the price you get is a better fit than moving storage ever was —
+        /// and it keeps the skill from being one that levels without changing anything a
+        /// player can feel, which §4.3 calls a bug.</para>
+        ///
+        /// <para>Seed data rather than a service branch, for the same reason as
+        /// <see cref="DistanceSynergySkills"/>.</para>
+        /// </summary>
+        public static IReadOnlySet<SkillType> SellPriceSkills { get; } =
+            new HashSet<SkillType> { SkillType.Banking };
+
+        /// <summary>
+        /// Sell-price bonus per level in a <see cref="SellPriceSkills"/> skill.
+        ///
+        /// <para>0.005 means level 99 Banking sells at +49.5%. Deliberately the same curve
+        /// the stack-cap version used: it was tuned to be comparable to the Storehouse and
+        /// that relationship still holds, since the Storehouse was repointed too.</para>
+        /// </summary>
+        public const double SellPricePerSkillLevel = 0.005;
+
         /// <summary>Skill metadata for the skills screen.</summary>
         public static IReadOnlyList<SkillDefinition> Definitions { get; } = new List<SkillDefinition>
         {
@@ -358,11 +410,6 @@ namespace GeoSlayer.Domain.Services.Skills
                     LevelRequired = level,
                     BaseGatherSeconds = seconds,
                     XpPerUnit = xp,
-
-                    // Higher tiers are rarer, so a smaller stack still represents real effort
-                    // and the cap bites at a comparable amount of gathering time.
-                    StackCap = tier <= 2 ? 1000 : tier <= 4 ? 500 : 250,
-                    DustPerOverflow = tier,
                 });
             }
 
@@ -530,12 +577,23 @@ namespace GeoSlayer.Domain.Services.Skills
                 ("vintage_reserve", "Vintage Reserve"), ("legendary_cask", "Legendary Cask"),
             ]);
 
-        /// <summary>Banking's ladder (Stage 15).</summary>
+        /// <summary>
+        /// Banking's ladder (Stage 15), reflavoured when real currency arrived (§5.4).
+        ///
+        /// <para>These were Copper Coin / Silver Coin / Gold Coin. Once <c>Player.Coin</c>
+        /// existed, "sell 40 Gold Coins for 800 coin" was going to read as a bug rather than
+        /// a trade. They are <b>valuables</b> now — things a bank holds — which keeps the
+        /// ladder and loses the collision.</para>
+        ///
+        /// <para>Priced highest of any category (<c>CoinPricing</c>), so a bank is the best
+        /// place to fill a satchel. That is the point: it gives Banking a reason to be
+        /// visited before deposits and interest are unlocked.</para>
+        /// </summary>
         public static IReadOnlyList<Material> BankingMaterials { get; } = BuildLadder(
             SkillType.Banking, MaterialCategory.Coin,
             [
-                ("copper_coin", "Copper Coin"), ("silver_coin", "Silver Coin"),
-                ("gold_coin", "Gold Coin"), ("promissory_note", "Promissory Note"),
+                ("copper_token", "Copper Token"), ("silver_bar", "Silver Bar"),
+                ("gold_bullion", "Gold Bullion"), ("promissory_note", "Promissory Note"),
                 ("deed", "Deed"), ("bearer_bond", "Bearer Bond"), ("royal_charter", "Royal Charter"),
             ]);
 

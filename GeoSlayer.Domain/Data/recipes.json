@@ -269,8 +269,8 @@
     },
     {
       "key": "storehouse",
-      "name": "Storehouse",
-      "description": "Raises every stack cap. Placed on a Claim.",
+      "name": "Counting House",
+      "description": "Somewhere to keep it, and someone to count it.",
       "skill": "Foraging",
       "levelRequired": 14,
       "durationSeconds": 10800,
@@ -443,6 +443,65 @@
         {
           "material": "meteoric_ore",
           "quantity": 4
+        }
+      ]
+    },
+    {
+      "key": "smith_padded_jerkin",
+      "name": "Padded Jerkin",
+      "description": "Layered cloth over old iron.",
+      "skill": "Smithing",
+      "levelRequired": 15,
+      "durationSeconds": 600,
+      "xpReward": 70,
+      "outputItem": "padded_jerkin",
+      "outputQuantity": 1,
+      "inputs": [
+        {
+          "material": "iron_shard",
+          "quantity": 5
+        }
+      ]
+    },
+    {
+      "key": "smith_campaigners_helm",
+      "name": "Campaigner's Helm",
+      "description": "Reforged from something that lost.",
+      "skill": "Smithing",
+      "levelRequired": 40,
+      "durationSeconds": 1200,
+      "xpReward": 130,
+      "outputItem": "campaigners_helm",
+      "outputQuantity": 1,
+      "inputs": [
+        {
+          "material": "steel_fitting",
+          "quantity": 4
+        },
+        {
+          "material": "officers_insignia",
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "key": "smith_warlords_signet",
+      "name": "Warlord's Signet",
+      "description": "The seal recut as a ring.",
+      "skill": "Smithing",
+      "levelRequired": 75,
+      "durationSeconds": 3300,
+      "xpReward": 320,
+      "outputItem": "warlords_signet",
+      "outputQuantity": 1,
+      "inputs": [
+        {
+          "material": "warlords_seal",
+          "quantity": 3
+        },
+        {
+          "material": "ancient_blade",
+          "quantity": 1
         }
       ]
     }

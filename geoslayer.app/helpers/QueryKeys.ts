@@ -32,6 +32,9 @@ export enum QueryKeys {
   // ── Combat ──
   Encounters = 'encounters',
 
+  // ── Economy ──
+  BankAccount = 'bankAccount',
+
   // ── Retention ──
   Expeditions = 'expeditions',
   ExpeditionDestinations = 'expeditionDestinations',

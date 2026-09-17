@@ -54,6 +54,7 @@ namespace GeoSlayer.Domain.Services.Combat
             var definitions = await db.EncounterDefinitions.ToListAsync(ct);
             var byKey = definitions.ToDictionary(d => d.Key);
             var combatLevel = await CombatLevel(playerId, ct);
+            var gearPower = await GearPowerLevels(playerId, ct);
 
             return open
                 .Where(e => byKey.ContainsKey(e.DefinitionKey))
@@ -79,7 +80,7 @@ namespace GeoSlayer.Domain.Services.Combat
                         MinCombatLevel = definition.MinCombatLevel,
                         IsTrainingGround = definition.IsTrainingGround,
                         ExpiresUtc = e.ExpiresUtc,
-                        WinChance = EncounterResolution.WinChance(combatLevel, definition.MinCombatLevel),
+                        WinChance = EncounterResolution.WinChance(combatLevel, definition.MinCombatLevel, gearPower),
                         DistanceMetres = distance,
                         IsInRange = distance <= EncounterResolution.ArrivalRadiusMetres,
                     };
@@ -289,7 +290,8 @@ namespace GeoSlayer.Domain.Services.Combat
                 ?? throw new NotFoundException($"Encounter definition {encounter.DefinitionKey} missing.");
 
             var combatLevel = await CombatLevel(playerId, ct);
-            var won = EncounterResolution.Resolve(encounter.Id, combatLevel, definition.MinCombatLevel);
+            var gearPower = await GearPowerLevels(playerId, ct);
+            var won = EncounterResolution.Resolve(encounter.Id, combatLevel, definition.MinCombatLevel, gearPower);
 
             encounter.ResolvedUtc = now;
             encounter.Won = won;
@@ -372,6 +374,34 @@ namespace GeoSlayer.Domain.Services.Combat
                 .FirstOrDefaultAsync(s => s.PlayerId == playerId && s.SkillType == EncounterSeedData.Skill, ct);
 
             return skill?.Level ?? 1;
+        }
+
+        /// <summary>
+        /// Effective Combat levels from equipped gear (§5C.3).
+        ///
+        /// <para>Read on both the preview and the resolve so the odds a player is shown are
+        /// the odds they get — a win chance that ignored the sword they are carrying would be
+        /// a lie told before a walk.</para>
+        /// </summary>
+        private async Task<double> GearPowerLevels(int playerId, CancellationToken ct)
+        {
+            var fromItems = await db.PlayerItems
+                .Include(pi => pi.Item)
+                .Where(pi => pi.PlayerId == playerId
+                          && pi.IsEquipped
+                          && pi.Quantity > 0
+                          && pi.Item.Modifier == ItemModifier.CombatPowerLevels)
+                .SumAsync(pi => pi.Item.ModifierValue, ct);
+
+            var fromSecondary = await db.PlayerItems
+                .Include(pi => pi.Item)
+                .Where(pi => pi.PlayerId == playerId
+                          && pi.IsEquipped
+                          && pi.Quantity > 0
+                          && pi.Item.SecondaryModifier == ItemModifier.CombatPowerLevels)
+                .SumAsync(pi => pi.Item.SecondaryModifierValue, ct);
+
+            return fromItems + fromSecondary;
         }
     }
 }

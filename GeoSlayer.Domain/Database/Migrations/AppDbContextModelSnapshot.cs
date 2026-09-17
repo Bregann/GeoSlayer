@@ -24,6 +24,53 @@ namespace GeoSlayer.Domain.Database.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "postgis");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("GeoSlayer.Domain.Database.Models.AdminAuditEntry", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("AdminUserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("AdminUsername")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("Detail")
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
+
+                    b.Property<string>("EntityId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTime>("OccurredUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OccurredUtc");
+
+                    b.HasIndex("EntityType", "EntityId");
+
+                    b.ToTable("AdminAuditEntries");
+                });
+
             modelBuilder.Entity("GeoSlayer.Domain.Database.Models.BankedTransit", b =>
                 {
                     b.Property<int>("Id")
@@ -435,6 +482,49 @@ namespace GeoSlayer.Domain.Database.Migrations
                     b.ToTable("Items");
                 });
 
+            modelBuilder.Entity("GeoSlayer.Domain.Database.Models.ItemImage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<byte[]>("Data")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<int>("ItemId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SizeBytes")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("UploadedByUserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("UploadedUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ItemId")
+                        .IsUnique();
+
+                    b.ToTable("ItemImages");
+                });
+
             modelBuilder.Entity("GeoSlayer.Domain.Database.Models.Material", b =>
                 {
                     b.Property<int>("Id")
@@ -447,9 +537,6 @@ namespace GeoSlayer.Domain.Database.Migrations
                         .HasColumnType("double precision");
 
                     b.Property<int>("Category")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("DustPerOverflow")
                         .HasColumnType("integer");
 
                     b.Property<bool>("IsUnique")
@@ -469,9 +556,6 @@ namespace GeoSlayer.Domain.Database.Migrations
                         .HasColumnType("character varying(128)");
 
                     b.Property<int?>("SkillType")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("StackCap")
                         .HasColumnType("integer");
 
                     b.Property<int>("Tier")
@@ -617,8 +701,17 @@ namespace GeoSlayer.Domain.Database.Migrations
                     b.Property<int>("BonusPointsSpent")
                         .HasColumnType("integer");
 
+                    b.Property<long>("Coin")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("CoinDeposited")
+                        .HasColumnType("bigint");
+
                     b.Property<long>("Curation")
                         .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("InterestSettledUtc")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<double?>("LastCellLat")
                         .HasColumnType("double precision");
@@ -989,6 +1082,10 @@ namespace GeoSlayer.Domain.Database.Migrations
                     b.Property<int>("Skill")
                         .HasColumnType("integer");
 
+                    b.Property<string>("Tags")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
                     b.Property<int>("XpReward")
                         .HasColumnType("integer");
 
@@ -1324,6 +1421,9 @@ namespace GeoSlayer.Domain.Database.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<bool>("IsAdmin")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasColumnType("text");
@@ -1493,6 +1593,17 @@ namespace GeoSlayer.Domain.Database.Migrations
                         .IsRequired();
 
                     b.Navigation("Material");
+                });
+
+            modelBuilder.Entity("GeoSlayer.Domain.Database.Models.ItemImage", b =>
+                {
+                    b.HasOne("GeoSlayer.Domain.Database.Models.Item", "Item")
+                        .WithMany()
+                        .HasForeignKey("ItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Item");
                 });
 
             modelBuilder.Entity("GeoSlayer.Domain.Database.Models.PatrolRoute", b =>

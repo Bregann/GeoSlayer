@@ -6,5 +6,4 @@ export interface MaterialGain {
   category: number;
   quantity: number;
   /** Units that did not fit and became Dust instead (DESIGN.md §7.4). */
-  overflowConvertedToDust: number;
 }

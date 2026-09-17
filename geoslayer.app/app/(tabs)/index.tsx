@@ -15,6 +15,7 @@ import { PlayerMarker } from '@/components/playerMarker';
 import { PoiClusterModal } from '@/components/poiClusterModal';
 import { PoiDetailModal } from '@/components/poiDetailModal';
 import { PoiMarker } from '@/components/poiMarker';
+import { EncounterMarker } from '@/components/encounterMarker';
 import { MAP_STYLE_URL } from '@/constants/mapStyle';
 import { useAuth } from '@/contexts/authContext';
 import { authApiClient } from '@/helpers/apiClient';
@@ -22,17 +23,19 @@ import { drainBackgroundBreadcrumbs, startBackgroundLocation } from '@/helpers/b
 import { buildFogGeoJSON, buildTransitGeoJSON, clusterPois, distanceMetres, toBreadcrumbGeoJSON } from '@/helpers/geo';
 import { expiryNudge, redemptionSummary, transitHint, transitSummary } from '@/helpers/transit';
 import { surgeSummary, surgeHint } from '@/helpers/surges';
+import { mappableEncounters } from '@/helpers/encounters';
 import { mapScreenStyles as styles, overviewStyles } from '@/styles/mapScreen';
 import { pickupStyles, surgeStyles, transitStyles } from '@/styles/progression';
 import type { Coord } from '@/types/map';
 import { UnlockCelebration } from '@/components/unlockCelebration';
-import { formatPickups, hasOverflow } from '@/helpers/inventory';
+import { formatPickups } from '@/helpers/inventory';
 import { shouldShowWelcomeBack } from '@/helpers/idle';
 import { WelcomeBack } from '@/components/welcomeBack';
 import type { BankedTransit } from '@/interfaces/api/retention/BankedTransit';
 import type { CellDto } from '@/interfaces/api/journey/CellDto';
 import type { NearbyPoi } from '@/interfaces/api/journey/NearbyPoi';
 import type { OfflineAccrual } from '@/interfaces/api/idle/OfflineAccrual';
+import type { Encounter } from '@/interfaces/api/combat/Encounter';
 import type { Surge } from '@/interfaces/api/retention/Surge';
 import type { SyncData } from '@/interfaces/api/journey/SyncData';
 import type { UnlockEvent } from '@/interfaces/api/progression/UnlockEvent';
@@ -64,20 +67,20 @@ export default function MapScreen() {
   const [selectedCluster, setSelectedCluster] = useState<NearbyPoi[] | null>(null);
   const [pendingUnlocks, setPendingUnlocks] = useState<UnlockEvent[]>([]);
   const [pickupText, setPickupText] = useState<string | null>(null);
-  const [pickupOverflow, setPickupOverflow] = useState(false);
   const [visitCounts, setVisitCounts] = useState<Record<number, number>>({});
   const [welcomeBack, setWelcomeBack] = useState<OfflineAccrual | null>(null);
   const [bankedTransit, setBankedTransit] = useState<BankedTransit[]>([]);
   const [surges, setSurges] = useState<Surge[]>([]);
+  const [encounters, setEncounters] = useState<Encounter[]>([]);
 
   // Pickups fade themselves; requiring a tap to clear ambient feedback would be a chore
   // on a walk. Overflow lingers longer because it costs the player something.
   useEffect(() => {
     if (!pickupText) return;
 
-    const timeout = setTimeout(() => setPickupText(null), pickupOverflow ? 6000 : 3000);
+    const timeout = setTimeout(() => setPickupText(null), 3000);
     return () => clearTimeout(timeout);
-  }, [pickupText, pickupOverflow]);
+  }, [pickupText]);
 
   const { player, updatePlayer } = useAuth();
 
@@ -187,6 +190,16 @@ export default function MapScreen() {
             // Non-fatal: the banner simply does not update this sync.
           }
 
+          // Encounters spawn from the player's own movement and the roaming ones expire,
+          // so they are refetched per sync for the same reason surges are. GetEncounters
+          // is also what spawns them, so this is the call that keeps the map populated.
+          try {
+            const nearby = await authApiClient.get<Encounter[]>('/api/Combat/GetEncounters');
+            if (nearby.status < 400) setEncounters(nearby.data);
+          } catch {
+            // Non-fatal: the map keeps the last known set.
+          }
+
           const redemption = redemptionSummary(data.transitRedemption);
           if (redemption) setPickupText(redemption);
 
@@ -194,7 +207,6 @@ export default function MapScreen() {
             const text = formatPickups(data.materials);
             if (text) {
               setPickupText(text);
-              setPickupOverflow(hasOverflow(data.materials));
             }
           }
         }
@@ -440,6 +452,17 @@ export default function MapScreen() {
           />
         ))}
 
+        {/* Encounters (§5C). Drawn after the POI markers so they sit above them: an
+            encounter shares its POI's coordinate, and the time-limited one is the thing
+            that needs to be seen. Tapping opens the screen that can resolve it. */}
+        {mappableEncounters(encounters).map((encounter) => (
+          <EncounterMarker
+            key={encounter.id}
+            encounter={encounter}
+            onPress={() => router.push('/encounters')}
+          />
+        ))}
+
         {/* Player marker */}
         <PlayerMarker coordinate={[location.longitude, location.latitude]} />
       </Map>
@@ -497,9 +520,6 @@ export default function MapScreen() {
           activeOpacity={0.8}
         >
           <Text style={pickupStyles.text}>{pickupText}</Text>
-          {pickupOverflow && (
-            <Text style={pickupStyles.overflow}>Stack full — converted to Dust</Text>
-          )}
         </TouchableOpacity>
       )}
 
@@ -526,7 +546,6 @@ export default function MapScreen() {
             const text = formatPickups(result.materials);
             if (text) {
               setPickupText(text);
-              setPickupOverflow(hasOverflow(result.materials));
             }
           }
 

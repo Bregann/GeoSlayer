@@ -17,7 +17,5 @@ namespace GeoSlayer.Domain.DTOs.Materials.Responses
         /// <summary>
         /// Units that could not fit and became Dust instead (§7.4). Non-zero here is the
         /// signal the app uses to warn that a stack is full.
-        /// </summary>
-        public int OverflowConvertedToDust { get; set; }
     }
 }

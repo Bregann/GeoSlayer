@@ -465,7 +465,9 @@ namespace GeoSlayer.Tests.Services.Idle
                     DbContext.PlayerMaterials.Add(row);
                 }
 
-                row.Quantity = material.StackCap;
+                // Caps are gone (§5.4); a very large holding is the modern equivalent
+                // of "the stack is full".
+                row.Quantity = 1_000_000;
             }
 
             await DbContext.SaveChangesAsync();

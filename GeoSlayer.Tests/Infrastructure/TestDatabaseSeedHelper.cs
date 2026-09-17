@@ -113,12 +113,10 @@ namespace GeoSlayer.Tests.Infrastructure
                     Tier = material.Tier,
                     Category = material.Category,
                     SkillType = material.SkillType,
-                    StackCap = material.StackCap,
                     IsUnique = material.IsUnique,
                     LevelRequired = material.LevelRequired,
                     BaseGatherSeconds = material.BaseGatherSeconds,
                     XpPerUnit = material.XpPerUnit,
-                    DustPerOverflow = material.DustPerOverflow,
                 });
             }
 
@@ -211,12 +209,10 @@ namespace GeoSlayer.Tests.Infrastructure
                     Tier = material.Tier,
                     Category = material.Category,
                     SkillType = material.SkillType,
-                    StackCap = material.StackCap,
                     IsUnique = material.IsUnique,
                     LevelRequired = material.LevelRequired,
                     BaseGatherSeconds = material.BaseGatherSeconds,
                     XpPerUnit = material.XpPerUnit,
-                    DustPerOverflow = material.DustPerOverflow,
                 });
             }
 
@@ -266,6 +262,15 @@ namespace GeoSlayer.Tests.Infrastructure
             new(context, progression, materials,
                 CreateCraftingService(context, progression, materials),
                 CreateMuseumService(context));
+
+        /// <summary>A real <see cref="EconomyService"/> over the test database.</summary>
+        public static Domain.Services.Economy.EconomyService CreateEconomyService(
+            AppDbContext context,
+            ProgressionService progression,
+            MaterialService materials) =>
+            new(context, materials,
+                CreateCraftingService(context, progression, materials),
+                progression);
 
         /// <summary>A real <see cref="CraftingService"/> over the test database.</summary>
         public static CraftingService CreateCraftingService(

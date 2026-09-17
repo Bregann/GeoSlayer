@@ -12,4 +12,7 @@ export interface PlayerItem {
   isEquipped: boolean;
   claimId: number | null;
   claimName: string | null;
+
+  /** Whether an admin has uploaded artwork for this item (Stage 18 task 3). */
+  hasImage: boolean;
 }

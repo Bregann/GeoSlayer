@@ -5,7 +5,8 @@ import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'rea
 
 import { authApiClient } from '@/helpers/apiClient';
 import { useMutationPost } from '@/helpers/mutations/useMutationPost';
-import { groupItemsByKind, needsClaim } from '@/helpers/crafting';
+import { groupItemsByKind, itemFallbackIcon, needsClaim } from '@/helpers/crafting';
+import { ItemIcon } from '@/components/itemIcon';
 import { progressionStyles as styles } from '@/styles/progression';
 import { QueryKeys } from '@/helpers/QueryKeys';
 import type { PlayerItem } from '@/interfaces/api/crafting/PlayerItem';
@@ -93,6 +94,13 @@ export default function EquipmentScreen() {
               {group.items.map((item) => (
                 <View key={item.id} style={styles.card}>
                   <View style={styles.cardRow}>
+                    {/* Artwork when an admin has uploaded it, the kind's emoji otherwise —
+                        both are permanent states, not one a placeholder for the other. */}
+                    <ItemIcon
+                      itemId={item.itemId}
+                      hasImage={item.hasImage}
+                      fallback={itemFallbackIcon(item)}
+                    />
                     <Text style={styles.cardName}>{item.name}</Text>
                     {item.isEquipped && <Text style={styles.cardLevel}>ACTIVE</Text>}
                   </View>

@@ -37,7 +37,7 @@ namespace GeoSlayer.Domain.Services.Museum
                     "+3% skill XP — you read ground well."),
 
                 [MuseumWing.Skills] = new(
-                    ItemModifier.StackCapPercent, 0.10,
+                    ItemModifier.SellPricePercent, 0.10,
                     "+10% stack caps — you know what is worth keeping."),
 
                 [MuseumWing.Rarities] = new(

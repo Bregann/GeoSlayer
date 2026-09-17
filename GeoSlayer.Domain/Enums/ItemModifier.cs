@@ -21,8 +21,16 @@ namespace GeoSlayer.Domain.Enums
         /// <summary>Additional hours of offline accrual.</summary>
         OfflineCapHours,
 
-        /// <summary>Fractional bonus to per-material stack caps.</summary>
-        StackCapPercent,
+        /// <summary>
+        /// Fractional bonus to what materials sell for (§5.4).
+        ///
+        /// <para>Was <c>StackCapPercent</c> until caps were removed. The sources are
+        /// unchanged — a Storehouse, a completed Museum wing, Banking level — and so is the
+        /// feel: all three reward the player who gathers more than they immediately need.
+        /// Repointed rather than deleted, because a modifier nothing reads is the bug §4.3
+        /// names.</para>
+        /// </summary>
+        SellPricePercent,
 
         /// <summary>Fractional bonus to worker output.</summary>
         WorkerRatePercent,
@@ -38,5 +46,16 @@ namespace GeoSlayer.Domain.Enums
         /// pointless. 0.2 means 20% faster, which shows up as more units per cell.</para>
         /// </summary>
         GatherSpeedPercent,
+
+        /// <summary>
+        /// Effective Combat levels added when resolving an encounter (§5C.3, Stage 16).
+        ///
+        /// <para>Expressed in <b>levels</b> rather than a win-chance fraction so it composes
+        /// with the existing margin rule instead of sitting on top of it: gear makes you
+        /// fight as though you were higher level, which is the same axis training moves.
+        /// A percentage would have had to be clamped separately and would have let gear
+        /// outrun the 95% ceiling that keeps a fight uncertain.</para>
+        /// </summary>
+        CombatPowerLevels,
     }
 }

@@ -604,5 +604,170 @@ namespace GeoSlayer.Tests.Services.Clues
             Assert.That(text, Does.Not.Contain("Test Place"));
             Assert.That(text, Does.StartWith("Stand somewhere"));
         }
+
+        // ── Criterion 5: Cryptic steps ──────────────────────────────────
+
+        /// <summary>
+        /// POIs carrying tags that single each one out — the case Cryptic generation needs.
+        /// Distinct values per POI, so the uniqueness check can actually succeed.
+        /// </summary>
+        private async Task SeedTaggedPois(int count = 10)
+        {
+            for (var i = 0; i < count; i++)
+            {
+                DbContext.PointsOfInterest.Add(new PointOfInterest
+                {
+                    OsmId = Random.Shared.NextInt64(1, long.MaxValue),
+                    OsmType = "node",
+                    Name = $"Tagged Place {i}",
+                    Skill = SkillType.Prayer,
+                    Location = new Point(OriginLng + i * 0.0005, OriginLat + i * 0.0005) { SRID = 4326 },
+                    XpReward = 10,
+
+                    // start_date is unique per POI, so every one of them is distinguishable.
+                    Tags = new Dictionary<string, string> { ["start_date"] = $"{1800 + i}" },
+                });
+            }
+
+            await DbContext.SaveChangesAsync();
+        }
+
+        [Test]
+        public async Task WithDistinguishableTags_CrypticStepsAreGenerated()
+        {
+            // Stage 13 criterion 5, end to end. Cryptic was the one acceptance criterion left
+            // genuinely unsatisfied, because nothing generated a step of this type.
+            await RevealTerritory();
+            await SeedTaggedPois();
+
+            var scroll = await _sut.GenerateScroll(_player.Id, ClueTier.Pilgrim, Ct);
+
+            Assert.That(scroll, Is.Not.Null);
+
+            var steps = await DbContext.ClueSteps
+                .Where(s => s.ScrollId == scroll!.Id)
+                .ToListAsync();
+
+            Assert.That(steps.Any(s => s.StepType == ClueStepType.Cryptic), Is.True,
+                "tagged POIs must yield at least one Cryptic step");
+        }
+
+        [Test]
+        public async Task WithNoTags_NoCrypticStepIsGenerated()
+        {
+            // Every POI imported before the Tags column existed looks like this. The scroll
+            // must still generate and still be completable — degrading to Category, not
+            // failing and not inventing a detail.
+            await RevealTerritory();
+            await SeedNearbyPois();
+
+            var scroll = await _sut.GenerateScroll(_player.Id, ClueTier.Pilgrim, Ct);
+
+            Assert.That(scroll, Is.Not.Null);
+
+            var steps = await DbContext.ClueSteps
+                .Where(s => s.ScrollId == scroll!.Id)
+                .ToListAsync();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(steps.Any(s => s.StepType == ClueStepType.Cryptic), Is.False);
+                Assert.That(steps, Is.Not.Empty, "the scroll must still be generated");
+            });
+        }
+
+        [Test]
+        public async Task WhenEveryPoiSharesATag_NoCrypticStepIsGenerated()
+        {
+            // The uniqueness rule, at the level that matters. Ten churches all built in 1850
+            // means "that has stood since 1850" identifies none of them, and an ambiguous
+            // riddle is unsolvable — worse than no Cryptic step at all.
+            await RevealTerritory();
+
+            for (var i = 0; i < 10; i++)
+            {
+                DbContext.PointsOfInterest.Add(new PointOfInterest
+                {
+                    OsmId = Random.Shared.NextInt64(1, long.MaxValue),
+                    OsmType = "node",
+                    Name = $"Identical Place {i}",
+                    Skill = SkillType.Prayer,
+                    Location = new Point(OriginLng + i * 0.0005, OriginLat + i * 0.0005) { SRID = 4326 },
+                    XpReward = 10,
+                    Tags = new Dictionary<string, string> { ["start_date"] = "1850" },
+                });
+            }
+
+            await DbContext.SaveChangesAsync();
+
+            var scroll = await _sut.GenerateScroll(_player.Id, ClueTier.Pilgrim, Ct);
+
+            Assert.That(scroll, Is.Not.Null);
+
+            var steps = await DbContext.ClueSteps
+                .Where(s => s.ScrollId == scroll!.Id)
+                .ToListAsync();
+
+            Assert.That(steps.Any(s => s.StepType == ClueStepType.Cryptic), Is.False,
+                "a shared tag identifies nothing, so it must not become a riddle");
+        }
+
+        [Test]
+        public async Task ACrypticStep_ResolvesToExactlyOnePoi()
+        {
+            // Criterion 5's hard requirement. A Cryptic step is validated by POI id like a
+            // Direct step, because it names one place — unlike Category, where any POI of the
+            // kind will do.
+            await RevealTerritory();
+            await SeedTaggedPois();
+
+            var scroll = await _sut.GenerateScroll(_player.Id, ClueTier.Pilgrim, Ct);
+
+            var cryptic = await DbContext.ClueSteps
+                .Where(s => s.ScrollId == scroll!.Id && s.StepType == ClueStepType.Cryptic)
+                .ToListAsync();
+
+            Assert.That(cryptic, Is.Not.Empty);
+            Assert.That(cryptic.All(s => s.TargetPoiId != null), Is.True,
+                "a Cryptic step must name the one POI it resolves to");
+        }
+
+        [Test]
+        public async Task ACrypticStep_DoesNotLeakItsPosition()
+        {
+            // Same rule as a Direct step: handing over the coordinates would turn the riddle
+            // into a map pin. Only Coordinate steps expose a search area.
+            await RevealTerritory();
+            await SeedTaggedPois();
+
+            var scroll = await _sut.GenerateScroll(_player.Id, ClueTier.Pilgrim, Ct);
+            var scrolls = await _sut.GetScrolls(_player.Id, Ct);
+
+            var steps = scrolls
+                .First(s => s.Id == scroll!.Id)
+                .Steps
+                .Where(s => s.StepType == ClueStepType.Cryptic)
+                .ToList();
+
+            Assert.That(steps.All(s => s.SearchLat is null && s.SearchLng is null), Is.True);
+        }
+
+        [Test]
+        public async Task ACrypticRiddle_NeverNamesItsPoi()
+        {
+            // §5B.2: the riddle is a category phrase plus a distinguishing detail. The name
+            // is the answer, so it must not appear in the question.
+            await RevealTerritory();
+            await SeedTaggedPois();
+
+            var scroll = await _sut.GenerateScroll(_player.Id, ClueTier.Pilgrim, Ct);
+
+            var cryptic = await DbContext.ClueSteps
+                .Where(s => s.ScrollId == scroll!.Id && s.StepType == ClueStepType.Cryptic)
+                .ToListAsync();
+
+            Assert.That(cryptic, Is.Not.Empty);
+            Assert.That(cryptic.All(s => !s.RiddleText.Contains("Tagged Place")), Is.True);
+        }
     }
 }

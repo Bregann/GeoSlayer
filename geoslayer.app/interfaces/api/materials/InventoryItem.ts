@@ -6,9 +6,13 @@ export interface InventoryItem {
   category: number;
   skillType: number | null;
   quantity: number;
-  stackCap: number;
+  /** Coin for one unit, before the sell bonus (§5.4). */
+  unitPrice: number;
+
+  /** Coin the whole stack fetches, bonus included. */
+  stackPrice: number;
+
+  /** Safe for the "sell all junk" shortcut. */
+  isJunk: boolean;
   isUnique: boolean;
-  /** At or above 90% of cap — warned before anything overflows. */
-  isNearCap: boolean;
-  isFull: boolean;
 }

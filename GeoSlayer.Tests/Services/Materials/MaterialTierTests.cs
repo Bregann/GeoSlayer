@@ -39,12 +39,10 @@ namespace GeoSlayer.Tests.Services.Materials
                     Tier = material.Tier,
                     Category = material.Category,
                     SkillType = material.SkillType,
-                    StackCap = material.StackCap,
                     IsUnique = material.IsUnique,
                     LevelRequired = material.LevelRequired,
                     BaseGatherSeconds = material.BaseGatherSeconds,
                     XpPerUnit = material.XpPerUnit,
-                    DustPerOverflow = material.DustPerOverflow,
                 };
 
                 byKey[copy.Key] = copy;

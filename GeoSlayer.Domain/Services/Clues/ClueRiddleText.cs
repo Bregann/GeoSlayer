@@ -49,7 +49,10 @@ namespace GeoSlayer.Domain.Services.Clues
 
             // Deterministic: regenerating a scroll must not reword a step the player is
             // already carrying.
-            return phrases[Math.Abs(seed) % phrases.Length];
+            //
+            // Not Math.Abs: ClueService seeds from HashCode.Combine, which can return
+            // int.MinValue, and Math.Abs throws on exactly that value.
+            return phrases[(int)((uint)seed % (uint)phrases.Length)];
         }
 
         /// <summary>

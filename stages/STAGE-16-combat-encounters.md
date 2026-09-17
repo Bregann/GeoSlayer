@@ -39,19 +39,41 @@ branching on skill. But the fix was better than an exemption: the skill is now
 `EncounterSeedData.Skill`, declared once as seed data and read by the service. One place
 names it, and no service code decides anything by asking which skill it holds.
 
-### Not done, and recorded rather than ticked
+### ~~Not done, and recorded rather than ticked~~ — both closed
 
-- **Gear does not affect resolution.** The stage asked for "Combat level and equipped
-  gear"; only level is read. Needs a combat modifier on `Item` first.
-- **Encounters are not drawn on the map.** They have a screen instead. The DTO already
-  carries coordinates, so this is a map layer, not an API change.
+Both gaps were closed in a later pass. The stage is now complete as written.
 
-Both are visible in the task list above, unticked.
+- ~~**Gear does not affect resolution.**~~ **Built.** `ItemModifier.CombatPowerLevels`,
+  read by both `WinChance` and `Resolve`, plus `EncounterService.GearPowerLevels` reading
+  equipped items (primary *and* secondary modifiers).
+
+  Modelled as **effective levels** rather than a win-chance bonus. Folding gear into the
+  margin means it composes with training on one axis and stays under the existing 55–95%
+  clamp — a test asserts that a thousand levels of gear still cannot make a fight a
+  certainty. A percentage bonus would have needed its own clamp and could have outrun the
+  ceiling that keeps an encounter uncertain.
+
+  Three items seeded (Padded Jerkin, Campaigner's Helm, Warlord's Signet), forged by
+  Smithing from Combat's own Martial drops — so encounters now fund the gear that wins
+  them, the same closed loop Mining and Smithing have.
+
+  The preview and the resolve read the same gear deliberately: a win chance shown before a
+  walk that ignored the player's sword would be a lie about the odds given after it.
+
+- ~~**Encounters are not drawn on the map.**~~ **Built.** `components/encounterMarker.tsx`,
+  fetched per sync alongside surges (the same call that spawns them).
+
+  Drawn as a **diamond**, not a bubble, because an encounter sits on its POI's exact
+  coordinate and two similar markers on one point read as one duplicated thing. Colour
+  carries **urgency, not tier** — amber under 30 minutes, crimson otherwise, muted gold for
+  a training ground that will still be there tomorrow. Tier is in the label, where it does
+  not have to compete for attention with a deadline.
 
 ### Verification
 
 - **Build:** green, 0 warnings.
-- **Tests:** **522 passed, 0 failed, 0 skipped** (was 501).
+- **Tests:** **522 passed, 0 failed, 0 skipped** (was 501). Since the gear and map work,
+  **556 passed** suite-wide.
 - **Migration:** `Stage16CombatEncounters` applied against a scratch PostGIS container,
   full chain from empty. Two new tables, no destructive operations on existing ones.
 

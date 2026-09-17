@@ -317,24 +317,29 @@ namespace GeoSlayer.Tests.Services.Crafting
             Assert.That(list.Recipes.Any(r => !r.CanCraft), Is.True);
         }
 
-        // ── Criterion 7: a building measurably raises stack caps ────────
+        // ── Criterion 7: a building measurably changes something ────────
+        //
+        // Was "raises stack caps" until caps were removed (§5.4). The Counting House now
+        // raises sell price — same acquisition route, same feel (it rewards gathering more
+        // than you immediately need), and still the §4.3 rule that an equipped building
+        // changing no behaviour is a bug.
 
         [Test]
-        public async Task AStorehouse_MeasurablyRaisesStackCaps()
+        public async Task ACountingHouse_MeasurablyRaisesSellPrice()
         {
-            var storehouse = await DbContext.Items.FirstAsync(i => i.Key == "storehouse");
+            var countingHouse = await DbContext.Items.FirstAsync(i => i.Key == "storehouse");
 
-            await GiveMaterial("scrap", 5);
+            await GiveMaterial("scrap", 1000);
 
             var before = (await _materials.GetInventory(_player.Id, Ct))
                 .Categories.SelectMany(c => c.Items)
                 .First(i => i.Key == "scrap")
-                .StackCap;
+                .StackPrice;
 
             DbContext.PlayerItems.Add(new PlayerItem
             {
                 PlayerId = _player.Id,
-                ItemId = storehouse.Id,
+                ItemId = countingHouse.Id,
                 Quantity = 1,
                 IsEquipped = true,
                 AcquiredUtc = DateTime.UtcNow,
@@ -344,40 +349,40 @@ namespace GeoSlayer.Tests.Services.Crafting
             var after = (await _materials.GetInventory(_player.Id, Ct))
                 .Categories.SelectMany(c => c.Items)
                 .First(i => i.Key == "scrap")
-                .StackCap;
+                .StackPrice;
 
             Assert.That(after, Is.GreaterThan(before),
                 "an equipped building that changes no behaviour is a bug (§4.3)");
         }
 
         [Test]
-        public async Task AStorehouse_LetsMoreMaterialFitBeforeOverflowing()
+        public async Task AnUnequippedCountingHouse_ChangesNothing()
         {
-            var storehouse = await DbContext.Items.FirstAsync(i => i.Key == "storehouse");
-            var scrap = await DbContext.Materials.FirstAsync(m => m.Key == "scrap");
+            var countingHouse = await DbContext.Items.FirstAsync(i => i.Key == "storehouse");
+
+            await GiveMaterial("scrap", 1000);
+
+            var before = (await _materials.GetInventory(_player.Id, Ct))
+                .Categories.SelectMany(c => c.Items)
+                .First(i => i.Key == "scrap")
+                .StackPrice;
 
             DbContext.PlayerItems.Add(new PlayerItem
             {
                 PlayerId = _player.Id,
-                ItemId = storehouse.Id,
+                ItemId = countingHouse.Id,
                 Quantity = 1,
-                IsEquipped = true,
+                IsEquipped = false,
                 AcquiredUtc = DateTime.UtcNow,
             });
             await DbContext.SaveChangesAsync();
 
-            // Grant exactly the base cap. Without the Storehouse this would fill the stack
-            // and overflow; with it there should be room to spare.
-            var gains = await _materials.GrantMaterials(
-                _player.Id, new Dictionary<int, int> { [scrap.Id] = scrap.StackCap }, Ct);
+            var after = (await _materials.GetInventory(_player.Id, Ct))
+                .Categories.SelectMany(c => c.Items)
+                .First(i => i.Key == "scrap")
+                .StackPrice;
 
-            var gain = gains.First(g => g.MaterialId == scrap.Id);
-
-            Assert.Multiple(() =>
-            {
-                Assert.That(gain.Quantity, Is.EqualTo(scrap.StackCap), "all of it should fit");
-                Assert.That(gain.OverflowConvertedToDust, Is.Zero);
-            });
+            Assert.That(after, Is.EqualTo(before), "a building in a box is not a building");
         }
 
         // ── Gear modifiers are read, not merely stored (§4.3) ───────────

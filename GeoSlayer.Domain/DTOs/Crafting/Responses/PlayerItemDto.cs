@@ -26,6 +26,15 @@ namespace GeoSlayer.Domain.DTOs.Crafting.Responses
         public double SecondaryModifierValue { get; set; }
 
         public int Tier { get; set; }
+
+        /// <summary>
+        /// Whether an admin has uploaded an image for this item (Stage 18 task 3).
+        ///
+        /// <para>Sent so the app knows whether to render an image at all. Without it the
+        /// only way to find out is to request one and handle the 404, which means a failed
+        /// request per imageless item on every render.</para>
+        /// </summary>
+        public bool HasImage { get; set; }
         public int Quantity { get; set; }
         public bool IsEquipped { get; set; }
         public int? ClaimId { get; set; }

@@ -154,12 +154,10 @@ namespace GeoSlayer.Domain.Helpers
                     Tier = material.Tier,
                     Category = material.Category,
                     SkillType = material.SkillType,
-                    StackCap = material.StackCap,
                     IsUnique = material.IsUnique,
                     LevelRequired = material.LevelRequired,
                     BaseGatherSeconds = material.BaseGatherSeconds,
                     XpPerUnit = material.XpPerUnit,
-                    DustPerOverflow = material.DustPerOverflow,
                 });
             }
         }

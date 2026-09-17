@@ -29,9 +29,12 @@ namespace GeoSlayer.Domain.Services.Combat
         /// <para>Deliberately generous at parity. Combat is trained by walking to things;
         /// making the walk usually pay is what stops it feeling like a slot machine.</para>
         /// </summary>
-        public static double WinChance(int combatLevel, int minCombatLevel)
+        public static double WinChance(int combatLevel, int minCombatLevel, double gearPowerLevels = 0)
         {
-            var margin = combatLevel - minCombatLevel;
+            // Gear counts as effective levels (§5C.3 asks for level *and* equipped gear).
+            // Folding it into the margin rather than the chance keeps the 55–95% clamp
+            // meaningful: a fully-geared player is favoured, never certain.
+            var margin = combatLevel + gearPowerLevels - minCombatLevel;
             var chance = 0.75 + (margin * 0.01);
 
             return Math.Clamp(chance, 0.55, 0.95);
@@ -43,11 +46,11 @@ namespace GeoSlayer.Domain.Services.Combat
         /// <para>Same reasoning as <c>DropRoller.SeedFor</c>: the outcome is a property of
         /// this encounter, not of when the client happened to ask.</para>
         /// </summary>
-        public static bool Resolve(int encounterId, int combatLevel, int minCombatLevel)
+        public static bool Resolve(int encounterId, int combatLevel, int minCombatLevel, double gearPowerLevels = 0)
         {
             var roll = new Random(encounterId).NextDouble();
 
-            return roll < WinChance(combatLevel, minCombatLevel);
+            return roll < WinChance(combatLevel, minCombatLevel, gearPowerLevels);
         }
 
         /// <summary>

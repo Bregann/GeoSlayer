@@ -157,6 +157,7 @@ namespace GeoSlayer.Tests.Services.Skills
             var results = await training.TrainFromCells(
                 _player.Id,
                 Enumerable.Range(0, 10).Select(i => new GridCell(10 + i, 10)).ToList(),
+                0,
                 Ct);
 
             Assert.That(results.Any(r => r.SkillType == SkillType.Cooking), Is.False,
@@ -293,7 +294,7 @@ namespace GeoSlayer.Tests.Services.Skills
             Assert.Multiple(() =>
             {
                 Assert.That(item.Quantity, Is.EqualTo(5));
-                Assert.That(item.StackCap, Is.GreaterThan(0));
+                Assert.That(item.UnitPrice, Is.GreaterThan(0));
             });
         }
     }

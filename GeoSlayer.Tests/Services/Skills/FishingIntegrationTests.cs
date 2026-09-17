@@ -97,7 +97,7 @@ namespace GeoSlayer.Tests.Services.Skills
             await UnlockFishing();
 
             var results = await TrainingFor(TerrainType.Water)
-                .TrainFromCells(_player.Id, [new GridCell(10, 10), new GridCell(11, 10)], Ct);
+                .TrainFromCells(_player.Id, [new GridCell(10, 10), new GridCell(11, 10)], 0, Ct);
 
             var fishing = results.FirstOrDefault(r => r.SkillType == SkillType.Fishing);
 
@@ -116,7 +116,7 @@ namespace GeoSlayer.Tests.Services.Skills
             await UnlockFishing();
 
             var results = await TrainingFor(TerrainType.Rocky)
-                .TrainFromCells(_player.Id, [new GridCell(20, 20)], Ct);
+                .TrainFromCells(_player.Id, [new GridCell(20, 20)], 0, Ct);
 
             var fishing = results.FirstOrDefault(r => r.SkillType == SkillType.Fishing);
 
@@ -133,10 +133,10 @@ namespace GeoSlayer.Tests.Services.Skills
             await UnlockFishing();
 
             var inland = await TrainingFor(TerrainType.Urban)
-                .TrainFromCells(_player.Id, [new GridCell(30, 30)], Ct);
+                .TrainFromCells(_player.Id, [new GridCell(30, 30)], 0, Ct);
 
             var water = await TrainingFor(TerrainType.Water)
-                .TrainFromCells(_player.Id, [new GridCell(31, 30)], Ct);
+                .TrainFromCells(_player.Id, [new GridCell(31, 30)], 0, Ct);
 
             var inlandXp = inland.First(r => r.SkillType == SkillType.Fishing).SkillXpEarned;
             var waterXp = water.First(r => r.SkillType == SkillType.Fishing).SkillXpEarned;
@@ -154,6 +154,7 @@ namespace GeoSlayer.Tests.Services.Skills
                 .TrainFromCells(
                     _player.Id,
                     Enumerable.Range(0, 10).Select(i => new GridCell(100 + i, 100)).ToList(),
+                    0,
                     Ct);
 
             foreach (var result in results)
@@ -200,7 +201,7 @@ namespace GeoSlayer.Tests.Services.Skills
             Assert.Multiple(() =>
             {
                 Assert.That(item.Quantity, Is.EqualTo(5));
-                Assert.That(item.StackCap, Is.GreaterThan(0));
+                Assert.That(item.UnitPrice, Is.GreaterThan(0));
             });
         }
 

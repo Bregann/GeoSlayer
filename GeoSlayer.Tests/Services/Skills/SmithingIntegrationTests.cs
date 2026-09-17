@@ -157,9 +157,17 @@ namespace GeoSlayer.Tests.Services.Skills
         {
             // The stage note's first demand. Tier-for-tier coupling is what makes these two
             // skills a chain rather than parallel bars.
+            //
+            // Scoped to recipes producing a Tool: Smithing also forges combat gear, which
+            // consumes Martial drops rather than ore and is deliberately not part of this
+            // ladder. Asserting over every Smithing recipe would make adding any non-tool
+            // recipe a failure, which is not what the chain rule says.
             var recipes = await DbContext.Recipes
                 .Include(r => r.Inputs).ThenInclude(i => i.Material)
-                .Where(r => r.SkillType == SkillType.Smithing)
+                .Include(r => r.OutputItem)
+                .Where(r => r.SkillType == SkillType.Smithing
+                         && r.OutputItem != null
+                         && r.OutputItem.Kind == ItemKind.Tool)
                 .OrderBy(r => r.LevelRequired)
                 .ToListAsync();
 
@@ -181,6 +189,32 @@ namespace GeoSlayer.Tests.Services.Skills
                         Assert.That(input.Material.Tier, Is.EqualTo(expectedTier),
                             $"{recipes[i].Name} (tier {expectedTier}) consumes tier {input.Material.Tier}");
                     });
+                }
+            }
+        }
+
+        [Test]
+        public async Task CombatGear_ConsumesCombatDrops()
+        {
+            // The second chain Smithing closes (Stage 16's gear gap): Combat encounters drop
+            // Martial materials, Smithing forges them into gear, and the gear makes the next
+            // encounter winnable. Ore would have made combat gear a Mining reward.
+            var gearRecipes = await DbContext.Recipes
+                .Include(r => r.Inputs).ThenInclude(i => i.Material)
+                .Include(r => r.OutputItem)
+                .Where(r => r.SkillType == SkillType.Smithing
+                         && r.OutputItem != null
+                         && r.OutputItem.Modifier == ItemModifier.CombatPowerLevels)
+                .ToListAsync();
+
+            Assert.That(gearRecipes, Is.Not.Empty, "combat gear must be craftable");
+
+            foreach (var recipe in gearRecipes)
+            {
+                foreach (var input in recipe.Inputs)
+                {
+                    Assert.That(input.Material.SkillType, Is.EqualTo(SkillType.Combat),
+                        $"{recipe.Name} should consume Combat drops, not ore");
                 }
             }
         }

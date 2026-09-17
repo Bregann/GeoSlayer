@@ -155,7 +155,7 @@ namespace GeoSlayer.Domain.Services.Clues
                          && p.Location.Y <= anchorLat + degreeRadius
                          && p.Location.X >= anchorLng - degreeRadius * 2
                          && p.Location.X <= anchorLng + degreeRadius * 2)
-                .Select(p => new { p.Id, p.Name, p.Skill, Lat = p.Location.Y, Lng = p.Location.X })
+                .Select(p => new { p.Id, p.Name, p.Skill, p.Tags, Lat = p.Location.Y, Lng = p.Location.X })
                 .Take(200)
                 .ToListAsync(ct);
 
@@ -181,21 +181,54 @@ namespace GeoSlayer.Domain.Services.Clues
                     usedPoiIds.Add(poi.Id);
 
                     // Direct for the first step so a new player learns the mechanic on an
-                    // easy one; Category afterwards, which works even where POIs are thin.
-                    var type = index == 0 ? ClueStepType.Direct : ClueStepType.Category;
+                    // easy one. Afterwards, Cryptic when the POI's tags can single it out,
+                    // and Category when they cannot — Category works even where POIs are
+                    // thin, which is what makes it the safe floor.
+                    ClueStepType type;
+                    string riddle;
+
+                    if (index == 0)
+                    {
+                        type = ClueStepType.Direct;
+                        riddle = ClueRiddleText.Direct(poi.Name, poi.Skill, seed + index);
+                    }
+                    else
+                    {
+                        // Uniqueness is judged against same-skill POIs only, because the
+                        // category phrase has already narrowed the field to one skill.
+                        var rivals = candidates
+                            .Where(c => c.Id != poi.Id && c.Skill == poi.Skill)
+                            .Select(c => (IReadOnlyDictionary<string, string>)c.Tags)
+                            .ToList();
+
+                        var detail = ClueCrypticTags.DistinguishingDetail(poi.Tags, rivals, seed + index);
+
+                        if (detail is not null)
+                        {
+                            type = ClueStepType.Cryptic;
+                            riddle = ClueRiddleText.Cryptic(poi.Skill, detail, seed + index);
+                        }
+                        else
+                        {
+                            type = ClueStepType.Category;
+                            riddle = ClueRiddleText.Category(poi.Skill, seed + index);
+                        }
+                    }
 
                     step = new ClueStep
                     {
                         StepIndex = index,
                         StepType = type,
-                        TargetPoiId = type == ClueStepType.Direct ? poi.Id : null,
+
+                        // Cryptic resolves to one POI by construction, so it is validated by
+                        // id like a Direct step. Category deliberately is not — any POI of
+                        // the kind will do.
+                        TargetPoiId = type is ClueStepType.Direct or ClueStepType.Cryptic ? poi.Id : null,
                         TargetSkill = poi.Skill,
                         TargetLat = poi.Lat,
                         TargetLng = poi.Lng,
                         TargetRadius = ClueTierConfig.PoiArrivalRadiusMetres,
-                        RiddleText = type == ClueStepType.Direct
-                            ? ClueRiddleText.Direct(poi.Name, poi.Skill, seed + index)
-                            : ClueRiddleText.Category(poi.Skill, seed + index),
+                        RiddleText = riddle,
                     };
                 }
                 else
