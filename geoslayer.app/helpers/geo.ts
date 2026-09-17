@@ -111,3 +111,35 @@ export function clusterPois(pois: NearbyPoi[]): ClusteredPoi[] {
 
   return result;
 }
+
+/**
+ * Banked transit cells, as fillable polygons (DESIGN.md §7.1).
+ *
+ * <p>Unlike fog, these are drawn as <b>positive</b> shapes rather than holes: transit is
+ * "places you passed but did not see", so it must read as present-but-unrevealed rather
+ * than as cleared ground. §7.1 asks for "a distinct visual state", and without it the
+ * whole mechanic is invisible — a commuter banks cells and never learns why.</p>
+ */
+export function buildTransitGeoJSON(
+  cells: { south: number; west: number; north: number; east: number; weight: number }[],
+): GeoJSON.FeatureCollection {
+  return {
+    type: 'FeatureCollection',
+    features: cells.map((c) => ({
+      type: 'Feature' as const,
+      // Weight rides along so a cycling-pace cell (partial) can render fainter than a
+      // train-pace one, rather than every banked cell looking identical.
+      properties: { weight: c.weight },
+      geometry: {
+        type: 'Polygon' as const,
+        coordinates: [[
+          [c.west, c.south],
+          [c.east, c.south],
+          [c.east, c.north],
+          [c.west, c.north],
+          [c.west, c.south],
+        ]],
+      },
+    })),
+  };
+}

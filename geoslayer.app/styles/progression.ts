@@ -422,3 +422,40 @@ export const museumStyles = StyleSheet.create({
     flex: 1,
   },
 });
+
+/**
+ * The Uncharted Transit overlay (DESIGN.md §7.1).
+ *
+ * Violet to match the banked-cell layer, and placed top-left so it does not fight the
+ * pickup toast at the bottom.
+ */
+export const transitStyles = StyleSheet.create({
+  container: {
+    position: 'absolute',
+    top: 150,
+    left: 12,
+    maxWidth: 240,
+    backgroundColor: 'rgba(10, 10, 30, 0.9)',
+    borderWidth: 1,
+    borderColor: VIOLET,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    gap: 2,
+  },
+  title: {
+    color: VIOLET,
+    fontSize: 11,
+    fontWeight: 'bold',
+    fontFamily: 'monospace',
+  },
+  hint: {
+    color: '#c8c8e0',
+    fontSize: 10,
+    fontFamily: 'monospace',
+  },
+  nudge: {
+    color: GOLD,
+    fontSize: 10,
+    fontFamily: 'monospace',
+  },
+});

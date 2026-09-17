@@ -22,9 +22,22 @@ import {
   drainBackgroundBreadcrumbs,
   startBackgroundLocation,
 } from '@/helpers/backgroundLocation';
-import { buildFogGeoJSON, clusterPois, distanceMetres, toBreadcrumbGeoJSON } from '@/helpers/geo';
+import {
+  buildFogGeoJSON,
+  buildTransitGeoJSON,
+  clusterPois,
+  distanceMetres,
+  toBreadcrumbGeoJSON,
+} from '@/helpers/geo';
+import {
+  expiryNudge,
+  redemptionSummary,
+  transitHint,
+  transitSummary,
+  type BankedTransit,
+} from '@/helpers/transit';
 import { mapScreenStyles as styles, overviewStyles } from '@/styles/mapScreen';
-import { pickupStyles } from '@/styles/progression';
+import { pickupStyles, transitStyles } from '@/styles/progression';
 import type { CellDto, Coord, NearbyPoi, SyncData } from '@/types/map';
 import type { UnlockEvent } from '@/types/progression';
 import { UnlockCelebration } from '@/components/unlockCelebration';
@@ -62,6 +75,7 @@ export default function MapScreen() {
   const [pickupOverflow, setPickupOverflow] = useState(false);
   const [visitCounts, setVisitCounts] = useState<Record<number, number>>({});
   const [welcomeBack, setWelcomeBack] = useState<OfflineAccrual | null>(null);
+  const [bankedTransit, setBankedTransit] = useState<BankedTransit[]>([]);
 
   // Pickups fade themselves; requiring a tap to clear ambient feedback would be a chore
   // on a walk. Overflow lingers longer because it costs the player something.
@@ -161,6 +175,18 @@ export default function MapScreen() {
           if (shouldShowWelcomeBack(data.offlineAccrual)) {
             setWelcomeBack(data.offlineAccrual);
           }
+
+          // Banked transit changes on almost every sync — either banked or redeemed —
+          // so it is refetched rather than inferred from the response.
+          try {
+            const transit = await authApiClient.get<BankedTransit[]>('/api/retention/transit');
+            if (transit.status < 400) setBankedTransit(transit.data);
+          } catch {
+            // Non-fatal: the map simply keeps the last known set.
+          }
+
+          const redemption = redemptionSummary(data.transitRedemption);
+          if (redemption) setPickupText(redemption);
 
           if (data.materials && data.materials.length > 0) {
             const text = formatPickups(data.materials);
@@ -312,6 +338,7 @@ export default function MapScreen() {
   // Union all revealed circles — recalculated only when revealedCells changes.
   // Unioning prevents winding-rule dark patches where circles overlap.
   const fogGeoJSON = buildFogGeoJSON(revealedCells);
+  const transitGeoJSON = buildTransitGeoJSON(bankedTransit);
   const breadcrumbGeoJSON = toBreadcrumbGeoJSON(breadcrumbs);
   const clusteredPois = clusterPois(syncData?.nearbyPois ?? []);
 
@@ -343,6 +370,30 @@ export default function MapScreen() {
             paint={{
               'fill-color': '#0a0a1e',
               'fill-opacity': 0.92,
+            }}
+          />
+        </GeoJSONSource>
+
+        {/* Uncharted Transit (§7.1) — places passed through but not seen.
+            Drawn above the fog so it reads as ground glimpsed rather than cleared. */}
+        <GeoJSONSource id="transit-source" data={transitGeoJSON}>
+          <Layer
+            id="transit-fill"
+            type="fill"
+            paint={{
+              'fill-color': '#bb66ff',
+              'fill-opacity': 0.22,
+            }}
+          />
+          <Layer
+            id="transit-outline"
+            type="line"
+            paint={{
+              'line-color': '#bb66ff',
+              'line-width': 1,
+              // Dashed, so it never reads as revealed ground at a glance.
+              'line-dasharray': [2, 2],
+              'line-opacity': 0.5,
             }}
           />
         </GeoJSONSource>
@@ -413,6 +464,18 @@ export default function MapScreen() {
         onCrafting={() => router.push('/crafting')}
         onMuseum={() => router.push('/museum')}
       />
+
+      {/* Uncharted Transit summary. Without this the hatched cells are unexplained,
+          and the mechanic is invisible — a commuter banks cells and never learns why. */}
+      {transitSummary(bankedTransit) && (
+        <View style={transitStyles.container}>
+          <Text style={transitStyles.title}>{transitSummary(bankedTransit)}</Text>
+          <Text style={transitStyles.hint}>{transitHint(bankedTransit)}</Text>
+          {expiryNudge(bankedTransit) && (
+            <Text style={transitStyles.nudge}>{expiryNudge(bankedTransit)}</Text>
+          )}
+        </View>
+      )}
 
       {/* Material pickups from this sync (Stage 03 task 5) */}
       {pickupText && (

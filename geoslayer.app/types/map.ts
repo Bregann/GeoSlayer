@@ -1,5 +1,6 @@
 import type { MaterialGain } from './inventory';
 import type { OfflineAccrual } from '../helpers/idle';
+import type { TransitRedemption } from '../helpers/transit';
 import type { UnlockEvent } from './progression';
 
 export interface Coord {
@@ -31,6 +32,10 @@ export interface SyncData {
   bonusPointsGranted: number;
   /** Materials picked up this sync (Stage 03). */
   materials: MaterialGain[];
+  /** Cells banked as Uncharted Transit rather than revealed (Stage 14, §7.1). */
+  transitBanked: number;
+  /** Banked transit this walk redeemed, or null when none was. */
+  transitRedemption: TransitRedemption | null;
   /** What workers produced while away, or null when nothing did (Stage 05). */
   offlineAccrual: OfflineAccrual | null;
   nearbyPois: NearbyPoi[];

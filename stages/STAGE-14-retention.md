@@ -150,8 +150,10 @@ Replaces the interim hard cap from Stage 01.
 - [x] Unredeemed transit decays over ~a week — an opportunity, not an obligation.
 - [x] Speed-graded conversion: full reveal at walking pace, partial at cycling pace, pure
       transit above. This handles cyclists without a special case.
-- [ ] **NOT DONE — banked transit on the map.** `GET /api/retention/transit` returns
-      each cell's bounds for exactly this, but nothing draws them. App work only.
+- [x] **Banked transit on the map.** Drawn as a violet dashed layer above the fog, so it
+      reads as ground glimpsed rather than cleared. Opacity carries the speed grading, and
+      an overlay states what the cells are and what to do about them — without that the
+      mechanic is invisible.
 
 Converts the biggest exploit into the best retention mechanic: the commute becomes a reason
 to walk, seeded along routes the player already travels.

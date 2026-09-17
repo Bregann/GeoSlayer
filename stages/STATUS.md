@@ -385,13 +385,15 @@ The caveat that stood through Stages 02–15 is closed. What remains is *visual*
 *behavioural* review on a real device — layout, whether the framing reads right — not
 whether the code is sound.
 
-### 2. Stage 14's systems have no app surface at all — now the largest gap
+### 2. Stage 14's systems are mostly still API-only
 
-The largest single gap. All five retention systems are backend-complete and tested, and
-**none of them is visible to a player**:
-
-- Banked transit is not drawn on the map, so a commuter banks cells and never learns why.
-- Expeditions, patrol routes, surges and District status are all API-only.
+- ~~Banked transit is not drawn on the map.~~ **Built.** A violet dashed layer above the
+  fog, with an overlay reading "You passed through N places / Walk near them to reveal what
+  you missed." Opacity carries the speed grading, so a cycling-pace cell renders fainter
+  than a train-pace one. The redemption result surfaces in the pickup toast.
+- **Still API-only:** Expeditions, patrol routes, surges and District status. Expeditions
+  are the most valuable of these — Stage 14 calls them "highest value per unit of work",
+  and dispatch currently has no way to pick from the POIs you have visited.
 
 ### 3. Genuinely unmet acceptance criteria
 
