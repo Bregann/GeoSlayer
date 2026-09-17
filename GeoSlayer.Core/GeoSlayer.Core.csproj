@@ -33,12 +33,16 @@
     <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageReference Include="Serilog.Sinks.Seq" Version="9.0.0" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7" />
-    <!-- Direct references pin patched versions of two transitive packages flagged by
-         NU1903 (GHSA-v5pm-xwqc-g5wc, GHSA-q939-rpr3-3284). Swashbuckle pulls in
-         Microsoft.OpenApi and Testcontainers pulls in SSH.NET; neither parent has
-         shipped a release that moves off the vulnerable version yet. -->
-    <PackageReference Include="Microsoft.OpenApi" Version="3.10.2" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3" />
+    <!-- Microsoft.OpenApi was pinned to 3.10.2 for GHSA-v5pm-xwqc-g5wc, which broke
+         /swagger outright: Swashbuckle targets the 2.x API surface and threw a 500 on
+         every request. The pin was never needed — that advisory is patched on *both*
+         lines, at 3.5.4 and at 2.7.5, and Swashbuckle 10.2.3 already depends on 2.7.5.
+         So the fix is to let Swashbuckle resolve its own dependency, which is both
+         patched and compatible. No direct Microsoft.OpenApi reference is required.
+
+         SSH.NET stays pinned: GHSA-q939-rpr3-3284 is patched only at 2026.0.0 and
+         Testcontainers has not shipped a release that moves off the vulnerable version. -->
     <PackageReference Include="SSH.NET" Version="2026.0.0" />
     <PackageReference Include="Testcontainers" Version="4.11.0" />
     <PackageReference Include="Testcontainers.PostgreSql" Version="4.11.0" />

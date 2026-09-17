@@ -518,9 +518,21 @@ suite because tests construct services directly rather than through DI:
 - **The app called `/api/Auth/RefreshAppToken`**, which does not exist. Token refresh
   would have failed on first use.
 
-**Known issue:** `/swagger` returns 500. `GeoSlayer.Core.csproj` pins `Microsoft.OpenApi`
-3.10.2 for two CVEs and Swashbuckle 10.1.7 is incompatible with that version. A deliberate
-trade-off, but it means route changes must be verified by curling endpoints.
+~~**Known issue:** `/swagger` returns 500.~~ **Fixed** (Stage 18 prep).
+
+The pin was never necessary. `GeoSlayer.Core.csproj` pinned `Microsoft.OpenApi` 3.10.2 for
+GHSA-v5pm-xwqc-g5wc, which forced Swashbuckle 10.1.7 to run against an API surface it does
+not target — hence the 500. But that advisory is patched on **both** lines, at 3.5.4 *and*
+at 2.7.5, and Swashbuckle 10.2.3 already depends on 2.7.5. Removing the direct reference and
+upgrading Swashbuckle gives a version that is both patched and compatible.
+
+`dotnet list package --include-transitive` confirms `Microsoft.OpenApi 2.7.5`, and the build
+is clean with no NU1903 warnings. The SSH.NET pin stays — GHSA-q939-rpr3-3284 is patched
+only at 2026.0.0 and Testcontainers has not moved off the vulnerable version.
+
+**Caveat:** the version conflict is definitively gone, but `/swagger` has not been hit with
+a live request — this sandbox cannot bind a socket, so the API could not be booted here.
+Worth one `curl` on a real machine to close it out.
 
 ### 4. ~~Genuinely unmet acceptance criteria~~ — ALL RESOLVED
 
