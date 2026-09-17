@@ -20,6 +20,7 @@ public class JourneyService(
     ISkillTrainingService skillTraining,
     IWorkerService workerService,
     ICraftingService craftingService,
+    IRetentionService retentionService,
     IUserContextHelper userContextHelper) : IJourneyService
 {
     private const double PoiCellSize = 0.05;
@@ -55,10 +56,26 @@ public class JourneyService(
         // Crafts finish lazily too (§4.2 / §5.3) — no recurring job for either.
         var craftCollection = await craftingService.CollectCompletedCrafts(player.Id, ct);
 
+        // Expeditions return lazily too — the same principle as workers and crafts.
+        var expeditions = await retentionService.CollectExpeditions(player.Id, ct);
+
         // Reveal fog-of-war cells (includes anti-cheat validation)
         var fogResult = await fogService.Reveal(player.Id, path, ct);
 
         await db.SaveChangesAsync(ct);
+
+        // A completed patrol circuit pays upkeep (§5.7). Checked against this batch's
+        // path, so the loop is detected as it is walked.
+        var patrols = await retentionService.CheckPatrolCompletion(
+            player.Id,
+            path.Select(p => (p.Latitude, p.Longitude)).ToList(),
+            ct);
+
+        // Surges are a property of a place, generated on demand for the region the player
+        // is actually in — cheap, and it means nobody sees an empty map.
+        await retentionService.EnsureSurgeFor(last.Latitude, last.Longitude, ct);
+
+        var surges = await retentionService.GetActiveSurges(last.Latitude, last.Longitude, ct);
 
         // Load nearby POIs
         var playerLocation = new Point(last.Longitude, last.Latitude) { SRID = 4326 };
@@ -78,6 +95,11 @@ public class JourneyService(
             MuseumAcquisitions = fogResult.MuseumAcquisitions,
             OfflineAccrual = offlineAccrual.HasAccrual ? offlineAccrual : null,
             CraftCollection = craftCollection.HasCollection ? craftCollection : null,
+            ExpeditionCollection = expeditions.HasCollection ? expeditions : null,
+            PatrolCompletions = patrols,
+            TransitBanked = fogResult.TransitBanked,
+            TransitRedemption = fogResult.TransitRedemption,
+            Surges = surges,
             BonusPointsGranted = fogResult.Grant?.BonusPointsGranted ?? 0,
             NearbyPois = nearbyPois,
         };

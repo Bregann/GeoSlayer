@@ -6,6 +6,7 @@ using GeoSlayer.Domain.Interfaces.Api;
 using GeoSlayer.Domain.Services.Crafting;
 using GeoSlayer.Domain.Services.Materials;
 using GeoSlayer.Domain.Services.Museum;
+using GeoSlayer.Domain.Services.Retention;
 using GeoSlayer.Domain.Services.Progression;
 using GeoSlayer.Domain.Services.Skills;
 using Microsoft.AspNetCore.Identity;
@@ -279,6 +280,32 @@ namespace GeoSlayer.Tests.Infrastructure
                             "Locality"));
 
             return new MuseumService(context, resolver.Object);
+        }
+
+        /// <summary>A real <see cref="RetentionService"/> over the test database.</summary>
+        public static RetentionService CreateRetentionService(
+            AppDbContext context,
+            MaterialService materials,
+            ProgressionService progression) =>
+            new(context, materials, progression);
+
+        /// <summary>Seeds District definitions (§5.5).</summary>
+        public static async Task SeedDistrictDefinitions(AppDbContext context)
+        {
+            foreach (var district in RetentionSeedData.Districts)
+            {
+                context.DistrictDefinitions.Add(new DistrictDefinition
+                {
+                    Key = district.Key,
+                    Name = district.Name,
+                    Description = district.Description,
+                    RequiredTerrains = district.RequiredTerrains,
+                    MinimumClaims = district.MinimumClaims,
+                    OutputBonus = district.OutputBonus,
+                });
+            }
+
+            await context.SaveChangesAsync();
         }
 
         /// <summary>Seeds the Museum's plinths (§5A.2), derived from the live tables.</summary>

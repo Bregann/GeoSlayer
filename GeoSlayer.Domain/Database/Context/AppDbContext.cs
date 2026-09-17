@@ -35,6 +35,12 @@ namespace GeoSlayer.Domain.Database.Context
         public DbSet<GeoRegion> GeoRegions { get; set; } = null!;
         public DbSet<PlayerClueScroll> PlayerClueScrolls { get; set; } = null!;
         public DbSet<ClueStep> ClueSteps { get; set; } = null!;
+        public DbSet<WorkerExpedition> WorkerExpeditions { get; set; } = null!;
+        public DbSet<BankedTransit> BankedTransits { get; set; } = null!;
+        public DbSet<PatrolRoute> PatrolRoutes { get; set; } = null!;
+        public DbSet<PatrolWaypoint> PatrolWaypoints { get; set; } = null!;
+        public DbSet<DistrictDefinition> DistrictDefinitions { get; set; } = null!;
+        public DbSet<ResourceSurge> ResourceSurges { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -198,6 +204,42 @@ namespace GeoSlayer.Domain.Database.Context
             modelBuilder.Entity<ClueStep>(entity =>
             {
                 entity.HasIndex(e => new { e.ScrollId, e.StepIndex }).IsUnique();
+            });
+
+            modelBuilder.Entity<WorkerExpedition>(entity =>
+            {
+                entity.HasIndex(e => new { e.PlayerId, e.Collected });
+                entity.HasIndex(e => e.WorkerId);
+            });
+
+            modelBuilder.Entity<BankedTransit>(entity =>
+            {
+                // One banked row per cell per player: passing the same spot twice on one
+                // commute should not bank it twice.
+                entity.HasIndex(e => new { e.PlayerId, e.GridLat, e.GridLng }).IsUnique();
+                entity.HasIndex(e => new { e.PlayerId, e.Redeemed });
+            });
+
+            modelBuilder.Entity<PatrolRoute>(entity =>
+            {
+                entity.HasIndex(e => e.PlayerId);
+            });
+
+            modelBuilder.Entity<PatrolWaypoint>(entity =>
+            {
+                entity.HasIndex(e => new { e.RouteId, e.Sequence }).IsUnique();
+            });
+
+            modelBuilder.Entity<DistrictDefinition>(entity =>
+            {
+                entity.HasIndex(e => e.Key).IsUnique();
+            });
+
+            modelBuilder.Entity<ResourceSurge>(entity =>
+            {
+                // One active surge per region cell — shared across players, since a surge
+                // is a property of a place.
+                entity.HasIndex(e => new { e.CellLat, e.CellLng, e.EndsUtc });
             });
 
             modelBuilder.Entity<RevealedCell>(entity =>

@@ -35,6 +35,16 @@ public class MuseumWingDto
     public int Found { get; set; }
     public int Total { get; set; }
     public bool IsComplete { get; set; }
+
+    /// <summary>
+    /// What completing this wing grants, in words. Shown whether or not it is complete,
+    /// so the reward is visible as a reason rather than a surprise.
+    /// </summary>
+    public string? SetBonusDescription { get; set; }
+
+    /// <summary>True when the bonus is actually being applied.</summary>
+    public bool SetBonusActive { get; set; }
+
     public List<MuseumEntryDto> Entries { get; set; } = [];
 }
 

@@ -1,6 +1,7 @@
 using GeoSlayer.Domain.DTOs.Crafting.Responses;
 using GeoSlayer.Domain.DTOs.Idle.Responses;
 using GeoSlayer.Domain.DTOs.Museum.Responses;
+using GeoSlayer.Domain.DTOs.Retention.Responses;
 using GeoSlayer.Domain.DTOs.Materials.Responses;
 using GeoSlayer.Domain.DTOs.Skills.Responses;
 using GeoSlayer.Domain.DTOs.Progression.Responses;
@@ -36,6 +37,21 @@ public class SyncResponse
 
     /// <summary>Museum plinths filled this sync (Stage 12).</summary>
     public List<MuseumAcquisitionDto> MuseumAcquisitions { get; set; } = [];
+
+    /// <summary>Expeditions that returned while away (Stage 14 §5.4).</summary>
+    public ExpeditionCollectionDto? ExpeditionCollection { get; set; }
+
+    /// <summary>Patrol circuits this walk completed (§5.7).</summary>
+    public List<PatrolCompletionDto> PatrolCompletions { get; set; } = [];
+
+    /// <summary>Cells banked as Uncharted Transit rather than revealed (§7.1).</summary>
+    public int TransitBanked { get; set; }
+
+    /// <summary>Banked transit this walk redeemed.</summary>
+    public TransitRedemptionDto? TransitRedemption { get; set; }
+
+    /// <summary>Surges active where the player is now (§5.6).</summary>
+    public List<SurgeDto> Surges { get; set; } = [];
 
     public List<NearbyPoiDto> NearbyPois { get; set; } = [];
 }

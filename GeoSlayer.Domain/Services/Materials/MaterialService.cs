@@ -162,13 +162,43 @@ public class MaterialService(
     /// </summary>
     private async Task<double> StackCapBonus(int playerId, CancellationToken ct)
     {
-        return await db.PlayerItems
+        var fromItems = await db.PlayerItems
             .Include(pi => pi.Item)
             .Where(pi => pi.PlayerId == playerId
                       && pi.IsEquipped
                       && pi.Quantity > 0
                       && pi.Item.Modifier == ItemModifier.StackCapPercent)
             .SumAsync(pi => pi.Item.ModifierValue, ct);
+
+        // A completed Museum wing grants a small permanent bonus (§5A). Read here rather
+        // than through IMuseumService to avoid a service cycle — a bonus nothing reads
+        // would be exactly the "displays but does nothing" bug §4.3 warns about.
+        var completedWings = await CompletedMuseumWings(playerId, ct);
+
+        return fromItems
+             + Services.Museum.MuseumSetBonus.TotalFor(ItemModifier.StackCapPercent, completedWings);
+    }
+
+    /// <summary>Wings the player has filled, for set bonuses.</summary>
+    private async Task<List<MuseumWing>> CompletedMuseumWings(int playerId, CancellationToken ct)
+    {
+        var definitions = await db.MuseumEntryDefinitions
+            .Select(d => new { d.Wing, d.Key })
+            .ToListAsync(ct);
+
+        if (definitions.Count == 0) return [];
+
+        var found = (await db.PlayerMuseumEntries
+                .Where(e => e.PlayerId == playerId)
+                .Select(e => e.EntryKey)
+                .ToListAsync(ct))
+            .ToHashSet();
+
+        return definitions
+            .GroupBy(d => d.Wing)
+            .Where(g => g.All(d => found.Contains(d.Key)))
+            .Select(g => g.Key)
+            .ToList();
     }
 
     public async Task<List<MaterialGainDto>> GrantMaterials(

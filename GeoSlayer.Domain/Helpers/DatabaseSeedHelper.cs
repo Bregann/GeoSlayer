@@ -5,6 +5,7 @@ using GeoSlayer.Domain.Interfaces.Helpers;
 using GeoSlayer.Domain.Services.Crafting;
 using GeoSlayer.Domain.Services.Materials;
 using GeoSlayer.Domain.Services.Museum;
+using GeoSlayer.Domain.Services.Retention;
 using GeoSlayer.Domain.Services.Progression;
 using GeoSlayer.Domain.Services.Skills;
 using Microsoft.EntityFrameworkCore;
@@ -37,6 +38,7 @@ namespace GeoSlayer.Domain.Helpers
             await context.SaveChangesAsync();
 
             await SeedMuseumEntries(context);
+            await SeedDistricts(context);
             await context.SaveChangesAsync();
         }
 
@@ -337,6 +339,28 @@ namespace GeoSlayer.Domain.Helpers
                     Rarity = definition.Rarity,
                     UnlockCondition = definition.UnlockCondition,
                     SortOrder = definition.SortOrder,
+                });
+            }
+        }
+
+        /// <summary>District definitions (§5.5). "New ones cost nothing but data."</summary>
+        private static async Task SeedDistricts(AppDbContext context)
+        {
+            var have = (await context.DistrictDefinitions.Select(d => d.Key).ToListAsync())
+                .ToHashSet();
+
+            foreach (var district in RetentionSeedData.Districts)
+            {
+                if (!have.Add(district.Key)) continue;
+
+                context.DistrictDefinitions.Add(new DistrictDefinition
+                {
+                    Key = district.Key,
+                    Name = district.Name,
+                    Description = district.Description,
+                    RequiredTerrains = district.RequiredTerrains,
+                    MinimumClaims = district.MinimumClaims,
+                    OutputBonus = district.OutputBonus,
                 });
             }
         }

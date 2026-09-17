@@ -5,6 +5,7 @@ using GeoSlayer.Domain.Services;
 using GeoSlayer.Domain.Services.Crafting;
 using GeoSlayer.Domain.Services.Materials;
 using GeoSlayer.Domain.Services.Museum;
+using GeoSlayer.Domain.Services.Retention;
 using GeoSlayer.Domain.Services.Progression;
 using GeoSlayer.Domain.Services.Skills;
 using GeoSlayer.Tests.Infrastructure;
@@ -36,6 +37,7 @@ public class FogServiceIntegrationTests : DatabaseIntegrationTestBase
     private SkillTrainingService _skillTraining = null!;
     private CraftingService _crafting = null!;
     private MuseumService _museum = null!;
+    private RetentionService _retention = null!;
 
     protected override async Task CustomSetUp()
     {
@@ -52,12 +54,13 @@ public class FogServiceIntegrationTests : DatabaseIntegrationTestBase
         _materials = TestDatabaseSeedHelper.CreateMaterialService(DbContext);
         _crafting = TestDatabaseSeedHelper.CreateCraftingService(DbContext, _progression, _materials);
         _museum = TestDatabaseSeedHelper.CreateMuseumService(DbContext);
+        _retention = TestDatabaseSeedHelper.CreateRetentionService(DbContext, _materials, _progression);
         await TestDatabaseSeedHelper.SeedSkillDefinitions(DbContext);
         await TestDatabaseSeedHelper.SeedMuseumDefinitions(DbContext);
         _skillTraining = TestDatabaseSeedHelper.CreateSkillTrainingService(
             DbContext, _progression, _materials);
 
-        _sut = new FogService(DbContext, _progression, _materials, _skillTraining, _crafting, _museum);
+        _sut = new FogService(DbContext, _progression, _materials, _skillTraining, _crafting, _museum, _retention);
     }
 
     private static double LngOffset(double metres, double atLat) =>

@@ -1,6 +1,6 @@
 # Build status
 
-**Current stage: `STAGE-14-retention.md`**
+**Current stage: `STAGE-15-remaining-skills.md`**
 
 Single source of truth for where the build is. Update this when a stage completes.
 
@@ -19,7 +19,7 @@ Single source of truth for where the build is. Update this when a stage complete
 | 11 | Smithing | DONE |
 | 12 | Museum | DONE |
 | 13 | Clue scrolls | DONE |
-| 14 | Retention systems | NOT STARTED |
+| 14 | Retention systems | DONE |
 | 15 | Remaining skills | NOT STARTED |
 
 States: `NOT STARTED` → `IN PROGRESS` → `DONE` (or `BLOCKED`, with a reason).
@@ -273,10 +273,9 @@ Needs an app toolchain when one exists:
 
 Carried forward, deliberately:
 
-- **Museum set bonuses** are not implemented. Wing completion is tracked
-  (`IsComplete`, `CompletedWing`) but grants nothing. Relics (Stage 13) and Expeditions
-  (Stage 14) are still empty, so no wing can be completed honestly and a bonus now would
-  be balanced against an unfinished Museum. **Stage 14** is the right home.
+- ~~**Museum set bonuses** are not implemented.~~ **Delivered in Stage 14**, once Relics
+  and Expeditions had entries. Small, permanent, and read by real systems. Cartography
+  deliberately has none — it has no fixed size, so it can never be complete.
 
 Worth a human eye:
 
@@ -314,3 +313,28 @@ Needs a human with a phone (carried from the stage file):
   did not write the generator. Category steps say things like "Stand somewhere where the
   faithful gather" — whether that reads as evocative or as vague is the whole question,
   and no test can answer it.
+
+### From Stage 14
+
+**The Stage 01 interim speed cap is removed**, as the definition of done required.
+`TraceValidator` now rejects only implausible speed (>400 km/h, a forged path); everything
+below banks as Uncharted Transit.
+
+All five retention systems are backend-complete and tested. **No app surfaces were built
+for any of them** — this is the largest app gap in the project:
+
+- **Banked transit on the map.** `GET /api/retention/transit` returns each cell's bounds
+  for exactly this; nothing draws them. §7.1 wants it as "a distinct visual state", and
+  without it the whole mechanic is invisible — a commuter banks cells and never learns why.
+- **Expeditions screen.** Dispatch is API-only; nothing lists visited POIs to choose from.
+- **Patrol routes.** No way to define one from a walked path, which is how §5.7 intends
+  them to be created.
+- **Surges on the map.** §5.6 asks for them "clearly signposted"; the sync response
+  carries them and nothing renders them.
+- **District status.** `GET /api/retention/district` works; nothing shows it.
+
+Worth a human eye:
+
+- **Whether the transit redemption ratio feels right.** One walked cell redeems three
+  banked. Too generous and the commute becomes the efficient route; too stingy and the
+  bank rots unused. All constants are in `TransitGrading`.

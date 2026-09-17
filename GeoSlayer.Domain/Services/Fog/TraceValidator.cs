@@ -109,6 +109,14 @@ public static class TraceValidator
     /// Filter and judge a batch.  Returns the positions that may reveal, or the reason
     /// the batch may not.
     /// </summary>
+    /// <summary>
+    /// Faster than any vehicle a player could plausibly be in — 400 km/h.
+    ///
+    /// <para>Above this it is not a commute, it is a forged path. Everything below banks
+    /// as Uncharted Transit instead of being rejected (§7.1).</para>
+    /// </summary>
+    public const double ImplausibleSpeedMetresPerSecond = 111.0;
+
     public static TraceVerdict Validate(IReadOnlyList<SyncPosition> path)
     {
         // ── Accuracy cutoff ──────────────────────────────────────
@@ -136,7 +144,15 @@ public static class TraceValidator
         // ── Speed grading ────────────────────────────────────────
         // Judged on net displacement, not path length: GPS jitter inflates path length
         // and would otherwise flag a slow walk as a vehicle.
-        if (elapsedSeconds > 0 && displacement / elapsedSeconds > MaxRevealSpeedMetresPerSecond)
+        //
+        // Stage 14 replaced the hard rejection here with Uncharted Transit (§7.1). A fast
+        // batch is no longer thrown away — it banks instead, because rejecting it
+        // "punishes cyclists, who are a legitimate audience moving under their own power"
+        // and gives a commuter nothing for genuinely passing through new ground.
+        //
+        // The old TooFast rejection is kept only for speeds no human achieves under any
+        // power, which is a spoofing signal rather than a commute.
+        if (elapsedSeconds > 0 && displacement / elapsedSeconds > ImplausibleSpeedMetresPerSecond)
             return TraceVerdict.Reject(TraceRejection.TooFast);
 
         // ── Dwell detection ──────────────────────────────────────

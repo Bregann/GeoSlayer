@@ -74,13 +74,19 @@ public class MuseumService(AppDbContext db, IRegionResolver regions) : IMuseumSe
 
             var foundCount = entries.Count(e => e.IsFound);
 
+            var isComplete = entries.Count > 0 && foundCount == entries.Count;
+
+            var bonus = MuseumSetBonus.Bonuses.TryGetValue(wing, out var b) ? b : (MuseumSetBonus.Bonus?)null;
+
             dto.Wings.Add(new MuseumWingDto
             {
                 Wing = wing,
                 Name = wing.ToString(),
                 Found = foundCount,
                 Total = entries.Count,
-                IsComplete = entries.Count > 0 && foundCount == entries.Count,
+                IsComplete = isComplete,
+                SetBonusDescription = bonus?.Description,
+                SetBonusActive = isComplete && bonus is not null,
                 Entries = entries,
             });
         }
@@ -89,6 +95,33 @@ public class MuseumService(AppDbContext db, IRegionResolver regions) : IMuseumSe
         dto.TotalEntries = dto.Wings.Sum(w => w.Total);
 
         return dto;
+    }
+
+    public async Task<List<MuseumWing>> GetCompletedWings(int playerId, CancellationToken ct)
+    {
+        var definitions = await db.MuseumEntryDefinitions
+            .Select(d => new { d.Wing, d.Key })
+            .ToListAsync(ct);
+
+        var found = (await db.PlayerMuseumEntries
+                .Where(e => e.PlayerId == playerId)
+                .Select(e => e.EntryKey)
+                .ToListAsync(ct))
+            .ToHashSet();
+
+        return definitions
+            .GroupBy(d => d.Wing)
+            .Where(g => g.Any() && g.All(d => found.Contains(d.Key)))
+            .Select(g => g.Key)
+            .ToList();
+    }
+
+    public async Task<double> GetSetBonusTotal(
+        int playerId, ItemModifier modifier, CancellationToken ct)
+    {
+        var completed = await GetCompletedWings(playerId, ct);
+
+        return MuseumSetBonus.TotalFor(modifier, completed);
     }
 
     public async Task<MuseumAcquisitionDto?> RecordFind(

@@ -18,7 +18,8 @@ public class FogService(
     IMaterialService materials,
     ISkillTrainingService skillTraining,
     ICraftingService crafting,
-    IMuseumService museum) : IFogService
+    IMuseumService museum,
+    IRetentionService retention) : IFogService
 {
     /// <summary>
     /// Grid cell size in degrees.  0.0009° ≈ 100 m at the equator, ~64 m at 45° latitude.
@@ -145,6 +146,41 @@ public class FogService(
 
         var swept = PathSweep.SweepPath(gridPath);
 
+        var transitBanked = 0;
+        DTOs.Retention.Responses.TransitRedemptionDto? transitRedemption = null;
+
+        // ── Uncharted Transit (§7.1) ──────────────────────────────
+        // Ground crossed above walking pace banks rather than revealing. Stage 01's hard
+        // cap threw the whole batch away, which "punishes cyclists … and gives a bus
+        // commuter nothing for genuinely passing through new territory".
+        var elapsedSeconds = verdict.Accepted.Count > 1
+            ? (DateTimeOffset.FromUnixTimeMilliseconds(verdict.Accepted[^1].TimestampMs)
+               - DateTimeOffset.FromUnixTimeMilliseconds(verdict.Accepted[0].TimestampMs)).TotalSeconds
+            : 0;
+
+        var displacement = TraceValidator.HaversineMetres(
+            verdict.Accepted[0].Latitude, verdict.Accepted[0].Longitude,
+            verdict.Accepted[^1].Latitude, verdict.Accepted[^1].Longitude);
+
+        var speed = elapsedSeconds > 0 ? displacement / elapsedSeconds : 0;
+        var revealFraction = TransitGrading.RevealFraction(speed);
+
+        if (revealFraction < 1.0)
+        {
+            transitBanked = await retention.BankTransit(playerId, swept.ToList(), speed, ct);
+
+            // Above cycling pace nothing reveals at all — the journey banks entirely, and
+            // becomes a reason to walk back later.
+            if (revealFraction <= 0)
+            {
+                return new FogRevealResult
+                {
+                    NewCells = [],
+                    TransitBanked = transitBanked,
+                };
+            }
+        }
+
         // Reveal Radius is bought with Bonus Points and must change the actual reveal —
         // an upgrade that only displays is worse than no upgrade (§3.0a).
         var bonusRadius = await progression.GetUpgradeEffect(
@@ -260,6 +296,13 @@ public class FogService(
 
             museumAcquisitions.AddRange(await museum.CheckFeats(playerId, ct));
 
+            // Walking redeems banked transit nearby, at the configured ratio (§7.1) —
+            // which is what turns a commute into a reason to walk.
+            transitRedemption = await retention.RedeemTransit(
+                playerId,
+                newCells.Select(c => new GridCell(c.GridLat, c.GridLng)).ToList(),
+                ct);
+
             // The region the player is standing in — the Cartography wing (§5A.2).
             var region = await museum.RecordRegion(playerId, last.Latitude, last.Longitude, ct);
             if (region is not null) museumAcquisitions.Add(region);
@@ -280,6 +323,8 @@ public class FogService(
             Materials = materialGains,
             SkillTraining = skillTraining_,
             MuseumAcquisitions = museumAcquisitions,
+            TransitBanked = transitBanked,
+            TransitRedemption = transitRedemption,
         };
     }
 
@@ -339,4 +384,10 @@ public class FogRevealResult
 
     /// <summary>Museum plinths filled by this sync (Stage 12).</summary>
     public List<DTOs.Museum.Responses.MuseumAcquisitionDto> MuseumAcquisitions { get; set; } = [];
+
+    /// <summary>Cells banked as Uncharted Transit rather than revealed (Stage 14, §7.1).</summary>
+    public int TransitBanked { get; set; }
+
+    /// <summary>Banked transit this walk redeemed.</summary>
+    public DTOs.Retention.Responses.TransitRedemptionDto? TransitRedemption { get; set; }
 }

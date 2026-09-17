@@ -154,18 +154,33 @@ public class TraceValidatorTests
     // ── Required: the car reveals nothing ───────────────────────────
 
     [Test]
-    public void Validate_DrivingTrace_RevealsZeroCells()
+    public void Validate_DrivingTrace_IsAcceptedButGradedAsTransit()
     {
         // 15 m/s ≈ 54 km/h — clearly a vehicle.
+        //
+        // Stage 14 replaced the hard rejection with Uncharted Transit (§7.1). The batch is
+        // no longer thrown away — the validator accepts it, and FogService banks it rather
+        // than revealing, because rejecting outright "gives a bus commuter nothing for
+        // genuinely passing through new territory".
         var trace = StraightTrace(speed: 15, fixes: 40, fixIntervalSeconds: 5);
 
-        Assert.That(RevealedCellCount(trace), Is.Zero);
+        var verdict = TraceValidator.Validate(trace);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(verdict.Allowed, Is.True, "a commute is no longer rejected outright");
+            Assert.That(TransitGrading.GradeFor(15), Is.EqualTo(TransitGrading.Grade.Transit));
+            Assert.That(TransitGrading.RevealFraction(15), Is.Zero, "but it reveals nothing");
+        });
     }
 
     [Test]
-    public void Validate_DrivingTrace_IsRejectedAsTooFast()
+    public void Validate_ImplausibleSpeed_IsStillRejected()
     {
-        var verdict = TraceValidator.Validate(StraightTrace(speed: 15, fixes: 40, fixIntervalSeconds: 5));
+        // Above any speed a player could plausibly be travelling at — 150 m/s is 540 km/h.
+        // That is not a commute, it is a forged path, so the TooFast rejection survives
+        // for exactly this case.
+        var verdict = TraceValidator.Validate(StraightTrace(speed: 150, fixes: 40, fixIntervalSeconds: 5));
 
         Assert.That(verdict.Rejection, Is.EqualTo(TraceRejection.TooFast));
     }
@@ -188,11 +203,22 @@ public class TraceValidatorTests
     }
 
     [Test]
-    public void Validate_JustAboveTheSpeedCut_DoesNotReveal()
+    public void Validate_CyclingPace_RevealsPartiallyRatherThanBeingRejected()
     {
+        // 5.5 m/s ≈ 20 km/h — a cyclist, moving under their own power. §7.1 rejects the
+        // hard cap precisely because it "punishes cyclists, who are a legitimate
+        // audience", so this must grade as Mixed rather than being thrown away.
         var verdict = TraceValidator.Validate(StraightTrace(speed: 5.5, fixes: 30, fixIntervalSeconds: 5));
 
-        Assert.That(verdict.Rejection, Is.EqualTo(TraceRejection.TooFast));
+        var fraction = TransitGrading.RevealFraction(5.5);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(verdict.Allowed, Is.True);
+            Assert.That(TransitGrading.GradeFor(5.5), Is.EqualTo(TransitGrading.Grade.Mixed));
+            Assert.That(fraction, Is.GreaterThan(0), "a cyclist reveals something");
+            Assert.That(fraction, Is.LessThan(1), "but not as much as a walker");
+        });
     }
 
     // ── Accuracy cutoff ─────────────────────────────────────────────

@@ -34,6 +34,17 @@ public interface IMuseumService
     /// <summary>Re-check Feat thresholds against the player's counters.</summary>
     Task<List<MuseumAcquisitionDto>> CheckFeats(int playerId, CancellationToken ct);
 
+    /// <summary>Wings the player has filled completely.</summary>
+    Task<List<MuseumWing>> GetCompletedWings(int playerId, CancellationToken ct);
+
+    /// <summary>
+    /// Total value of a modifier from completed-wing set bonuses (§5A).
+    ///
+    /// The read path for systems that must honour them — deliberately small values, so
+    /// the Museum stays "pursued for its own sake, not because it is mandatory".
+    /// </summary>
+    Task<double> GetSetBonusTotal(int playerId, ItemModifier modifier, CancellationToken ct);
+
     /// <summary>Donate spares for Curation. The entry itself is never removed.</summary>
     Task<DonationResultDto> DonateDuplicates(
         int playerId, string entryKey, int quantity, CancellationToken ct);

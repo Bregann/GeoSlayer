@@ -501,6 +501,104 @@ public class MuseumIntegrationTests : DatabaseIntegrationTestBase
         Assert.That(keys, Is.Unique);
     }
 
+    // ── Set bonuses (Stage 12 task 3, delivered in Stage 14) ───────
+
+    [Test]
+    public async Task AnIncompleteWing_GrantsNoSetBonus()
+    {
+        var total = await _sut.GetSetBonusTotal(_player.Id, ItemModifier.StackCapPercent, Ct);
+
+        Assert.That(total, Is.Zero);
+    }
+
+    [Test]
+    public async Task ACompletedWing_GrantsItsSetBonus()
+    {
+        // Fill the Naturalist wing entirely.
+        var keys = await DbContext.MuseumEntryDefinitions
+            .Where(d => d.Wing == MuseumWing.Naturalist)
+            .Select(d => d.Key)
+            .ToListAsync();
+
+        foreach (var key in keys)
+            await _sut.RecordFind(_player.Id, key, 1, null, null, Ct);
+
+        var completed = await _sut.GetCompletedWings(_player.Id, Ct);
+
+        var bonus = await _sut.GetSetBonusTotal(_player.Id, ItemModifier.SkillXpPercent, Ct);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(completed, Contains.Item(MuseumWing.Naturalist));
+            Assert.That(bonus, Is.GreaterThan(0), "a filled wing should actually grant something");
+        });
+    }
+
+    [Test]
+    public async Task SetBonusesAreSmall()
+    {
+        // §5A / Stage 12 task 3: "keep small — the Museum should be pursued for its own
+        // sake, not because it is mandatory". A wing is dozens of finds; a large bonus
+        // would make filling it obligatory rather than a choice.
+        foreach (var (_, bonus) in MuseumSetBonus.Bonuses)
+        {
+            if (bonus.Modifier is ItemModifier.SkillXpPercent
+                or ItemModifier.StackCapPercent
+                or ItemModifier.WorkerRatePercent)
+            {
+                Assert.That(bonus.Value, Is.LessThanOrEqualTo(0.10),
+                    $"{bonus.Description} is more than a nudge");
+            }
+        }
+
+        await Task.CompletedTask;
+    }
+
+    [Test]
+    public void CartographyHasNoSetBonus()
+    {
+        // That wing has no fixed size — regions are created on discovery — so it can
+        // never be "complete", and promising a bonus for finishing it would be a lie.
+        Assert.That(MuseumSetBonus.Bonuses.ContainsKey(MuseumWing.Cartography), Is.False);
+    }
+
+    [Test]
+    public async Task ACompletedWing_IsReportedOnTheMuseumDto()
+    {
+        var keys = await DbContext.MuseumEntryDefinitions
+            .Where(d => d.Wing == MuseumWing.Naturalist)
+            .Select(d => d.Key)
+            .ToListAsync();
+
+        foreach (var key in keys)
+            await _sut.RecordFind(_player.Id, key, 1, null, null, Ct);
+
+        var museum = await _sut.GetMuseum(_player.Id, Ct);
+        var naturalist = museum.Wings.First(w => w.Wing == MuseumWing.Naturalist);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(naturalist.IsComplete, Is.True);
+            Assert.That(naturalist.SetBonusActive, Is.True);
+            Assert.That(naturalist.SetBonusDescription, Is.Not.Null);
+        });
+    }
+
+    [Test]
+    public async Task AnIncompleteWing_StillShowsWhatItsBonusWouldBe()
+    {
+        // The reward should be visible as a reason to fill the wing, not a surprise at
+        // the end.
+        var museum = await _sut.GetMuseum(_player.Id, Ct);
+        var naturalist = museum.Wings.First(w => w.Wing == MuseumWing.Naturalist);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(naturalist.SetBonusDescription, Is.Not.Null);
+            Assert.That(naturalist.SetBonusActive, Is.False);
+        });
+    }
+
     private static string FindRepositoryRoot()
     {
         var dir = new DirectoryInfo(TestContext.CurrentContext.TestDirectory);
