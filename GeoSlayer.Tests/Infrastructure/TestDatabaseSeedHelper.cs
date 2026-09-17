@@ -5,6 +5,7 @@ using GeoSlayer.Domain.Interfaces.Helpers;
 using GeoSlayer.Domain.Interfaces.Api;
 using GeoSlayer.Domain.Services.Crafting;
 using GeoSlayer.Domain.Services.Materials;
+using GeoSlayer.Domain.Services.Museum;
 using GeoSlayer.Domain.Services.Progression;
 using GeoSlayer.Domain.Services.Skills;
 using Microsoft.AspNetCore.Identity;
@@ -245,14 +246,65 @@ namespace GeoSlayer.Tests.Infrastructure
             AppDbContext context,
             ProgressionService progression,
             MaterialService materials) =>
-            new(context, progression, materials, CreateCraftingService(context, progression, materials));
+            new(context, progression, materials,
+                CreateCraftingService(context, progression, materials),
+                CreateMuseumService(context));
 
         /// <summary>A real <see cref="CraftingService"/> over the test database.</summary>
         public static CraftingService CreateCraftingService(
             AppDbContext context,
             ProgressionService progression,
             MaterialService materials) =>
-            new(context, progression, materials);
+            new(context, progression, materials, CreateMuseumService(context));
+
+        /// <summary>
+        /// A <see cref="MuseumService"/> with a <b>fake</b> region resolver.
+        ///
+        /// No test may depend on a third-party geocoder, for the same reason none may
+        /// reach Overpass. The fake names every cell deterministically.
+        /// </summary>
+        public static MuseumService CreateMuseumService(
+            AppDbContext context, string? regionName = "Testshire")
+        {
+            var resolver = new Mock<IRegionResolver>();
+
+            resolver
+                .Setup(r => r.Resolve(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((double lat, double lng, CancellationToken _) =>
+                    regionName is null
+                        ? null
+                        : new RegionResult(
+                            $"region:{PoiRegionResolver.SnapToGrid(lat):F2}:{PoiRegionResolver.SnapToGrid(lng):F2}",
+                            regionName,
+                            "Locality"));
+
+            return new MuseumService(context, resolver.Object);
+        }
+
+        /// <summary>Seeds the Museum's plinths (§5A.2), derived from the live tables.</summary>
+        public static async Task SeedMuseumDefinitions(AppDbContext context)
+        {
+            var have = (await context.MuseumEntryDefinitions.Select(d => d.Key).ToListAsync())
+                .ToHashSet();
+
+            foreach (var definition in MuseumSeedData.Definitions())
+            {
+                if (!have.Add(definition.Key)) continue;
+
+                context.MuseumEntryDefinitions.Add(new MuseumEntryDefinition
+                {
+                    Key = definition.Key,
+                    Wing = definition.Wing,
+                    Name = definition.Name,
+                    Description = definition.Description,
+                    Rarity = definition.Rarity,
+                    UnlockCondition = definition.UnlockCondition,
+                    SortOrder = definition.SortOrder,
+                });
+            }
+
+            await context.SaveChangesAsync();
+        }
 
         /// <summary>
         /// Seeds items and recipes from the embedded JSON (§4.2, §4.3). Call after

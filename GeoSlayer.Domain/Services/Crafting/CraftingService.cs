@@ -15,7 +15,8 @@ namespace GeoSlayer.Domain.Services.Crafting;
 public class CraftingService(
     AppDbContext db,
     IProgressionService progression,
-    IMaterialService materials) : ICraftingService
+    IMaterialService materials,
+    IMuseumService museum) : ICraftingService
 {
     /// <summary>Crafts runnable at once before the Craft Slot upgrade.</summary>
     private const int BaseQueueLimit = 1;
@@ -287,6 +288,15 @@ public class CraftingService(
             playerId, MilestoneType.CraftComplete, completed.Count, ct);
 
         result.AdventurerXpEarned += milestone.AdventurerXpEarned;
+
+        // A crafted item earns its Museum plinth (§5A.2 skill wings).
+        foreach (var craft in completed.Where(c => c.Recipe.OutputItem is not null))
+        {
+            await museum.RecordFind(
+                playerId,
+                Services.Museum.MuseumSeedData.ItemKey(craft.Recipe.OutputItem!.Key),
+                craft.Recipe.OutputQuantity, null, null, ct);
+        }
 
         result.Items = await GetItems(playerId, ct);
         result.HasCollection = true;

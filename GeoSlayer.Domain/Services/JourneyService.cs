@@ -75,6 +75,7 @@ public class JourneyService(
             Unlocks = fogResult.Grant?.Unlocks ?? [],
             Materials = fogResult.Materials,
             SkillTraining = fogResult.SkillTraining,
+            MuseumAcquisitions = fogResult.MuseumAcquisitions,
             OfflineAccrual = offlineAccrual.HasAccrual ? offlineAccrual : null,
             CraftCollection = craftCollection.HasCollection ? craftCollection : null,
             BonusPointsGranted = fogResult.Grant?.BonusPointsGranted ?? 0,

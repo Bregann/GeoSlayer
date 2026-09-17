@@ -1,6 +1,6 @@
 # Build status
 
-**Current stage: `STAGE-12-museum.md`**
+**Current stage: `STAGE-13-clue-scrolls.md`**
 
 Single source of truth for where the build is. Update this when a stage completes.
 
@@ -17,7 +17,7 @@ Single source of truth for where the build is. Update this when a stage complete
 | 09 | Cooking | DONE |
 | 10 | Mining | DONE |
 | 11 | Smithing | DONE |
-| 12 | Museum | NOT STARTED |
+| 12 | Museum | DONE |
 | 13 | Clue scrolls | NOT STARTED |
 | 14 | Retention systems | NOT STARTED |
 | 15 | Remaining skills | NOT STARTED |
@@ -260,3 +260,27 @@ produces ore, Smithing turns it into tools, and the tools make Mining faster.
 ~~Tools show only their primary modifier.~~ **Fixed immediately after** — `ModifierText`
 now reads "Gathers up to tier 3 · 20% faster gathering", and the DTO carries the secondary
 modifier so the app can render them separately if it prefers.
+
+### From Stage 12
+
+Needs an app toolchain when one exists:
+
+- Typecheck and launch `app/museum.tsx`, and confirm empty plinths read as a pull rather
+  than as noise. §5A.1 stakes the whole system on that framing, and it is the one thing a
+  test cannot check.
+- **Nothing links to the Museum yet.** The screen and route exist but no HUD button opens
+  it — the bottom panel has 🎒 ✨ ⚡ and no 🏛️.
+
+Carried forward, deliberately:
+
+- **Museum set bonuses** are not implemented. Wing completion is tracked
+  (`IsComplete`, `CompletedWing`) but grants nothing. Relics (Stage 13) and Expeditions
+  (Stage 14) are still empty, so no wing can be completed honestly and a bonus now would
+  be balanced against an unfinished Museum. **Stage 14** is the right home.
+
+Worth a human eye:
+
+- **Region naming quality.** `PoiRegionResolver` names a cell after its most notable POI,
+  which will sometimes read oddly — "you have been to Tesco Express" is technically true
+  and tonally wrong. The fix is a better resolver behind the same interface, but whether
+  it matters depends on how it reads in a real neighbourhood.

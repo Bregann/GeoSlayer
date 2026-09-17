@@ -20,7 +20,8 @@ public class SkillTrainingService(
     AppDbContext db,
     IProgressionService progression,
     IMaterialService materials,
-    ICraftingService crafting) : ISkillTrainingService
+    ICraftingService crafting,
+    IMuseumService museum) : ISkillTrainingService
 {
     /// <summary>
     /// Must match <c>JourneyService.PoiInteractRadius</c>. Range is revalidated here
@@ -231,6 +232,15 @@ public class SkillTrainingService(
             result.LevelledUp = grant.SkillLevelledUp;
             result.Unlocks.AddRange(grant.Unlocks);
         }
+
+        // A Landmark plinth per POI *type*, recorded with where and when — the diary
+        // (§5A). Uses the POI's own mapped skill, so it needs no per-skill code.
+        var landmark = await museum.RecordFind(
+            playerId,
+            Services.Museum.MuseumSeedData.LandmarkKey(poi.Skill),
+            1, poi.Id, poi.Name, ct);
+
+        if (landmark is not null) result.MuseumAcquisitions.Add(landmark);
 
         if (isFirstVisit)
         {

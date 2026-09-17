@@ -4,6 +4,7 @@ using GeoSlayer.Domain.Enums;
 using GeoSlayer.Domain.Interfaces.Helpers;
 using GeoSlayer.Domain.Services.Crafting;
 using GeoSlayer.Domain.Services.Materials;
+using GeoSlayer.Domain.Services.Museum;
 using GeoSlayer.Domain.Services.Progression;
 using GeoSlayer.Domain.Services.Skills;
 using Microsoft.EntityFrameworkCore;
@@ -33,6 +34,9 @@ namespace GeoSlayer.Domain.Helpers
 
             // Recipes reference both material and item ids.
             await SeedRecipes(context);
+            await context.SaveChangesAsync();
+
+            await SeedMuseumEntries(context);
             await context.SaveChangesAsync();
         }
 
@@ -307,6 +311,32 @@ namespace GeoSlayer.Domain.Helpers
                     OutputItemId = outputItemId,
                     OutputQuantity = definition.OutputQuantity,
                     Inputs = inputs,
+                });
+            }
+        }
+
+        /// <summary>
+        /// Museum plinths (§5A.2), derived from the live tables rather than authored, so
+        /// adding a skill or POI tag adds its entries for free.
+        /// </summary>
+        private static async Task SeedMuseumEntries(AppDbContext context)
+        {
+            var have = (await context.MuseumEntryDefinitions.Select(d => d.Key).ToListAsync())
+                .ToHashSet();
+
+            foreach (var definition in MuseumSeedData.Definitions())
+            {
+                if (!have.Add(definition.Key)) continue;
+
+                context.MuseumEntryDefinitions.Add(new MuseumEntryDefinition
+                {
+                    Key = definition.Key,
+                    Wing = definition.Wing,
+                    Name = definition.Name,
+                    Description = definition.Description,
+                    Rarity = definition.Rarity,
+                    UnlockCondition = definition.UnlockCondition,
+                    SortOrder = definition.SortOrder,
                 });
             }
         }

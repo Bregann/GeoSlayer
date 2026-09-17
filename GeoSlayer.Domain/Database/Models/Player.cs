@@ -40,6 +40,12 @@ public class Player
     /// <summary>How many times this player has respecced — the cost escalates (§3.0a).</summary>
     public int RespecCount { get; set; }
 
+    /// <summary>
+    /// Museum-only currency from donated duplicates (§5A.1) — the dignified sink for
+    /// material overflow.
+    /// </summary>
+    public long Curation { get; set; }
+
     public virtual ICollection<PlayerSkill> Skills { get; set; } = new List<PlayerSkill>();
 
     public virtual ICollection<PlayerUpgrade> Upgrades { get; set; } = new List<PlayerUpgrade>();

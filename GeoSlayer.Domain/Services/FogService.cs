@@ -17,7 +17,8 @@ public class FogService(
     IProgressionService progression,
     IMaterialService materials,
     ISkillTrainingService skillTraining,
-    ICraftingService crafting) : IFogService
+    ICraftingService crafting,
+    IMuseumService museum) : IFogService
 {
     /// <summary>
     /// Grid cell size in degrees.  0.0009° ≈ 100 m at the equator, ~64 m at 45° latitude.
@@ -208,6 +209,7 @@ public class FogService(
         XpGrantResult? grant = null;
         var materialGains = new List<MaterialGainDto>();
         var skillTraining_ = new List<SkillTrainingDto>();
+        var museumAcquisitions = new List<DTOs.Museum.Responses.MuseumAcquisitionDto>();
 
         if (newCells.Count > 0)
         {
@@ -247,6 +249,21 @@ public class FogService(
                 newCells.Select(c => new GridCell(c.GridLat, c.GridLng)).ToList(),
                 ct);
 
+            // Museum: terrain traversed, materials first gathered, and any Feat now met.
+            var terrains = new List<TerrainType>();
+
+            foreach (var cell in newCells)
+                terrains.Add(await materials.GetOrClassifyTerrain(cell.GridLat, cell.GridLng, ct));
+
+            museumAcquisitions = await museum.RecordCellFinds(
+                playerId, terrains, materialGains.Select(m => m.Key).ToList(), ct);
+
+            museumAcquisitions.AddRange(await museum.CheckFeats(playerId, ct));
+
+            // The region the player is standing in — the Cartography wing (§5A.2).
+            var region = await museum.RecordRegion(playerId, last.Latitude, last.Longitude, ct);
+            if (region is not null) museumAcquisitions.Add(region);
+
             grant.AdventurerXpEarned += milestone.AdventurerXpEarned;
             grant.AdventurerLevel = milestone.AdventurerLevel;
             grant.AdventurerXp = milestone.AdventurerXp;
@@ -262,6 +279,7 @@ public class FogService(
             Grant = grant,
             Materials = materialGains,
             SkillTraining = skillTraining_,
+            MuseumAcquisitions = museumAcquisitions,
         };
     }
 
@@ -318,4 +336,7 @@ public class FogRevealResult
 
     /// <summary>Per-skill XP earned from the revealed cells (Stage 04).</summary>
     public List<SkillTrainingDto> SkillTraining { get; set; } = [];
+
+    /// <summary>Museum plinths filled by this sync (Stage 12).</summary>
+    public List<DTOs.Museum.Responses.MuseumAcquisitionDto> MuseumAcquisitions { get; set; } = [];
 }

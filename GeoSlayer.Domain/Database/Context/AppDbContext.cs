@@ -30,6 +30,9 @@ namespace GeoSlayer.Domain.Database.Context
         public DbSet<Item> Items { get; set; } = null!;
         public DbSet<PlayerItem> PlayerItems { get; set; } = null!;
         public DbSet<PlayerCraft> PlayerCrafts { get; set; } = null!;
+        public DbSet<MuseumEntryDefinition> MuseumEntryDefinitions { get; set; } = null!;
+        public DbSet<PlayerMuseumEntry> PlayerMuseumEntries { get; set; } = null!;
+        public DbSet<GeoRegion> GeoRegions { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -163,6 +166,26 @@ namespace GeoSlayer.Domain.Database.Context
             modelBuilder.Entity<PlayerCraft>(entity =>
             {
                 entity.HasIndex(e => new { e.PlayerId, e.Collected });
+            });
+
+            modelBuilder.Entity<MuseumEntryDefinition>(entity =>
+            {
+                entity.HasIndex(e => e.Key).IsUnique();
+                entity.HasIndex(e => e.Wing);
+            });
+
+            modelBuilder.Entity<PlayerMuseumEntry>(entity =>
+            {
+                // One plinth per player per entry. The unique index is what makes
+                // "first-find counts" safe under a concurrent double-find.
+                entity.HasIndex(e => new { e.PlayerId, e.EntryKey }).IsUnique();
+            });
+
+            modelBuilder.Entity<GeoRegion>(entity =>
+            {
+                // Shared across players: one lookup per cell, ever.
+                entity.HasIndex(e => new { e.CellLat, e.CellLng }).IsUnique();
+                entity.HasIndex(e => e.RegionKey);
             });
 
             modelBuilder.Entity<RevealedCell>(entity =>

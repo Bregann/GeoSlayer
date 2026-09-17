@@ -30,6 +30,7 @@ function RootNavigator() {
         <Stack.Screen name="skills" />
         <Stack.Screen name="workers" />
         <Stack.Screen name="crafting" />
+        <Stack.Screen name="museum" />
         <Stack.Screen name="equipment" />
         <Stack.Screen name="upgrades" />
       </Stack>

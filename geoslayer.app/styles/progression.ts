@@ -395,3 +395,30 @@ export const visitStyles = StyleSheet.create({
     textAlign: 'center',
   },
 });
+
+/**
+ * The Museum's plinths (Stage 12 task 4).
+ *
+ * An empty plinth is styled as a visible absence rather than omitted — §5A.1 makes that
+ * the whole mechanic.
+ */
+export const museumStyles = StyleSheet.create({
+  plinth: {
+    borderWidth: 1,
+    borderColor: '#4a4a7e',
+    backgroundColor: 'rgba(20, 20, 45, 0.7)',
+    padding: 10,
+    gap: 3,
+  },
+  plinthEmpty: {
+    borderStyle: 'dashed',
+    borderColor: '#2a2a4e',
+    backgroundColor: 'transparent',
+  },
+  plinthName: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    fontFamily: 'monospace',
+    flex: 1,
+  },
+});

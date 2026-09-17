@@ -53,4 +53,7 @@ public class PoiVisitResultDto
 
     /// <summary>Ladder rungs crossed by this visit's XP.</summary>
     public List<DTOs.Progression.Responses.UnlockEventDto> Unlocks { get; set; } = [];
+
+    /// <summary>Museum plinths filled by this visit (Stage 12).</summary>
+    public List<DTOs.Museum.Responses.MuseumAcquisitionDto> MuseumAcquisitions { get; set; } = [];
 }

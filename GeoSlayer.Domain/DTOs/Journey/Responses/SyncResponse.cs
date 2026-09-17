@@ -1,5 +1,6 @@
 using GeoSlayer.Domain.DTOs.Crafting.Responses;
 using GeoSlayer.Domain.DTOs.Idle.Responses;
+using GeoSlayer.Domain.DTOs.Museum.Responses;
 using GeoSlayer.Domain.DTOs.Materials.Responses;
 using GeoSlayer.Domain.DTOs.Skills.Responses;
 using GeoSlayer.Domain.DTOs.Progression.Responses;
@@ -32,6 +33,9 @@ public class SyncResponse
 
     /// <summary>Crafts that finished while away, or null when none did (Stage 06).</summary>
     public CraftCollectionDto? CraftCollection { get; set; }
+
+    /// <summary>Museum plinths filled this sync (Stage 12).</summary>
+    public List<MuseumAcquisitionDto> MuseumAcquisitions { get; set; } = [];
 
     public List<NearbyPoiDto> NearbyPois { get; set; } = [];
 }
