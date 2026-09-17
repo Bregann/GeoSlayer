@@ -108,7 +108,9 @@ namespace GeoSlayer.Tests.Services.Retention
             {
                 DbContext.RevealedCells.Add(new RevealedCell
                 {
-                    PlayerId = _player.Id, GridLat = cell.GridLat, GridLng = cell.GridLng,
+                    PlayerId = _player.Id,
+                    GridLat = cell.GridLat,
+                    GridLng = cell.GridLng,
                     RevealedAtUtc = now,
                 });
             }
@@ -192,7 +194,9 @@ namespace GeoSlayer.Tests.Services.Retention
                 .ToListAsync();
 
             foreach (var row in rows)
+            {
                 row.BankedUtc = DateTime.UtcNow - TransitGrading.DecayWindow - TimeSpan.FromHours(1);
+            }
 
             await DbContext.SaveChangesAsync();
 
@@ -213,7 +217,9 @@ namespace GeoSlayer.Tests.Services.Retention
             var rows = await DbContext.BankedTransits.Where(t => t.PlayerId == _player.Id).ToListAsync();
 
             foreach (var row in rows)
+            {
                 row.BankedUtc = DateTime.UtcNow - TransitGrading.DecayWindow - TimeSpan.FromHours(1);
+            }
 
             await DbContext.SaveChangesAsync();
 
@@ -346,7 +352,9 @@ namespace GeoSlayer.Tests.Services.Retention
             // Unlock Prayer so the XP has somewhere to land.
             DbContext.PlayerSkills.Add(new PlayerSkill
             {
-                PlayerId = _player.Id, SkillType = SkillType.Prayer, Level = 1,
+                PlayerId = _player.Id,
+                SkillType = SkillType.Prayer,
+                Level = 1,
                 UnlockedAtUtc = DateTime.UtcNow,
             });
             await DbContext.SaveChangesAsync();
@@ -463,8 +471,12 @@ namespace GeoSlayer.Tests.Services.Retention
 
             DbContext.PlayerPoiVisits.Add(new PlayerPoiVisit
             {
-                PlayerId = _player.Id, PoiId = near.Id, VisitCount = 1, TotalVisits = 1,
-                FirstVisitUtc = DateTime.UtcNow, LastVisitUtc = DateTime.UtcNow,
+                PlayerId = _player.Id,
+                PoiId = near.Id,
+                VisitCount = 1,
+                TotalVisits = 1,
+                FirstVisitUtc = DateTime.UtcNow,
+                LastVisitUtc = DateTime.UtcNow,
             });
             await DbContext.SaveChangesAsync();
 

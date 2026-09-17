@@ -1,0 +1,44 @@
+name: Run C# formatting
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "GeoSlayer.Domain/**"
+      - "GeoSlayer.Core/**"
+      - "GeoSlayer.Tests/**"
+      - "GeoSlayer.sln"
+
+  push:
+    branches:
+      - main
+    paths:
+      - "GeoSlayer.Domain/**"
+      - "GeoSlayer.Core/**"
+      - "GeoSlayer.Tests/**"
+      - "GeoSlayer.sln"
+
+jobs:
+  format-csharp-code:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore GeoSlayer.sln
+
+      - name: Check C# formatting
+        run: dotnet format --verify-no-changes
+
+      # The suite spins up a postgis/postgis:16-3.4 Testcontainer, so this needs Docker
+      # on the runner (ubuntu-latest has it) and the first run pays for the image pull.
+      - name: Run tests
+        run: dotnet test GeoSlayer.Tests/GeoSlayer.Tests.csproj --verbosity normal

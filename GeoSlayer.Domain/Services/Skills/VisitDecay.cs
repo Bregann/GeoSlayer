@@ -29,7 +29,10 @@ namespace GeoSlayer.Domain.Services.Skills
         public static double Multiplier(int visitCount)
         {
             // A negative count would invert the curve and pay more than full.
-            if (visitCount <= 0) return 1.0;
+            if (visitCount <= 0)
+            {
+                return 1.0;
+            }
 
             return Math.Max(Floor, 1.0 / (1.0 + 0.5 * visitCount));
         }
@@ -43,7 +46,10 @@ namespace GeoSlayer.Domain.Services.Skills
         /// </summary>
         public static int DecayedCount(int storedCount, TimeSpan elapsed)
         {
-            if (storedCount <= 0) return 0;
+            if (storedCount <= 0)
+            {
+                return 0;
+            }
 
             var regained = (int)Math.Floor(elapsed.TotalHours / HoursPerChargeRegained);
 

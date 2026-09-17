@@ -78,7 +78,10 @@ namespace GeoSlayer.Domain.Services.Idle
             var elapsed = nowUtc - lastCollectedUtc;
 
             // A clock moving backwards must not produce negative yield.
-            if (elapsed < TimeSpan.Zero) return TimeSpan.Zero;
+            if (elapsed < TimeSpan.Zero)
+            {
+                return TimeSpan.Zero;
+            }
 
             var cap = TimeSpan.FromHours(Math.Max(0, capHours));
 
@@ -94,7 +97,9 @@ namespace GeoSlayer.Domain.Services.Idle
         public static bool TerrainMatches(TerrainType claimTerrain, TerrainType skillTerrains)
         {
             if (claimTerrain == TerrainType.Open || skillTerrains == TerrainType.Open)
+            {
                 return false;
+            }
 
             return (claimTerrain & skillTerrains) != 0;
         }
@@ -120,7 +125,9 @@ namespace GeoSlayer.Domain.Services.Idle
             var wasCapped = rawElapsed > TimeSpan.FromHours(Math.Max(0, capHours));
 
             if (elapsed <= TimeSpan.Zero)
+            {
                 return new Accrual(TimeSpan.Zero, wasCapped, 0, 0, 1.0);
+            }
 
             // Terrain multiplies. It never gates — a worker on mismatched ground still
             // produces, at base rate. This is the rule §5.2 calls load-bearing.

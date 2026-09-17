@@ -48,7 +48,10 @@ namespace GeoSlayer.Domain.Services.Retention
                             Math.Abs(other.CentreGridLat - node.CentreGridLat) <= adjacency
                             && Math.Abs(other.CentreGridLng - node.CentreGridLng) <= adjacency;
 
-                        if (!touching) continue;
+                        if (!touching)
+                        {
+                            continue;
+                        }
 
                         frontier.Enqueue(other);
                         remaining.RemoveAt(i);
@@ -70,7 +73,10 @@ namespace GeoSlayer.Domain.Services.Retention
         /// </summary>
         public static bool Satisfies(IReadOnlyList<ClaimNode> group, DistrictDefinition definition)
         {
-            if (group.Count < definition.MinimumClaims) return false;
+            if (group.Count < definition.MinimumClaims)
+            {
+                return false;
+            }
 
             var combined = group.Aggregate(TerrainType.Open, (acc, c) => acc | c.Terrain);
 
@@ -93,8 +99,15 @@ namespace GeoSlayer.Domain.Services.Retention
             {
                 foreach (var definition in definitions)
                 {
-                    if (!Satisfies(group, definition)) continue;
-                    if (best is null || definition.OutputBonus > best.OutputBonus) best = definition;
+                    if (!Satisfies(group, definition))
+                    {
+                        continue;
+                    }
+
+                    if (best is null || definition.OutputBonus > best.OutputBonus)
+                    {
+                        best = definition;
+                    }
                 }
             }
 
@@ -134,7 +147,10 @@ namespace GeoSlayer.Domain.Services.Retention
             {
                 foreach (var group in groups.DefaultIfEmpty([]))
                 {
-                    if (Satisfies(group, definition)) continue;
+                    if (Satisfies(group, definition))
+                    {
+                        continue;
+                    }
 
                     var combined = group.Aggregate(TerrainType.Open, (acc, c) => acc | c.Terrain);
 
@@ -147,7 +163,10 @@ namespace GeoSlayer.Domain.Services.Retention
                     var shortBy = Math.Max(0, definition.MinimumClaims - group.Count);
                     var candidate = new Shortfall(definition, missing, shortBy);
 
-                    if (nearest is null || IsCloser(candidate, nearest.Value)) nearest = candidate;
+                    if (nearest is null || IsCloser(candidate, nearest.Value))
+                    {
+                        nearest = candidate;
+                    }
                 }
             }
 
@@ -157,10 +176,14 @@ namespace GeoSlayer.Domain.Services.Retention
         private static bool IsCloser(Shortfall candidate, Shortfall incumbent)
         {
             if (candidate.MissingTerrains.Count != incumbent.MissingTerrains.Count)
+            {
                 return candidate.MissingTerrains.Count < incumbent.MissingTerrains.Count;
+            }
 
             if (candidate.MissingClaims != incumbent.MissingClaims)
+            {
                 return candidate.MissingClaims < incumbent.MissingClaims;
+            }
 
             return candidate.Definition.OutputBonus > incumbent.Definition.OutputBonus;
         }

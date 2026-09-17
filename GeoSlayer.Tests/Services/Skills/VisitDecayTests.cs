@@ -39,7 +39,9 @@ namespace GeoSlayer.Tests.Services.Skills
             // "Floors at 5% so your local pub is never literally worthless but is never a
             // farm either."
             foreach (var count in new[] { 40, 100, 1_000, int.MaxValue / 2 })
+            {
                 Assert.That(VisitDecay.Multiplier(count), Is.EqualTo(VisitDecay.Floor));
+            }
         }
 
         [Test]

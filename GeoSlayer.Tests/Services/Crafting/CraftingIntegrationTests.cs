@@ -446,14 +446,20 @@ namespace GeoSlayer.Tests.Services.Crafting
 
             var first = new PlayerItem
             {
-                PlayerId = _player.Id, ItemId = satchel.Id, Quantity = 1,
-                IsEquipped = true, AcquiredUtc = DateTime.UtcNow,
+                PlayerId = _player.Id,
+                ItemId = satchel.Id,
+                Quantity = 1,
+                IsEquipped = true,
+                AcquiredUtc = DateTime.UtcNow,
             };
 
             var other = new PlayerItem
             {
-                PlayerId = _player.Id, ItemId = second.Id, Quantity = 1,
-                IsEquipped = false, AcquiredUtc = DateTime.UtcNow,
+                PlayerId = _player.Id,
+                ItemId = second.Id,
+                Quantity = 1,
+                IsEquipped = false,
+                AcquiredUtc = DateTime.UtcNow,
             };
 
             DbContext.PlayerItems.AddRange(first, other);
@@ -474,8 +480,11 @@ namespace GeoSlayer.Tests.Services.Crafting
 
             var owned = new PlayerItem
             {
-                PlayerId = _player.Id, ItemId = storehouse.Id, Quantity = 1,
-                IsEquipped = false, AcquiredUtc = DateTime.UtcNow,
+                PlayerId = _player.Id,
+                ItemId = storehouse.Id,
+                Quantity = 1,
+                IsEquipped = false,
+                AcquiredUtc = DateTime.UtcNow,
             };
 
             DbContext.PlayerItems.Add(owned);

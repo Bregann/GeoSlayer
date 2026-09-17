@@ -1,6 +1,6 @@
 using GeoSlayer.Domain.DTOs.Auth.Requests;
-using Microsoft.AspNetCore.Mvc;
 using GeoSlayer.Domain.Interfaces.Api.Auth;
+using Microsoft.AspNetCore.Mvc;
 
 namespace GeoSlayer.Core.Controllers
 {

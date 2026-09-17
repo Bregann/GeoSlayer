@@ -3,10 +3,10 @@ using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.DTOs.Progression.Responses;
 using GeoSlayer.Domain.Enums;
 using GeoSlayer.Domain.Exceptions;
-using GeoSlayer.Domain.Interfaces.Helpers;
-using Microsoft.EntityFrameworkCore;
 using GeoSlayer.Domain.Interfaces.Api.Crafting;
 using GeoSlayer.Domain.Interfaces.Api.Progression;
+using GeoSlayer.Domain.Interfaces.Helpers;
+using Microsoft.EntityFrameworkCore;
 
 namespace GeoSlayer.Domain.Services.Progression
 {
@@ -32,7 +32,9 @@ namespace GeoSlayer.Domain.Services.Progression
             // Negative grants would silently roll a player backwards past an unlock they
             // already celebrated.  There is no legitimate caller for one.
             if (amount < 0)
+            {
                 throw new BadRequestException("XP grants cannot be negative.");
+            }
 
             if (amount == 0)
             {
@@ -61,7 +63,9 @@ namespace GeoSlayer.Domain.Services.Progression
                 var xpBonus = scholar + gearXp;
 
                 if (xpBonus > 0)
+                {
                     skillXp = (long)Math.Floor(skillXp * (1 + xpBonus));
+                }
 
                 var row = await db.PlayerSkills
                     .FirstOrDefaultAsync(s => s.PlayerId == playerId && s.SkillType == skill.Value, ct);
@@ -88,7 +92,9 @@ namespace GeoSlayer.Domain.Services.Progression
             // leaves the house still progresses, just slowly.
             var ratio = GetGlobalXpRatio();
             if (source == XpSource.Idle)
+            {
                 ratio *= GetIdleMultiplier();
+            }
 
             var adventurerXp = skill.HasValue
                 ? (long)Math.Floor(skillXp * ratio)
@@ -163,7 +169,10 @@ namespace GeoSlayer.Domain.Services.Progression
                 .OrderBy(u => u.AdventurerLevel)
                 .ToListAsync(ct);
 
-            if (due.Count == 0) return [];
+            if (due.Count == 0)
+            {
+                return [];
+            }
 
             var existing = await db.PlayerSkills
                 .Where(s => s.PlayerId == player.Id)
@@ -179,10 +188,14 @@ namespace GeoSlayer.Domain.Services.Progression
                 if (def.UnlockType == UnlockType.Skill)
                 {
                     if (!Enum.TryParse<SkillType>(def.Payload, out var skillType))
+                    {
                         continue;   // Seed data naming a skill that no longer exists.
+                    }
 
                     if (!owned.Add(skillType))
+                    {
                         continue;   // Already unlocked — re-running the ladder is harmless.
+                    }
 
                     db.PlayerSkills.Add(new PlayerSkill
                     {
@@ -216,7 +229,9 @@ namespace GeoSlayer.Domain.Services.Progression
             var events = await ApplyUnlocks(player, 0, player.AdventurerLevel, ct);
 
             if (events.Count > 0)
+            {
                 await db.SaveChangesAsync(ct);
+            }
 
             return events;
         }
@@ -346,8 +361,10 @@ namespace GeoSlayer.Domain.Services.Progression
                 ?? throw new NotFoundException($"Upgrade '{upgradeKey}' not found.");
 
             if (player.AdventurerLevel < definition.MinAdventurerLevel)
+            {
                 throw new BadRequestException(
                     $"'{definition.Name}' unlocks at Adventurer level {definition.MinAdventurerLevel}.");
+            }
 
             var row = await db.PlayerUpgrades
                 .FirstOrDefaultAsync(u => u.PlayerId == playerId && u.UpgradeKey == upgradeKey, ct);
@@ -360,8 +377,10 @@ namespace GeoSlayer.Domain.Services.Progression
             var availablePoints = player.BonusPointsEarned - player.BonusPointsSpent;
 
             if (cost > availablePoints)
+            {
                 throw new BadRequestException(
                     $"'{definition.Name}' rank {rank + 1} costs {cost} points; you have {availablePoints}.");
+            }
 
             if (row is null)
             {
@@ -395,8 +414,10 @@ namespace GeoSlayer.Domain.Services.Progression
             // The refund returns every spent point, then the fee is charged against the
             // refunded total.  A respec the player cannot afford must not clear their tree.
             if (cost > player.BonusPointsSpent && rows.Count > 0)
+            {
                 throw new BadRequestException(
                     $"Respec costs {cost} points and you have only {player.BonusPointsSpent} invested.");
+            }
 
             db.PlayerUpgrades.RemoveRange(rows);
 
@@ -414,7 +435,10 @@ namespace GeoSlayer.Domain.Services.Progression
                 .Select(u => (int?)u.Rank)
                 .FirstOrDefaultAsync(ct);
 
-            if (rank is null or 0) return 0;
+            if (rank is null or 0)
+            {
+                return 0;
+            }
 
             var effect = await db.UpgradeDefinitions
                 .Where(u => u.Key == upgradeKey)

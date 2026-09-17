@@ -1,10 +1,10 @@
 using GeoSlayer.Domain.DTOs.Crafting.Responses;
 using GeoSlayer.Domain.DTOs.Idle.Responses;
-using GeoSlayer.Domain.DTOs.Museum.Responses;
-using GeoSlayer.Domain.DTOs.Retention.Responses;
 using GeoSlayer.Domain.DTOs.Materials.Responses;
-using GeoSlayer.Domain.DTOs.Skills.Responses;
+using GeoSlayer.Domain.DTOs.Museum.Responses;
 using GeoSlayer.Domain.DTOs.Progression.Responses;
+using GeoSlayer.Domain.DTOs.Retention.Responses;
+using GeoSlayer.Domain.DTOs.Skills.Responses;
 using GeoSlayer.Domain.Services;
 using GeoSlayer.Domain.Services.Fog;
 

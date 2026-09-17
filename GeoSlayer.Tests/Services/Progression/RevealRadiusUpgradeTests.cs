@@ -1,16 +1,16 @@
 using GeoSlayer.Domain.Database.Models;
-using GeoSlayer.Domain.Enums;
 using GeoSlayer.Domain.DTOs.Journey.Requests;
+using GeoSlayer.Domain.Enums;
 using GeoSlayer.Domain.Services;
 using GeoSlayer.Domain.Services.Crafting;
+using GeoSlayer.Domain.Services.Fog;
 using GeoSlayer.Domain.Services.Materials;
 using GeoSlayer.Domain.Services.Museum;
-using GeoSlayer.Domain.Services.Retention;
 using GeoSlayer.Domain.Services.Progression;
+using GeoSlayer.Domain.Services.Retention;
 using GeoSlayer.Domain.Services.Skills;
 using GeoSlayer.Tests.Infrastructure;
 using Microsoft.EntityFrameworkCore;
-using GeoSlayer.Domain.Services.Fog;
 
 namespace GeoSlayer.Tests.Services.Progression
 {

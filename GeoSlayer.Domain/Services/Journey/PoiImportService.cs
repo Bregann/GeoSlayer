@@ -1,11 +1,11 @@
 using GeoSlayer.Domain.Database.Context;
 using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.Enums;
+using GeoSlayer.Domain.Interfaces.Api.Journey;
 using Microsoft.EntityFrameworkCore;
 using NetTopologySuite.Geometries;
 using Newtonsoft.Json.Linq;
 using Serilog;
-using GeoSlayer.Domain.Interfaces.Api.Journey;
 
 namespace GeoSlayer.Domain.Services.Journey
 {
@@ -242,20 +242,32 @@ namespace GeoSlayer.Domain.Services.Journey
         private static List<PointOfInterest> ParsePois(JArray? elements)
         {
             var pois = new List<PointOfInterest>();
-            if (elements is null) return pois;
+            if (elements is null)
+            {
+                return pois;
+            }
 
             foreach (var el in elements)
             {
                 var type = el["type"]?.ToString();
-                if (type is not ("node" or "way")) continue;
+                if (type is not ("node" or "way"))
+                {
+                    continue;
+                }
 
                 var osmId = el["id"]!.Value<long>();
                 var tags = el["tags"] as JObject;
-                if (tags is null) continue;
+                if (tags is null)
+                {
+                    continue;
+                }
 
                 // Try to match tags to a skill
                 var match = MatchSkill(tags);
-                if (match is null) continue;
+                if (match is null)
+                {
+                    continue;
+                }
 
                 var (skill, xp) = match.Value;
 
@@ -274,7 +286,10 @@ namespace GeoSlayer.Domain.Services.Journey
                 {
                     // Way — compute centroid from geometry nodes
                     var geometry = el["geometry"] as JArray;
-                    if (geometry is null || geometry.Count == 0) continue;
+                    if (geometry is null || geometry.Count == 0)
+                    {
+                        continue;
+                    }
 
                     var coords = geometry
                         .Select(g => new Coordinate(
@@ -293,7 +308,8 @@ namespace GeoSlayer.Domain.Services.Journey
                         if (coords.First().Equals2D(coords.Last()) && coords.Length >= 4)
                         {
                             var polygon = new Polygon(
-                                new LinearRing(coords)) { SRID = 4326 };
+                                new LinearRing(coords))
+                            { SRID = 4326 };
                             location = (Point)polygon.Centroid;
                             location.SRID = 4326;
                         }
@@ -325,10 +341,15 @@ namespace GeoSlayer.Domain.Services.Journey
             foreach (var (key, value, skill, xp) in TagMappings)
             {
                 var tagValue = tags[key]?.ToString();
-                if (tagValue is null) continue;
+                if (tagValue is null)
+                {
+                    continue;
+                }
 
                 if (value == "*" || string.Equals(tagValue, value, StringComparison.OrdinalIgnoreCase))
+                {
                     return (skill, xp);
+                }
             }
 
             return null;

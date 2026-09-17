@@ -88,9 +88,11 @@ namespace GeoSlayer.Domain.Services.Fog
             double total = 0;
 
             for (var i = 1; i < path.Count; i++)
+            {
                 total += HaversineMetres(
                     path[i - 1].Latitude, path[i - 1].Longitude,
                     path[i].Latitude, path[i].Longitude);
+            }
 
             return total;
         }
@@ -131,11 +133,15 @@ namespace GeoSlayer.Domain.Services.Fog
                 .ToList();
 
             if (usable.Count == 0)
+            {
                 return TraceVerdict.Reject(TraceRejection.NoUsablePositions);
+            }
 
             // A single usable fix carries no motion information — reveal around it and stop.
             if (usable.Count == 1)
+            {
                 return new TraceVerdict(TraceRejection.None, usable);
+            }
 
             var elapsedSeconds = ElapsedSeconds(usable);
             var pathLength = PathLengthMetres(usable);
@@ -153,19 +159,25 @@ namespace GeoSlayer.Domain.Services.Fog
             // The old TooFast rejection is kept only for speeds no human achieves under any
             // power, which is a spoofing signal rather than a commute.
             if (elapsedSeconds > 0 && displacement / elapsedSeconds > ImplausibleSpeedMetresPerSecond)
+            {
                 return TraceVerdict.Reject(TraceRejection.TooFast);
+            }
 
             // ── Dwell detection ──────────────────────────────────────
             // A phone sitting on a desk: plenty of jitter, no actual travel.
             if (elapsedSeconds >= DwellSeconds && displacement < DwellRadiusMetres)
+            {
                 return TraceVerdict.Reject(TraceRejection.Dwell);
+            }
 
             // ── Displacement gate ────────────────────────────────────
             // A random walk wanders far in total but ends where it began.  Only meaningful
             // once the path is long enough that the ratio is not noise.
             if (pathLength >= MinPathLengthForRatioMetres &&
                 displacement / pathLength < MinDisplacementRatio)
+            {
                 return TraceVerdict.Reject(TraceRejection.Drift);
+            }
 
             return new TraceVerdict(TraceRejection.None, usable);
         }
@@ -177,7 +189,9 @@ namespace GeoSlayer.Domain.Services.Fog
         public static double ElapsedSeconds(IReadOnlyList<SyncPosition> path)
         {
             if (path.Count < 2)
+            {
                 return 0;
+            }
 
             var span = (path[^1].TimestampMs - path[0].TimestampMs) / 1000.0;
             return span > 0 ? span : 0;

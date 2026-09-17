@@ -47,8 +47,16 @@ namespace GeoSlayer.Domain.Services.Fog
         /// <summary>Grade a speed.</summary>
         public static Grade GradeFor(double metresPerSecond)
         {
-            if (metresPerSecond <= WalkingPaceMetresPerSecond) return Grade.Reveal;
-            if (metresPerSecond <= CyclingPaceMetresPerSecond) return Grade.Mixed;
+            if (metresPerSecond <= WalkingPaceMetresPerSecond)
+            {
+                return Grade.Reveal;
+            }
+
+            if (metresPerSecond <= CyclingPaceMetresPerSecond)
+            {
+                return Grade.Mixed;
+            }
+
             return Grade.Transit;
         }
 
@@ -60,8 +68,15 @@ namespace GeoSlayer.Domain.Services.Fog
         /// </summary>
         public static double RevealFraction(double metresPerSecond)
         {
-            if (metresPerSecond <= WalkingPaceMetresPerSecond) return 1.0;
-            if (metresPerSecond > CyclingPaceMetresPerSecond) return 0.0;
+            if (metresPerSecond <= WalkingPaceMetresPerSecond)
+            {
+                return 1.0;
+            }
+
+            if (metresPerSecond > CyclingPaceMetresPerSecond)
+            {
+                return 0.0;
+            }
 
             var band = CyclingPaceMetresPerSecond - WalkingPaceMetresPerSecond;
             var into = metresPerSecond - WalkingPaceMetresPerSecond;

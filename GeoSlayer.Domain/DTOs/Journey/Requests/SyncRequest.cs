@@ -26,13 +26,17 @@ namespace GeoSlayer.Domain.DTOs.Journey.Requests
         public IReadOnlyList<SyncPosition> Path()
         {
             if (Positions is { Count: > 0 })
+            {
                 return Positions;
+            }
 
             // A legacy client sends the single-point fields.  Null Island is not a
             // position anyone syncs from — treat an all-zero body as "no path given"
             // rather than sweeping cells off the coast of Africa.
             if (Latitude == 0 && Longitude == 0)
+            {
                 return [];
+            }
 
             return
             [

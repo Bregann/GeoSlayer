@@ -1,18 +1,18 @@
 using GeoSlayer.Domain.Database.Context;
 using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.Enums;
+using GeoSlayer.Domain.Interfaces.Api.Materials;
+using GeoSlayer.Domain.Interfaces.Api.Museum;
 using GeoSlayer.Domain.Interfaces.Helpers;
 using GeoSlayer.Domain.Services.Crafting;
 using GeoSlayer.Domain.Services.Materials;
 using GeoSlayer.Domain.Services.Museum;
-using GeoSlayer.Domain.Services.Retention;
 using GeoSlayer.Domain.Services.Progression;
+using GeoSlayer.Domain.Services.Retention;
 using GeoSlayer.Domain.Services.Skills;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Moq;
-using GeoSlayer.Domain.Interfaces.Api.Materials;
-using GeoSlayer.Domain.Interfaces.Api.Museum;
 
 namespace GeoSlayer.Tests.Infrastructure
 {
@@ -129,8 +129,15 @@ namespace GeoSlayer.Tests.Infrastructure
 
             foreach (var (terrain, key, weight, min, max) in MaterialSeedData.DropEntries())
             {
-                if (!ids.TryGetValue(key, out var materialId)) continue;
-                if (!seen.Add((terrain, materialId))) continue;
+                if (!ids.TryGetValue(key, out var materialId))
+                {
+                    continue;
+                }
+
+                if (!seen.Add((terrain, materialId)))
+                {
+                    continue;
+                }
 
                 context.DropTableEntries.Add(new DropTableEntry
                 {
@@ -224,8 +231,15 @@ namespace GeoSlayer.Tests.Infrastructure
 
             foreach (var (terrain, key, weight, min, max) in SkillSeedData.DropEntries())
             {
-                if (!ids.TryGetValue(key, out var materialId)) continue;
-                if (!seen.Add((terrain, materialId))) continue;
+                if (!ids.TryGetValue(key, out var materialId))
+                {
+                    continue;
+                }
+
+                if (!seen.Add((terrain, materialId)))
+                {
+                    continue;
+                }
 
                 context.DropTableEntries.Add(new DropTableEntry
                 {
@@ -317,7 +331,10 @@ namespace GeoSlayer.Tests.Infrastructure
 
             foreach (var definition in MuseumSeedData.Definitions())
             {
-                if (!have.Add(definition.Key)) continue;
+                if (!have.Add(definition.Key))
+                {
+                    continue;
+                }
 
                 context.MuseumEntryDefinitions.Add(new MuseumEntryDefinition
                 {
@@ -370,7 +387,10 @@ namespace GeoSlayer.Tests.Infrastructure
                 int? outputItemId = definition.OutputItem is not null
                     && itemIds.TryGetValue(definition.OutputItem, out var iid) ? iid : null;
 
-                if (outputMaterialId is null && outputItemId is null) continue;
+                if (outputMaterialId is null && outputItemId is null)
+                {
+                    continue;
+                }
 
                 var inputs = new List<RecipeInput>();
                 var resolved = true;
@@ -386,7 +406,10 @@ namespace GeoSlayer.Tests.Infrastructure
                     inputs.Add(new RecipeInput { MaterialId = inputId, Quantity = input.Quantity });
                 }
 
-                if (!resolved) continue;
+                if (!resolved)
+                {
+                    continue;
+                }
 
                 context.Recipes.Add(new Recipe
                 {

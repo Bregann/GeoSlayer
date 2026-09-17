@@ -223,7 +223,10 @@ namespace GeoSlayer.Tests.Services.Skills
                 {
                     DbContext.RevealedCells.Add(new RevealedCell
                     {
-                        PlayerId = _player.Id, GridLat = lat, GridLng = lng, RevealedAtUtc = now,
+                        PlayerId = _player.Id,
+                        GridLat = lat,
+                        GridLng = lng,
+                        RevealedAtUtc = now,
                     });
                 }
             }
@@ -232,7 +235,10 @@ namespace GeoSlayer.Tests.Services.Skills
             {
                 DbContext.RevealedCells.Add(new RevealedCell
                 {
-                    PlayerId = _player.Id, GridLat = 800 + i, GridLng = 800, RevealedAtUtc = now,
+                    PlayerId = _player.Id,
+                    GridLat = 800 + i,
+                    GridLng = 800,
+                    RevealedAtUtc = now,
                 });
             }
 

@@ -2,11 +2,11 @@ using GeoSlayer.Domain.Database.Context;
 using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.DTOs.Materials.Responses;
 using GeoSlayer.Domain.Enums;
-using GeoSlayer.Domain.Services.Fog;
-using Microsoft.EntityFrameworkCore;
 using GeoSlayer.Domain.Interfaces.Api.Crafting;
 using GeoSlayer.Domain.Interfaces.Api.Materials;
 using GeoSlayer.Domain.Interfaces.Api.Museum;
+using GeoSlayer.Domain.Services.Fog;
+using Microsoft.EntityFrameworkCore;
 
 namespace GeoSlayer.Domain.Services.Materials
 {
@@ -31,7 +31,10 @@ namespace GeoSlayer.Domain.Services.Materials
             var cached = await db.CellTerrains
                 .FirstOrDefaultAsync(c => c.GridLat == gridLat && c.GridLng == gridLng, ct);
 
-            if (cached is not null) return cached.Terrain;
+            if (cached is not null)
+            {
+                return cached.Terrain;
+            }
 
             var terrain = await classifier.Classify(gridLat, gridLng, ct);
 
@@ -99,8 +102,13 @@ namespace GeoSlayer.Domain.Services.Materials
             var values = await db.PlayerItems
                 .Include(pi => pi.Item)
                 .Where(pi => pi.PlayerId == playerId && pi.IsEquipped && pi.Quantity > 0)
-                .Select(pi => new { pi.Item.Modifier, pi.Item.ModifierValue,
-                                    pi.Item.SecondaryModifier, pi.Item.SecondaryModifierValue })
+                .Select(pi => new
+                {
+                    pi.Item.Modifier,
+                    pi.Item.ModifierValue,
+                    pi.Item.SecondaryModifier,
+                    pi.Item.SecondaryModifierValue
+                })
                 .ToListAsync(ct);
 
             return values.Sum(i =>
@@ -111,13 +119,19 @@ namespace GeoSlayer.Domain.Services.Materials
         public async Task<List<MaterialGainDto>> AwardCellDrops(
             int playerId, IReadOnlyList<GridCell> cells, CancellationToken ct)
         {
-            if (cells.Count == 0) return [];
+            if (cells.Count == 0)
+            {
+                return [];
+            }
 
             var entries = await db.DropTableEntries
                 .Include(e => e.Material)
                 .ToListAsync(ct);
 
-            if (entries.Count == 0) return [];
+            if (entries.Count == 0)
+            {
+                return [];
+            }
 
             // A skill missing here is treated as locked, so its materials cannot drop —
             // which is what keeps LevelRequired absolute rather than merely unlikely.
@@ -188,7 +202,10 @@ namespace GeoSlayer.Domain.Services.Materials
                 .Select(d => new { d.Wing, d.Key })
                 .ToListAsync(ct);
 
-            if (definitions.Count == 0) return [];
+            if (definitions.Count == 0)
+            {
+                return [];
+            }
 
             var found = (await db.PlayerMuseumEntries
                     .Where(e => e.PlayerId == playerId)
@@ -206,7 +223,10 @@ namespace GeoSlayer.Domain.Services.Materials
         public async Task<List<MaterialGainDto>> GrantMaterials(
             int playerId, IReadOnlyDictionary<int, int> quantityByMaterialId, CancellationToken ct)
         {
-            if (quantityByMaterialId.Count == 0) return [];
+            if (quantityByMaterialId.Count == 0)
+            {
+                return [];
+            }
 
             var materialIds = quantityByMaterialId.Keys.ToList();
 
@@ -227,8 +247,15 @@ namespace GeoSlayer.Domain.Services.Materials
 
             foreach (var (materialId, requested) in quantityByMaterialId)
             {
-                if (requested <= 0) continue;
-                if (!materials.TryGetValue(materialId, out var material)) continue;
+                if (requested <= 0)
+                {
+                    continue;
+                }
+
+                if (!materials.TryGetValue(materialId, out var material))
+                {
+                    continue;
+                }
 
                 var row = existing.GetValueOrDefault(materialId);
 
@@ -249,7 +276,9 @@ namespace GeoSlayer.Domain.Services.Materials
                 // Overflow becomes Dust rather than being discarded or blocking the gather
                 // (§7.4). Gathering at cap still succeeds — it just pays worse.
                 if (overflow > 0 && dust is not null && material.Id != dust.Id)
+                {
                     dustFromOverflow += (long)overflow * material.DustPerOverflow;
+                }
 
                 gains.Add(new MaterialGainDto
                 {

@@ -5,8 +5,8 @@ using GeoSlayer.Domain.Interfaces.Helpers;
 using GeoSlayer.Domain.Services.Crafting;
 using GeoSlayer.Domain.Services.Materials;
 using GeoSlayer.Domain.Services.Museum;
-using GeoSlayer.Domain.Services.Retention;
 using GeoSlayer.Domain.Services.Progression;
+using GeoSlayer.Domain.Services.Retention;
 using GeoSlayer.Domain.Services.Skills;
 using Microsoft.EntityFrameworkCore;
 
@@ -92,7 +92,10 @@ namespace GeoSlayer.Domain.Helpers
 
             foreach (var rung in ProgressionSeedData.Ladder)
             {
-                if (have.Contains((rung.AdventurerLevel, rung.Payload))) continue;
+                if (have.Contains((rung.AdventurerLevel, rung.Payload)))
+                {
+                    continue;
+                }
 
                 context.UnlockDefinitions.Add(new UnlockDefinition
                 {
@@ -112,7 +115,10 @@ namespace GeoSlayer.Domain.Helpers
 
             foreach (var upgrade in ProgressionSeedData.Upgrades)
             {
-                if (have.Contains(upgrade.Key)) continue;
+                if (have.Contains(upgrade.Key))
+                {
+                    continue;
+                }
 
                 context.UpgradeDefinitions.Add(new UpgradeDefinition
                 {
@@ -135,7 +141,10 @@ namespace GeoSlayer.Domain.Helpers
 
             foreach (var material in MaterialSeedData.Materials.Concat(SkillSeedData.AllSkillMaterials))
             {
-                if (!have.Add(material.Key)) continue;
+                if (!have.Add(material.Key))
+                {
+                    continue;
+                }
 
                 context.Materials.Add(new Material
                 {
@@ -171,8 +180,15 @@ namespace GeoSlayer.Domain.Helpers
             foreach (var (terrain, key, weight, min, max) in
                      MaterialSeedData.DropEntries().Concat(SkillSeedData.DropEntries()))
             {
-                if (!materialIds.TryGetValue(key, out var materialId)) continue;
-                if (have.Contains((terrain, materialId))) continue;
+                if (!materialIds.TryGetValue(key, out var materialId))
+                {
+                    continue;
+                }
+
+                if (have.Contains((terrain, materialId)))
+                {
+                    continue;
+                }
 
                 have.Add((terrain, materialId));
 
@@ -195,7 +211,10 @@ namespace GeoSlayer.Domain.Helpers
 
             foreach (var definition in SkillSeedData.Definitions)
             {
-                if (have.Contains(definition.SkillType)) continue;
+                if (have.Contains(definition.SkillType))
+                {
+                    continue;
+                }
 
                 context.SkillDefinitions.Add(new SkillDefinition
                 {
@@ -223,7 +242,10 @@ namespace GeoSlayer.Domain.Helpers
 
             foreach (var mapping in SkillSeedData.TerrainMappings)
             {
-                if (have.Contains((mapping.SkillType, mapping.Terrain))) continue;
+                if (have.Contains((mapping.SkillType, mapping.Terrain)))
+                {
+                    continue;
+                }
 
                 context.SkillTerrainMappings.Add(new SkillTerrainMapping
                 {
@@ -242,7 +264,10 @@ namespace GeoSlayer.Domain.Helpers
 
             foreach (var definition in RecipeSeedData.Items)
             {
-                if (!have.Add(definition.Key)) continue;
+                if (!have.Add(definition.Key))
+                {
+                    continue;
+                }
 
                 context.Items.Add(new Item
                 {
@@ -274,7 +299,10 @@ namespace GeoSlayer.Domain.Helpers
 
             foreach (var definition in RecipeSeedData.Recipes)
             {
-                if (have.Contains(definition.Key)) continue;
+                if (have.Contains(definition.Key))
+                {
+                    continue;
+                }
 
                 int? outputMaterialId = definition.OutputMaterial is not null
                     && materialIds.TryGetValue(definition.OutputMaterial, out var mid) ? mid : null;
@@ -282,7 +310,10 @@ namespace GeoSlayer.Domain.Helpers
                 int? outputItemId = definition.OutputItem is not null
                     && itemIds.TryGetValue(definition.OutputItem, out var iid) ? iid : null;
 
-                if (outputMaterialId is null && outputItemId is null) continue;
+                if (outputMaterialId is null && outputItemId is null)
+                {
+                    continue;
+                }
 
                 var inputs = new List<RecipeInput>();
                 var inputsResolved = true;
@@ -298,7 +329,10 @@ namespace GeoSlayer.Domain.Helpers
                     inputs.Add(new RecipeInput { MaterialId = inputId, Quantity = input.Quantity });
                 }
 
-                if (!inputsResolved) continue;
+                if (!inputsResolved)
+                {
+                    continue;
+                }
 
                 context.Recipes.Add(new Recipe
                 {
@@ -328,7 +362,10 @@ namespace GeoSlayer.Domain.Helpers
 
             foreach (var definition in MuseumSeedData.Definitions())
             {
-                if (!have.Add(definition.Key)) continue;
+                if (!have.Add(definition.Key))
+                {
+                    continue;
+                }
 
                 context.MuseumEntryDefinitions.Add(new MuseumEntryDefinition
                 {
@@ -351,7 +388,10 @@ namespace GeoSlayer.Domain.Helpers
 
             foreach (var district in RetentionSeedData.Districts)
             {
-                if (!have.Add(district.Key)) continue;
+                if (!have.Add(district.Key))
+                {
+                    continue;
+                }
 
                 context.DistrictDefinitions.Add(new DistrictDefinition
                 {
@@ -369,7 +409,10 @@ namespace GeoSlayer.Domain.Helpers
         {
             var name = key.ToString();
 
-            if (await context.EnvironmentalSettings.AnyAsync(s => s.Key == name)) return;
+            if (await context.EnvironmentalSettings.AnyAsync(s => s.Key == name))
+            {
+                return;
+            }
 
             await context.EnvironmentalSettings.AddAsync(new EnvironmentalSetting
             {

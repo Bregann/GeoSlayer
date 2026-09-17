@@ -237,7 +237,9 @@ namespace GeoSlayer.Tests.Services.Progression
 
             // Reveal Radius has 3 ranks.
             for (var i = 0; i < 3; i++)
+            {
                 await _sut.PurchaseUpgrade(_player.Id, ProgressionDefaults.UpgradeKeys.RevealRadius, Ct);
+            }
 
             await Assert.ThatAsync(
                 () => _sut.PurchaseUpgrade(_player.Id, ProgressionDefaults.UpgradeKeys.RevealRadius, Ct),

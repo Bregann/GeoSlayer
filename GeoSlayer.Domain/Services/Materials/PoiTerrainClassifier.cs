@@ -1,10 +1,10 @@
 using GeoSlayer.Domain.Database.Context;
 using GeoSlayer.Domain.Enums;
-using GeoSlayer.Domain.Services;
-using Microsoft.EntityFrameworkCore;
 using GeoSlayer.Domain.Interfaces.Api.Materials;
+using GeoSlayer.Domain.Services;
 using GeoSlayer.Domain.Services.Fog;
 using GeoSlayer.Domain.Services.Journey;
+using Microsoft.EntityFrameworkCore;
 
 namespace GeoSlayer.Domain.Services.Materials
 {
@@ -66,7 +66,9 @@ namespace GeoSlayer.Domain.Services.Materials
             foreach (var skill in skills)
             {
                 if (SkillTerrain.TryGetValue(skill, out var flag))
+                {
                     terrain |= flag;
+                }
             }
 
             return terrain;

@@ -72,8 +72,15 @@ namespace GeoSlayer.Tests.Services.Skills
 
             foreach (var (terrain, key, weight, min, max) in SkillSeedData.DropEntries())
             {
-                if (!byKey.TryGetValue(key, out var material)) continue;
-                if (!seen.Add((terrain, material.Id))) continue;
+                if (!byKey.TryGetValue(key, out var material))
+                {
+                    continue;
+                }
+
+                if (!seen.Add((terrain, material.Id)))
+                {
+                    continue;
+                }
 
                 entries.Add(new DropTableEntry
                 {
@@ -192,7 +199,10 @@ namespace GeoSlayer.Tests.Services.Skills
                 .Select(m => m.Terrain)
                 .FirstOrDefault();
 
-            if (worst == default) Assert.Ignore($"{skill} has no non-Open mappings");
+            if (worst == default)
+            {
+                Assert.Ignore($"{skill} has no non-Open mappings");
+            }
 
             var reachable = entries
                 .Where(e => e.Terrain == worst && e.Material.SkillType == skill)

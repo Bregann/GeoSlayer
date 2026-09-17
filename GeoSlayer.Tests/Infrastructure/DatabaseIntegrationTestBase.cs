@@ -51,7 +51,10 @@ namespace GeoSlayer.Tests.Infrastructure
         public async Task TearDown()
         {
             // SetUp may have been skipped before the context existed.
-            if (DbContext is null) return;
+            if (DbContext is null)
+            {
+                return;
+            }
 
             // Custom teardown for derived classes
             await CustomTearDown();

@@ -1,7 +1,7 @@
 using GeoSlayer.Domain.Database.Context;
+using GeoSlayer.Domain.Interfaces.Api.Museum;
 using GeoSlayer.Domain.Services;
 using Microsoft.EntityFrameworkCore;
-using GeoSlayer.Domain.Interfaces.Api.Museum;
 
 namespace GeoSlayer.Domain.Services.Museum
 {
@@ -43,7 +43,10 @@ namespace GeoSlayer.Domain.Services.Museum
                 .Select(p => p.Name)
                 .FirstOrDefaultAsync(ct);
 
-            if (string.IsNullOrWhiteSpace(anchor)) return null;
+            if (string.IsNullOrWhiteSpace(anchor))
+            {
+                return null;
+            }
 
             // Keyed on the cell, not the name: two cells sharing a POI name are still two
             // different places, and a key collision would silently merge them.

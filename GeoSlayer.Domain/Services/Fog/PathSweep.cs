@@ -99,13 +99,19 @@ namespace GeoSlayer.Domain.Services.Fog
             var swept = new HashSet<GridCell>();
 
             if (path.Count == 0)
+            {
                 return swept;
+            }
 
             swept.Add(path[0]);
 
             for (var i = 1; i < path.Count; i++)
-            foreach (var cell in SupercoverLine(path[i - 1], path[i]))
-                swept.Add(cell);
+            {
+                foreach (var cell in SupercoverLine(path[i - 1], path[i]))
+                {
+                    swept.Add(cell);
+                }
+            }
 
             return swept;
         }
@@ -119,9 +125,15 @@ namespace GeoSlayer.Domain.Services.Fog
             var dilated = new HashSet<GridCell>();
 
             foreach (var cell in cells)
-            for (var dLat = -radius; dLat <= radius; dLat++)
-            for (var dLng = -radius; dLng <= radius; dLng++)
-                dilated.Add(new GridCell(cell.GridLat + dLat, cell.GridLng + dLng));
+            {
+                for (var dLat = -radius; dLat <= radius; dLat++)
+                {
+                    for (var dLng = -radius; dLng <= radius; dLng++)
+                    {
+                        dilated.Add(new GridCell(cell.GridLat + dLat, cell.GridLng + dLng));
+                    }
+                }
+            }
 
             return dilated;
         }

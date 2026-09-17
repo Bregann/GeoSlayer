@@ -3,14 +3,14 @@ using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.DTOs.Skills.Responses;
 using GeoSlayer.Domain.Enums;
 using GeoSlayer.Domain.Exceptions;
-using GeoSlayer.Domain.Services.Fog;
-using Microsoft.EntityFrameworkCore;
 using GeoSlayer.Domain.Interfaces.Api.Crafting;
 using GeoSlayer.Domain.Interfaces.Api.Materials;
 using GeoSlayer.Domain.Interfaces.Api.Museum;
 using GeoSlayer.Domain.Interfaces.Api.Progression;
 using GeoSlayer.Domain.Interfaces.Api.Skills;
+using GeoSlayer.Domain.Services.Fog;
 using GeoSlayer.Domain.Services.Journey;
+using Microsoft.EntityFrameworkCore;
 
 namespace GeoSlayer.Domain.Services.Skills
 {
@@ -48,7 +48,10 @@ namespace GeoSlayer.Domain.Services.Skills
         public async Task<List<SkillTrainingDto>> TrainFromCells(
             int playerId, IReadOnlyList<GridCell> cells, CancellationToken ct)
         {
-            if (cells.Count == 0) return [];
+            if (cells.Count == 0)
+            {
+                return [];
+            }
 
             // Only unlocked skills train. The row existing is the unlock (§3.1), so this is
             // also what stops a locked skill silently accruing XP.
@@ -57,10 +60,16 @@ namespace GeoSlayer.Domain.Services.Skills
                 .Select(s => s.SkillType)
                 .ToListAsync(ct);
 
-            if (unlocked.Count == 0) return [];
+            if (unlocked.Count == 0)
+            {
+                return [];
+            }
 
             var mappings = await db.SkillTerrainMappings.ToListAsync(ct);
-            if (mappings.Count == 0) return [];
+            if (mappings.Count == 0)
+            {
+                return [];
+            }
 
             var unlockedSet = unlocked.ToHashSet();
 
@@ -75,7 +84,10 @@ namespace GeoSlayer.Domain.Services.Skills
                 foreach (var skill in unlockedSet)
                 {
                     var xp = XpForCell(mappings, skill, terrain);
-                    if (xp <= 0) continue;
+                    if (xp <= 0)
+                    {
+                        continue;
+                    }
 
                     xpBySkill[skill] = xpBySkill.GetValueOrDefault(skill) + xp;
                 }
@@ -86,7 +98,10 @@ namespace GeoSlayer.Domain.Services.Skills
             foreach (var (skill, xp) in xpBySkill.OrderBy(kv => kv.Key))
             {
                 var amount = (long)Math.Floor(xp);
-                if (amount <= 0) continue;
+                if (amount <= 0)
+                {
+                    continue;
+                }
 
                 // All XP goes through IProgressionService — it owns the Adventurer cut, the
                 // Scholar modifier, level-ups and the unlock ladder (Stage 02 criterion 2).
@@ -122,7 +137,10 @@ namespace GeoSlayer.Domain.Services.Skills
 
             foreach (var mapping in mappings)
             {
-                if (mapping.SkillType != skill) continue;
+                if (mapping.SkillType != skill)
+                {
+                    continue;
+                }
 
                 if (mapping.Terrain == TerrainType.Open)
                 {
@@ -132,7 +150,9 @@ namespace GeoSlayer.Domain.Services.Skills
 
                 // A cell can carry several terrain flags; the most generous match applies.
                 if ((terrain & mapping.Terrain) == mapping.Terrain)
+                {
                     best = Math.Max(best, mapping.XpPerCell);
+                }
             }
 
             return best > 0 ? best : baseRate;
@@ -154,7 +174,9 @@ namespace GeoSlayer.Domain.Services.Skills
             // treating that as proof of location would be exactly the hole this check exists
             // to close. Only a completed sync counts.
             if (player.LastSyncAtUtc is null)
+            {
                 throw new BadRequestException("No verified position yet — sync before visiting.");
+            }
 
             var distance = TraceValidator.HaversineMetres(
                 player.LastLatitude, player.LastLongitude, poi.Location.Y, poi.Location.X);
@@ -165,8 +187,10 @@ namespace GeoSlayer.Domain.Services.Skills
                 playerId, ItemModifier.PoiRangeMetres, ct);
 
             if (distance > PoiInteractRadius + RangeGraceMetres + gearRange)
+            {
                 throw new BadRequestException(
                     $"Too far from {poi.Name} — {Math.Round(distance)}m away, need {PoiInteractRadius}m.");
+            }
 
             var now = DateTime.UtcNow;
 
@@ -175,7 +199,9 @@ namespace GeoSlayer.Domain.Services.Skills
 
             // ── Anti-cheat: visit cooldown ───────────────────────────────────────────────
             if (visit is not null && (now - visit.LastVisitUtc).TotalSeconds < MinSecondsBetweenVisits)
+            {
                 throw new BadRequestException("Visiting too quickly — wait a moment.");
+            }
 
             var isFirstVisit = visit is null;
 
@@ -245,7 +271,10 @@ namespace GeoSlayer.Domain.Services.Skills
                 Services.Museum.MuseumSeedData.LandmarkKey(poi.Skill),
                 1, poi.Id, poi.Name, ct);
 
-            if (landmark is not null) result.MuseumAcquisitions.Add(landmark);
+            if (landmark is not null)
+            {
+                result.MuseumAcquisitions.Add(landmark);
+            }
 
             if (isFirstVisit)
             {

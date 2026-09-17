@@ -43,7 +43,9 @@ namespace GeoSlayer.Domain.Services.Clues
         public static string PhraseFor(SkillType skill, int seed)
         {
             if (!SkillPhrases.TryGetValue(skill, out var phrases) || phrases.Length == 0)
+            {
                 return "somewhere worth finding";
+            }
 
             // Deterministic: regenerating a scroll must not reword a step the player is
             // already carrying.

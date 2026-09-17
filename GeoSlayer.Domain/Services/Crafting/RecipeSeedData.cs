@@ -1,7 +1,7 @@
+using GeoSlayer.Domain.Enums;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using GeoSlayer.Domain.Enums;
 
 namespace GeoSlayer.Domain.Services.Crafting
 {
@@ -88,8 +88,10 @@ namespace GeoSlayer.Domain.Services.Crafting
                 .FirstOrDefault(n => n.EndsWith(fileName, StringComparison.OrdinalIgnoreCase));
 
             if (resource is null)
+            {
                 throw new InvalidOperationException(
                     $"Embedded resource '{fileName}' not found. Check the EmbeddedResource glob in the csproj.");
+            }
 
             using var stream = assembly.GetManifestResourceStream(resource)
                 ?? throw new InvalidOperationException($"Could not open '{resource}'.");

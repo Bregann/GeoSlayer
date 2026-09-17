@@ -61,7 +61,11 @@ namespace GeoSlayer.Domain.Database.Models
         public int? CostOfNextRank(int currentRank)
         {
             var costs = Costs;
-            if (currentRank >= MaxRank || currentRank >= costs.Length) return null;
+            if (currentRank >= MaxRank || currentRank >= costs.Length)
+            {
+                return null;
+            }
+
             return costs[currentRank];
         }
 
@@ -70,7 +74,11 @@ namespace GeoSlayer.Domain.Database.Models
         {
             var costs = Costs;
             var total = 0;
-            for (var i = 0; i < rank && i < costs.Length; i++) total += costs[i];
+            for (var i = 0; i < rank && i < costs.Length; i++)
+            {
+                total += costs[i];
+            }
+
             return total;
         }
     }

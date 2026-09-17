@@ -52,7 +52,10 @@ namespace GeoSlayer.Tests.Services.Fog
                     Accuracy = 8,
                 });
 
-                if (travelled >= metres) break;
+                if (travelled >= metres)
+                {
+                    break;
+                }
             }
 
             return positions;
@@ -126,7 +129,10 @@ namespace GeoSlayer.Tests.Services.Fog
 
         private static bool IsFourConnected(IReadOnlyCollection<GridCell> cells)
         {
-            if (cells.Count == 0) return true;
+            if (cells.Count == 0)
+            {
+                return true;
+            }
 
             var remaining = cells.ToHashSet();
             var start = remaining.First();
@@ -148,7 +154,9 @@ namespace GeoSlayer.Tests.Services.Fog
                 })
                 {
                     if (remaining.Remove(neighbour))
+                    {
                         queue.Enqueue(neighbour);
+                    }
                 }
             }
 

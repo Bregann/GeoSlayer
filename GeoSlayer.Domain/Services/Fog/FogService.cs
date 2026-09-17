@@ -2,12 +2,9 @@ using GeoSlayer.Domain.Database.Context;
 using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.DTOs.Journey.Requests;
 using GeoSlayer.Domain.DTOs.Materials.Responses;
-using GeoSlayer.Domain.DTOs.Skills.Responses;
 using GeoSlayer.Domain.DTOs.Progression.Responses;
+using GeoSlayer.Domain.DTOs.Skills.Responses;
 using GeoSlayer.Domain.Enums;
-using GeoSlayer.Domain.Services.Fog;
-using GeoSlayer.Domain.Services.Progression;
-using Microsoft.EntityFrameworkCore;
 using GeoSlayer.Domain.Interfaces.Api.Crafting;
 using GeoSlayer.Domain.Interfaces.Api.Fog;
 using GeoSlayer.Domain.Interfaces.Api.Materials;
@@ -15,6 +12,9 @@ using GeoSlayer.Domain.Interfaces.Api.Museum;
 using GeoSlayer.Domain.Interfaces.Api.Progression;
 using GeoSlayer.Domain.Interfaces.Api.Retention;
 using GeoSlayer.Domain.Interfaces.Api.Skills;
+using GeoSlayer.Domain.Services.Fog;
+using GeoSlayer.Domain.Services.Progression;
+using Microsoft.EntityFrameworkCore;
 
 namespace GeoSlayer.Domain.Services.Fog
 {
@@ -78,7 +78,9 @@ namespace GeoSlayer.Domain.Services.Fog
             int playerId, IReadOnlyList<SyncPosition> path, CancellationToken ct)
         {
             if (path.Count == 0)
+            {
                 return FogRevealResult.Empty;
+            }
 
             var now = DateTime.UtcNow;
             var player = await db.Players.FirstAsync(p => p.Id == playerId, ct);
@@ -89,7 +91,9 @@ namespace GeoSlayer.Domain.Services.Fog
             // Judge the batch by its newest fix; earlier ones are legitimately older.
             var clientTime = DateTimeOffset.FromUnixTimeMilliseconds(last.TimestampMs).UtcDateTime;
             if (Math.Abs((now - clientTime).TotalSeconds) > MaxClientClockSkewSeconds)
+            {
                 return FogRevealResult.Empty;
+            }
 
             // ── Anti-cheat: sync cooldown ─────────────────────────────
             // Rate-limits how often a client may *call* us.  It deliberately says nothing
@@ -99,7 +103,9 @@ namespace GeoSlayer.Domain.Services.Fog
             {
                 var secondsSinceLastSync = (now - player.LastSyncAtUtc.Value).TotalSeconds;
                 if (secondsSinceLastSync < MinSyncIntervalSeconds)
+                {
                     return FogRevealResult.Empty;
+                }
 
                 // ── Anti-cheat: speed / distance cap ─────────────────
                 if (player.LastLatitude != 0 || player.LastLongitude != 0)
@@ -110,7 +116,9 @@ namespace GeoSlayer.Domain.Services.Fog
 
                     // Allow a 100 m grace buffer for GPS drift
                     if (distance > maxAllowed + 100)
+                    {
                         return FogRevealResult.Empty;
+                    }
                 }
             }
 
@@ -134,14 +142,18 @@ namespace GeoSlayer.Domain.Services.Fog
             player.LastSyncAtUtc = now;
 
             if (dwelling)
+            {
                 return FogRevealResult.Empty;
+            }
 
             // ── Anti-cheat: is this batch real travel? ────────────────
             // Accuracy cutoff, drift, dwell and speed grading.  Swept reveal makes each of
             // these exploits far more valuable, so they gate the sweep, not the other way round.
             var verdict = TraceValidator.Validate(path);
             if (!verdict.Allowed)
+            {
                 return FogRevealResult.Empty;
+            }
 
             // ── Sweep the path ────────────────────────────────────────
             // Every cell the walked line crosses, not just the cells we happened to get a
@@ -221,8 +233,15 @@ namespace GeoSlayer.Domain.Services.Fog
 
             foreach (var cell in candidates)
             {
-                if (existingSet.Contains(cell)) continue;
-                if (newCells.Count >= MaxNewCellsPerSync) break;
+                if (existingSet.Contains(cell))
+                {
+                    continue;
+                }
+
+                if (newCells.Count >= MaxNewCellsPerSync)
+                {
+                    break;
+                }
 
                 inserts.Add(new RevealedCell
                 {
@@ -246,7 +265,9 @@ namespace GeoSlayer.Domain.Services.Fog
 
             // One batch insert — a long walk is hundreds of cells, not nine.
             if (inserts.Count > 0)
+            {
                 db.RevealedCells.AddRange(inserts);
+            }
 
             XpGrantResult? grant = null;
             var materialGains = new List<MaterialGainDto>();
@@ -295,7 +316,9 @@ namespace GeoSlayer.Domain.Services.Fog
                 var terrains = new List<TerrainType>();
 
                 foreach (var cell in newCells)
+                {
                     terrains.Add(await materials.GetOrClassifyTerrain(cell.GridLat, cell.GridLng, ct));
+                }
 
                 museumAcquisitions = await museum.RecordCellFinds(
                     playerId, terrains, materialGains.Select(m => m.Key).ToList(), ct);
@@ -311,7 +334,10 @@ namespace GeoSlayer.Domain.Services.Fog
 
                 // The region the player is standing in — the Cartography wing (§5A.2).
                 var region = await museum.RecordRegion(playerId, last.Latitude, last.Longitude, ct);
-                if (region is not null) museumAcquisitions.Add(region);
+                if (region is not null)
+                {
+                    museumAcquisitions.Add(region);
+                }
 
                 grant.AdventurerXpEarned += milestone.AdventurerXpEarned;
                 grant.AdventurerLevel = milestone.AdventurerLevel;

@@ -89,7 +89,10 @@ namespace GeoSlayer.Domain.Services.Materials
                 .Where(e => maxToolTier is null || e.Material.Tier <= maxToolTier.Value)
                 .ToList();
 
-            if (candidates.Count == 0) return [];
+            if (candidates.Count == 0)
+            {
+                return [];
+            }
 
             // Highest unlocked tier wins, with weighted fallback below it (§4.1a). Selecting
             // per category keeps a woodland cell from crowding out its own top tier just
@@ -105,11 +108,16 @@ namespace GeoSlayer.Domain.Services.Materials
                 var band = group.Where(e => e.Material.Tier >= best - 1).ToList();
 
                 var picked = PickWeighted(band, random);
-                if (picked is null) continue;
+                if (picked is null)
+                {
+                    continue;
+                }
 
                 var quantity = picked.MinQuantity;
                 if (picked.MaxQuantity > picked.MinQuantity)
+                {
                     quantity = random.Next(picked.MinQuantity, picked.MaxQuantity + 1);
+                }
 
                 // Terrain scales quantity. Floored at 1 so a poor-terrain match still yields
                 // something — the whole point of the geography rule.
@@ -130,7 +138,10 @@ namespace GeoSlayer.Domain.Services.Materials
         public static bool IsObtainable(Material material, IReadOnlyDictionary<SkillType, int> skillLevels)
         {
             // No skill means a universal material (Dust) — always available.
-            if (material.SkillType is null) return material.LevelRequired <= 1;
+            if (material.SkillType is null)
+            {
+                return material.LevelRequired <= 1;
+            }
 
             return skillLevels.TryGetValue(material.SkillType.Value, out var level)
                 && level >= material.LevelRequired;
@@ -139,14 +150,20 @@ namespace GeoSlayer.Domain.Services.Materials
         private static DropTableEntry? PickWeighted(List<DropTableEntry> entries, Random random)
         {
             var total = entries.Sum(e => Math.Max(1, e.Weight));
-            if (total <= 0) return null;
+            if (total <= 0)
+            {
+                return null;
+            }
 
             var roll = random.Next(total);
 
             foreach (var entry in entries)
             {
                 roll -= Math.Max(1, entry.Weight);
-                if (roll < 0) return entry;
+                if (roll < 0)
+                {
+                    return entry;
+                }
             }
 
             return entries[^1];

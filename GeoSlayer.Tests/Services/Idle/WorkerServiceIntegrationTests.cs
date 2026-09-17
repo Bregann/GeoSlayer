@@ -1,9 +1,9 @@
 using GeoSlayer.Domain.Database.Models;
+using GeoSlayer.Domain.DTOs.Idle.Responses;
 using GeoSlayer.Domain.Enums;
 using GeoSlayer.Domain.Exceptions;
-using GeoSlayer.Domain.DTOs.Idle.Responses;
-using GeoSlayer.Domain.Services.Idle;
 using GeoSlayer.Domain.Services.Crafting;
+using GeoSlayer.Domain.Services.Idle;
 using GeoSlayer.Domain.Services.Materials;
 using GeoSlayer.Domain.Services.Progression;
 using GeoSlayer.Tests.Infrastructure;
@@ -61,7 +61,10 @@ namespace GeoSlayer.Tests.Services.Idle
             {
                 for (var lng = centreLng - 1; lng <= centreLng + 1; lng++)
                 {
-                    if (!existing.Add((lat, lng))) continue;
+                    if (!existing.Add((lat, lng)))
+                    {
+                        continue;
+                    }
 
                     DbContext.RevealedCells.Add(new RevealedCell
                     {
@@ -76,7 +79,10 @@ namespace GeoSlayer.Tests.Services.Idle
             // The density cap is one Claim per 40 revealed cells (§5.1).
             for (var i = 0; i < extraCells; i++)
             {
-                if (!existing.Add((centreLat + 500 + i, centreLng + 500))) continue;
+                if (!existing.Add((centreLat + 500 + i, centreLng + 500)))
+                {
+                    continue;
+                }
 
                 DbContext.RevealedCells.Add(new RevealedCell
                 {
@@ -144,7 +150,10 @@ namespace GeoSlayer.Tests.Services.Idle
             // Only the centre cell.
             DbContext.RevealedCells.Add(new RevealedCell
             {
-                PlayerId = _player.Id, GridLat = 20, GridLng = 20, RevealedAtUtc = DateTime.UtcNow,
+                PlayerId = _player.Id,
+                GridLat = 20,
+                GridLng = 20,
+                RevealedAtUtc = DateTime.UtcNow,
             });
             await DbContext.SaveChangesAsync();
             await GiveClaimMaterials();
@@ -594,13 +603,22 @@ namespace GeoSlayer.Tests.Services.Idle
 
             foreach (var file in Directory.GetFiles(root, "*.cs", SearchOption.AllDirectories))
             {
-                if (file.Contains("/obj/") || file.Contains("/bin/")) continue;
-                if (file.Contains("Tests")) continue;
+                if (file.Contains("/obj/") || file.Contains("/bin/"))
+                {
+                    continue;
+                }
+
+                if (file.Contains("Tests"))
+                {
+                    continue;
+                }
 
                 foreach (var (line, index) in File.ReadAllLines(file).Select((l, i) => (l, i)))
                 {
                     if (line.Contains("AddOrUpdate") || line.Contains("RecurringJob"))
+                    {
                         offenders.Add($"{Path.GetFileName(file)}:{index + 1}  {line.Trim()}");
+                    }
                 }
             }
 
@@ -637,7 +655,9 @@ namespace GeoSlayer.Tests.Services.Idle
             var dir = new DirectoryInfo(TestContext.CurrentContext.TestDirectory);
 
             while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "GeoSlayer.sln")))
+            {
                 dir = dir.Parent;
+            }
 
             return dir?.FullName ?? throw new InvalidOperationException("repository root not found");
         }

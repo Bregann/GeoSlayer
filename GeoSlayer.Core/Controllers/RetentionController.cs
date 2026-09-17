@@ -1,11 +1,11 @@
 using GeoSlayer.Domain.Database.Context;
 using GeoSlayer.Domain.DTOs.Retention.Responses;
 using GeoSlayer.Domain.Exceptions;
+using GeoSlayer.Domain.Interfaces.Api.Retention;
 using GeoSlayer.Domain.Interfaces.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using GeoSlayer.Domain.Interfaces.Api.Retention;
 
 namespace GeoSlayer.Core.Controllers
 {
@@ -67,7 +67,10 @@ namespace GeoSlayer.Core.Controllers
                 .Select(p => new { p.LastLatitude, p.LastLongitude, p.LastSyncAtUtc })
                 .FirstAsync(ct);
 
-            if (position.LastSyncAtUtc is null) return Ok(new List<SurgeDto>());
+            if (position.LastSyncAtUtc is null)
+            {
+                return Ok(new List<SurgeDto>());
+            }
 
             return Ok(await retention.GetActiveSurges(position.LastLatitude, position.LastLongitude, ct));
         }

@@ -3,12 +3,12 @@ using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.DTOs.Clues.Responses;
 using GeoSlayer.Domain.Enums;
 using GeoSlayer.Domain.Exceptions;
-using GeoSlayer.Domain.Services.Fog;
-using GeoSlayer.Domain.Services.Museum;
-using Microsoft.EntityFrameworkCore;
 using GeoSlayer.Domain.Interfaces.Api.Clues;
 using GeoSlayer.Domain.Interfaces.Api.Materials;
 using GeoSlayer.Domain.Interfaces.Api.Museum;
+using GeoSlayer.Domain.Services.Fog;
+using GeoSlayer.Domain.Services.Museum;
+using Microsoft.EntityFrameworkCore;
 
 namespace GeoSlayer.Domain.Services.Clues
 {
@@ -48,8 +48,12 @@ namespace GeoSlayer.Domain.Services.Clues
             };
 
             foreach (var (tier, keys) in RelicsByTier)
+            {
                 foreach (var key in keys)
+                {
                     yield return (tier, key, names.GetValueOrDefault(key, key));
+                }
+            }
         }
 
         public async Task<List<ClueScrollDto>> GetScrolls(int playerId, CancellationToken ct)
@@ -117,7 +121,9 @@ namespace GeoSlayer.Domain.Services.Clues
                 .AnyAsync(s => s.PlayerId == playerId && s.Tier == tier && s.CompletedUtc == null, ct);
 
             if (existing)
+            {
                 throw new BadRequestException($"You already carry a {tier} scroll.");
+            }
 
             var shape = ClueTierConfig.For(tier);
 
@@ -129,7 +135,10 @@ namespace GeoSlayer.Domain.Services.Clues
                 .Select(r => new { r.GridLat, r.GridLng })
                 .ToListAsync(ct);
 
-            if (cells.Count == 0) return null;
+            if (cells.Count == 0)
+            {
+                return null;
+            }
 
             var seed = HashCode.Combine(playerId, tier, DateTime.UtcNow.Date.DayOfYear);
             var random = new Random(seed);
@@ -234,10 +243,14 @@ namespace GeoSlayer.Domain.Services.Clues
             // supplies one, exactly as with POI visits. Trusting a client here would make
             // clue completion a free teleport.
             if (player.LastSyncAtUtc is null)
+            {
                 throw new BadRequestException("No verified position yet — sync before attempting a clue.");
+            }
 
             if (step.TargetLat is null || step.TargetLng is null)
+            {
                 throw new BadRequestException("That step has no location to check.");
+            }
 
             var distance = TraceValidator.HaversineMetres(
                 player.LastLatitude, player.LastLongitude, step.TargetLat.Value, step.TargetLng.Value);
@@ -264,12 +277,16 @@ namespace GeoSlayer.Domain.Services.Clues
             // One skip per scroll (§5B.3): a clue the player cannot solve must never
             // permanently block their only scroll of that tier — but it should cost.
             if (scroll.SkipUsed)
+            {
                 throw new BadRequestException("You have already skipped a step on this scroll.");
+            }
 
             var cost = ClueTierConfig.For(scroll.Tier).SkipCostCuration;
 
             if (player.Curation < cost)
+            {
                 throw new BadRequestException($"Skipping costs {cost} curation; you have {player.Curation}.");
+            }
 
             player.Curation -= cost;
             scroll.SkipUsed = true;
@@ -289,7 +306,9 @@ namespace GeoSlayer.Domain.Services.Clues
                 ?? throw new NotFoundException($"Scroll {scrollId} not found.");
 
             if (scroll.CompletedUtc is not null)
+            {
                 throw new BadRequestException("That scroll is already complete.");
+            }
 
             var step = scroll.Steps.FirstOrDefault(s => s.StepIndex == scroll.CurrentStep)
                 ?? throw new BadRequestException("That scroll has no current step.");
@@ -354,7 +373,10 @@ namespace GeoSlayer.Domain.Services.Clues
             var relic = await museum.RecordFind(
                 scroll.PlayerId, relicKey, 1, null, null, ct);
 
-            if (relic is not null) reward.Relics.Add(relic);
+            if (relic is not null)
+            {
+                reward.Relics.Add(relic);
+            }
 
             // A little material, scaled by tier. Enough to feel like a find, not enough to
             // make clues the efficient way to gather.

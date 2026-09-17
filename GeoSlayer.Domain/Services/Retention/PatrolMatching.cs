@@ -29,20 +29,33 @@ namespace GeoSlayer.Domain.Services.Retention
             IReadOnlyList<Fix> waypoints,
             double radiusMetres = WaypointRadiusMetres)
         {
-            if (waypoints.Count == 0) return false;
-            if (path.Count == 0) return false;
+            if (waypoints.Count == 0)
+            {
+                return false;
+            }
+
+            if (path.Count == 0)
+            {
+                return false;
+            }
 
             var next = 0;
 
             foreach (var fix in path)
             {
-                if (next >= waypoints.Count) break;
+                if (next >= waypoints.Count)
+                {
+                    break;
+                }
 
                 var distance = TraceValidator.HaversineMetres(
                     fix.Latitude, fix.Longitude,
                     waypoints[next].Latitude, waypoints[next].Longitude);
 
-                if (distance <= radiusMetres) next++;
+                if (distance <= radiusMetres)
+                {
+                    next++;
+                }
             }
 
             return next >= waypoints.Count;
@@ -60,13 +73,19 @@ namespace GeoSlayer.Domain.Services.Retention
 
             foreach (var fix in path)
             {
-                if (next >= waypoints.Count) break;
+                if (next >= waypoints.Count)
+                {
+                    break;
+                }
 
                 var distance = TraceValidator.HaversineMetres(
                     fix.Latitude, fix.Longitude,
                     waypoints[next].Latitude, waypoints[next].Longitude);
 
-                if (distance <= radiusMetres) next++;
+                if (distance <= radiusMetres)
+                {
+                    next++;
+                }
             }
 
             return next;

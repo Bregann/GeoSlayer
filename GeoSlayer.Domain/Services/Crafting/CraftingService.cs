@@ -3,12 +3,12 @@ using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.DTOs.Crafting.Responses;
 using GeoSlayer.Domain.Enums;
 using GeoSlayer.Domain.Exceptions;
-using GeoSlayer.Domain.Services.Progression;
-using Microsoft.EntityFrameworkCore;
 using GeoSlayer.Domain.Interfaces.Api.Crafting;
 using GeoSlayer.Domain.Interfaces.Api.Materials;
 using GeoSlayer.Domain.Interfaces.Api.Museum;
 using GeoSlayer.Domain.Interfaces.Api.Progression;
+using GeoSlayer.Domain.Services.Progression;
+using Microsoft.EntityFrameworkCore;
 
 namespace GeoSlayer.Domain.Services.Crafting
 {
@@ -149,11 +149,15 @@ namespace GeoSlayer.Domain.Services.Crafting
                 .FirstOrDefaultAsync(s => s.PlayerId == playerId && s.SkillType == recipe.SkillType, ct);
 
             if (skill is null)
+            {
                 throw new BadRequestException($"{recipe.SkillType} is not unlocked yet.");
+            }
 
             if (skill.Level < recipe.LevelRequired)
+            {
                 throw new BadRequestException(
                     $"{recipe.Name} needs {recipe.SkillType} level {recipe.LevelRequired}.");
+            }
 
             var running = await db.PlayerCrafts
                 .CountAsync(c => c.PlayerId == playerId && !c.Collected, ct);
@@ -161,8 +165,10 @@ namespace GeoSlayer.Domain.Services.Crafting
             var limit = await QueueLimit(playerId, ct);
 
             if (running >= limit)
+            {
                 throw new BadRequestException(
                     $"All {limit} craft slot{(limit == 1 ? "" : "s")} are busy — buy another with Bonus Points.");
+            }
 
             // Inputs are consumed at queue time, not completion (task 2): otherwise a player
             // could queue everything, spend the materials elsewhere, and still collect.
@@ -175,12 +181,16 @@ namespace GeoSlayer.Domain.Services.Crafting
                 var row = rows.GetValueOrDefault(input.MaterialId);
 
                 if (row is null || row.Quantity < input.Quantity)
+                {
                     throw new BadRequestException(
                         $"Not enough {input.Material.Name} — need {input.Quantity}, have {row?.Quantity ?? 0}.");
+                }
             }
 
             foreach (var input in recipe.Inputs)
+            {
                 rows[input.MaterialId].Quantity -= input.Quantity;
+            }
 
             var now = DateTime.UtcNow;
 
@@ -208,7 +218,9 @@ namespace GeoSlayer.Domain.Services.Crafting
                 ?? throw new NotFoundException($"Craft {craftId} not found.");
 
             if (craft.Collected)
+            {
                 throw new BadRequestException("That craft has already been collected.");
+            }
 
             // Full refund. A partial one would make cancelling a trap, and the player has
             // gained nothing from a craft they stopped.
@@ -232,7 +244,10 @@ namespace GeoSlayer.Domain.Services.Crafting
 
             var result = new CraftCollectionDto();
 
-            if (completed.Count == 0) return result;
+            if (completed.Count == 0)
+            {
+                return result;
+            }
 
             var materialOutputs = new Dictionary<int, int>();
 
@@ -272,13 +287,18 @@ namespace GeoSlayer.Domain.Services.Crafting
             await db.SaveChangesAsync(ct);
 
             if (materialOutputs.Count > 0)
+            {
                 result.Materials = await materials.GrantMaterials(playerId, materialOutputs, ct);
+            }
 
             // XP through IProgressionService, so the Adventurer cut and unlocks apply.
             foreach (var group in completed.GroupBy(c => c.Recipe.SkillType))
             {
                 var xp = (long)Math.Floor(group.Sum(c => c.Recipe.XpReward));
-                if (xp <= 0) continue;
+                if (xp <= 0)
+                {
+                    continue;
+                }
 
                 var grant = await progression.GrantXp(playerId, group.Key, xp, XpSource.Craft, ct);
 
@@ -376,7 +396,9 @@ namespace GeoSlayer.Domain.Services.Crafting
             var primary = ModifierText(item.Modifier, item.ModifierValue);
 
             if (item.SecondaryModifier is null || item.SecondaryModifierValue == 0)
+            {
                 return primary;
+            }
 
             return $"{primary} · {ModifierText(item.SecondaryModifier.Value, item.SecondaryModifierValue)}";
         }
@@ -408,11 +430,16 @@ namespace GeoSlayer.Domain.Services.Crafting
                 if (playerItem.Item.Kind == ItemKind.Building)
                 {
                     if (claimId is null)
+                    {
                         throw new BadRequestException("A building must be placed on a Claim.");
+                    }
 
                     var owns = await db.Claims.AnyAsync(c => c.Id == claimId && c.PlayerId == playerId, ct);
 
-                    if (!owns) throw new BadRequestException("That Claim is not yours.");
+                    if (!owns)
+                    {
+                        throw new BadRequestException("That Claim is not yours.");
+                    }
 
                     playerItem.ClaimId = claimId;
                 }
@@ -433,7 +460,9 @@ namespace GeoSlayer.Domain.Services.Crafting
                             .ToListAsync(ct);
 
                         foreach (var other in occupying)
+                        {
                             other.IsEquipped = false;
+                        }
                     }
                 }
             }

@@ -1,13 +1,13 @@
 using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.Enums;
 using GeoSlayer.Domain.Exceptions;
+using GeoSlayer.Domain.Interfaces.Api.Museum;
 using GeoSlayer.Domain.Services.Museum;
 using GeoSlayer.Domain.Services.Progression;
 using GeoSlayer.Tests.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using NetTopologySuite.Geometries;
-using GeoSlayer.Domain.Interfaces.Api.Museum;
 
 namespace GeoSlayer.Tests.Services.Museum
 {
@@ -398,7 +398,9 @@ namespace GeoSlayer.Tests.Services.Museum
             var museum = await _sut.GetMuseum(_player.Id, Ct);
 
             foreach (var wing in museum.Wings.Where(w => w.Total > 0 && w.Found < w.Total))
+            {
                 Assert.That(wing.IsComplete, Is.False, $"{wing.Name} is not complete");
+            }
         }
 
         [Test]
@@ -408,7 +410,9 @@ namespace GeoSlayer.Tests.Services.Museum
             var museum = await _sut.GetMuseum(_player.Id, Ct);
 
             foreach (var wing in museum.Wings.Where(w => w.Total == 0))
+            {
                 Assert.That(wing.IsComplete, Is.False, $"{wing.Name} has no entries yet");
+            }
         }
 
         // ── Feats, derived from existing counters ───────────────────────
@@ -422,7 +426,10 @@ namespace GeoSlayer.Tests.Services.Museum
             {
                 DbContext.RevealedCells.Add(new RevealedCell
                 {
-                    PlayerId = _player.Id, GridLat = i, GridLng = 0, RevealedAtUtc = now,
+                    PlayerId = _player.Id,
+                    GridLat = i,
+                    GridLng = 0,
+                    RevealedAtUtc = now,
                 });
             }
 
@@ -442,7 +449,10 @@ namespace GeoSlayer.Tests.Services.Museum
             {
                 DbContext.RevealedCells.Add(new RevealedCell
                 {
-                    PlayerId = _player.Id, GridLat = i, GridLng = 0, RevealedAtUtc = now,
+                    PlayerId = _player.Id,
+                    GridLat = i,
+                    GridLng = 0,
+                    RevealedAtUtc = now,
                 });
             }
 
@@ -476,7 +486,9 @@ namespace GeoSlayer.Tests.Services.Museum
                 .ToHashSet();
 
             foreach (var skill in Enum.GetValues<SkillType>())
+            {
                 Assert.That(keys, Contains.Item(MuseumSeedData.LandmarkKey(skill)));
+            }
         }
 
         [Test]
@@ -489,8 +501,10 @@ namespace GeoSlayer.Tests.Services.Museum
                 .Where(m => m.Category != MaterialCategory.Dust);
 
             foreach (var material in materials)
+            {
                 Assert.That(keys, Contains.Item(MuseumSeedData.MaterialKey(material.Key)),
                     $"{material.Key} has no Museum plinth");
+            }
         }
 
         [Test]
@@ -521,7 +535,9 @@ namespace GeoSlayer.Tests.Services.Museum
                 .ToListAsync();
 
             foreach (var key in keys)
+            {
                 await _sut.RecordFind(_player.Id, key, 1, null, null, Ct);
+            }
 
             var completed = await _sut.GetCompletedWings(_player.Id, Ct);
 
@@ -571,7 +587,9 @@ namespace GeoSlayer.Tests.Services.Museum
                 .ToListAsync();
 
             foreach (var key in keys)
+            {
                 await _sut.RecordFind(_player.Id, key, 1, null, null, Ct);
+            }
 
             var museum = await _sut.GetMuseum(_player.Id, Ct);
             var naturalist = museum.Wings.First(w => w.Wing == MuseumWing.Naturalist);
@@ -604,7 +622,9 @@ namespace GeoSlayer.Tests.Services.Museum
             var dir = new DirectoryInfo(TestContext.CurrentContext.TestDirectory);
 
             while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "GeoSlayer.sln")))
+            {
                 dir = dir.Parent;
+            }
 
             return dir?.FullName ?? throw new InvalidOperationException("repository root not found");
         }

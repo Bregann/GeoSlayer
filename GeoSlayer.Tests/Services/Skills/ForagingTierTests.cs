@@ -44,8 +44,15 @@ namespace GeoSlayer.Tests.Services.Skills
 
             foreach (var (terrain, key, weight, min, max) in SkillSeedData.DropEntries())
             {
-                if (!byKey.TryGetValue(key, out var material)) continue;
-                if (!seen.Add((terrain, material.Id))) continue;
+                if (!byKey.TryGetValue(key, out var material))
+                {
+                    continue;
+                }
+
+                if (!seen.Add((terrain, material.Id)))
+                {
+                    continue;
+                }
 
                 entries.Add(new DropTableEntry
                 {
@@ -224,7 +231,9 @@ namespace GeoSlayer.Tests.Services.Skills
                     TerrainType.Woodland, entries, levels);
 
                 foreach (var drop in drops)
+                {
                     counts[drop.MaterialId] = counts.GetValueOrDefault(drop.MaterialId) + 1;
+                }
             }
 
             var berries = counts.GetValueOrDefault(byKey["berries"].Id);
@@ -307,7 +316,10 @@ namespace GeoSlayer.Tests.Services.Skills
             foreach (var file in Directory.GetFiles(servicesDir, "*.cs", SearchOption.AllDirectories))
             {
                 // Seed data is *supposed* to name skills — that is the point of it.
-                if (file.Contains("SeedData")) continue;
+                if (file.Contains("SeedData"))
+                {
+                    continue;
+                }
 
                 var lines = File.ReadAllLines(file);
 
@@ -317,7 +329,10 @@ namespace GeoSlayer.Tests.Services.Skills
 
                     // Comments and doc-comments may legitimately mention a skill.
                     var trimmed = line.TrimStart();
-                    if (trimmed.StartsWith("//") || trimmed.StartsWith("///") || trimmed.StartsWith("*")) continue;
+                    if (trimmed.StartsWith("//") || trimmed.StartsWith("///") || trimmed.StartsWith("*"))
+                    {
+                        continue;
+                    }
 
                     // A comparison against a named skill is the smell: `== SkillType.Foraging`,
                     // `is SkillType.Mining`, `case SkillType.Fishing`.
@@ -338,7 +353,9 @@ namespace GeoSlayer.Tests.Services.Skills
             var dir = new DirectoryInfo(TestContext.CurrentContext.TestDirectory);
 
             while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "GeoSlayer.sln")))
+            {
                 dir = dir.Parent;
+            }
 
             return dir?.FullName ?? throw new InvalidOperationException("repository root not found");
         }

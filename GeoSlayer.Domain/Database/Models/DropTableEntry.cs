@@ -1,6 +1,6 @@
+using GeoSlayer.Domain.Enums;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using GeoSlayer.Domain.Enums;
 
 namespace GeoSlayer.Domain.Database.Models
 {

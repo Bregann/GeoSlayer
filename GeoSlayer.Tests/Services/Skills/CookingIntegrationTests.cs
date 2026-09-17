@@ -53,7 +53,9 @@ namespace GeoSlayer.Tests.Services.Skills
             {
                 row = new PlayerSkill
                 {
-                    PlayerId = _player.Id, SkillType = skill, UnlockedAtUtc = DateTime.UtcNow,
+                    PlayerId = _player.Id,
+                    SkillType = skill,
+                    UnlockedAtUtc = DateTime.UtcNow,
                 };
                 DbContext.PlayerSkills.Add(row);
             }

@@ -24,7 +24,10 @@ namespace GeoSlayer.Tests.Services.Fog
         private static int RevealedCellCount(IReadOnlyList<SyncPosition> trace)
         {
             var verdict = TraceValidator.Validate(trace);
-            if (!verdict.Allowed) return 0;
+            if (!verdict.Allowed)
+            {
+                return 0;
+            }
 
             var grid = verdict.Accepted
                 .Select(p => new GridCell(FogService.ToGrid(p.Latitude), FogService.ToGrid(p.Longitude)))
@@ -252,7 +255,10 @@ namespace GeoSlayer.Tests.Services.Fog
             // Clients predating the accuracy field must keep revealing; the motion checks
             // still apply to them.
             var trace = StraightTrace(speed: 1.4, fixes: 30, fixIntervalSeconds: 5);
-            foreach (var p in trace) p.Accuracy = null;
+            foreach (var p in trace)
+            {
+                p.Accuracy = null;
+            }
 
             Assert.That(TraceValidator.Validate(trace).Allowed, Is.True);
         }

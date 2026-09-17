@@ -4,14 +4,14 @@ using GeoSlayer.Domain.DTOs.Idle.Responses;
 using GeoSlayer.Domain.DTOs.Materials.Responses;
 using GeoSlayer.Domain.Enums;
 using GeoSlayer.Domain.Exceptions;
-using GeoSlayer.Domain.Services.Materials;
-using GeoSlayer.Domain.Services.Progression;
-using Microsoft.EntityFrameworkCore;
 using GeoSlayer.Domain.Interfaces.Api.Crafting;
 using GeoSlayer.Domain.Interfaces.Api.Idle;
 using GeoSlayer.Domain.Interfaces.Api.Materials;
 using GeoSlayer.Domain.Interfaces.Api.Progression;
 using GeoSlayer.Domain.Services.Fog;
+using GeoSlayer.Domain.Services.Materials;
+using GeoSlayer.Domain.Services.Progression;
+using Microsoft.EntityFrameworkCore;
 
 namespace GeoSlayer.Domain.Services.Idle
 {
@@ -56,10 +56,16 @@ namespace GeoSlayer.Domain.Services.Idle
 
             foreach (var mapping in mappings)
             {
-                if (mapping.Terrain == TerrainType.Open) continue;
+                if (mapping.Terrain == TerrainType.Open)
+                {
+                    continue;
+                }
 
                 var baseRate = baseRates.GetValueOrDefault(mapping.SkillType, 0);
-                if (mapping.XpPerCell <= baseRate) continue;
+                if (mapping.XpPerCell <= baseRate)
+                {
+                    continue;
+                }
 
                 result[mapping.SkillType] = result.GetValueOrDefault(mapping.SkillType) | mapping.Terrain;
             }
@@ -92,7 +98,10 @@ namespace GeoSlayer.Domain.Services.Idle
 
             var result = new OfflineAccrualDto { OfflineCapHours = capHours };
 
-            if (workers.Count == 0) return result;
+            if (workers.Count == 0)
+            {
+                return result;
+            }
 
             var terrains = await SkillTerrains(ct);
             var now = DateTime.UtcNow;
@@ -117,7 +126,10 @@ namespace GeoSlayer.Domain.Services.Idle
             foreach (var worker in workers)
             {
                 var skill = worker.AssignedSkill!.Value;
-                if (!unlocked.Contains(skill)) continue;
+                if (!unlocked.Contains(skill))
+                {
+                    continue;
+                }
 
                 var accrual = OfflineAccrual.Compute(
                     worker.LastCollectedAtUtc,
@@ -127,7 +139,10 @@ namespace GeoSlayer.Domain.Services.Idle
                     worker.Claim?.TerrainProfile ?? TerrainType.Open,
                     terrains.GetValueOrDefault(skill, TerrainType.Open));
 
-                if (accrual.Elapsed <= TimeSpan.Zero) continue;
+                if (accrual.Elapsed <= TimeSpan.Zero)
+                {
+                    continue;
+                }
 
                 snapshots.Add((worker, skill, accrual));
 
@@ -141,7 +156,10 @@ namespace GeoSlayer.Domain.Services.Idle
                 worker.LastCollectedAtUtc = now;
             }
 
-            if (snapshots.Count == 0) return result;
+            if (snapshots.Count == 0)
+            {
+                return result;
+            }
 
             await db.SaveChangesAsync(ct);
 
@@ -151,7 +169,10 @@ namespace GeoSlayer.Domain.Services.Idle
             foreach (var (skill, xp) in xpBySkill.OrderBy(kv => kv.Key))
             {
                 var amount = (long)Math.Floor(xp);
-                if (amount <= 0) continue;
+                if (amount <= 0)
+                {
+                    continue;
+                }
 
                 // XpSource.Idle pays the reduced Adventurer ratio (§3.3), so idle never
                 // drives the unlock ladder at walking pace.
@@ -200,7 +221,10 @@ namespace GeoSlayer.Domain.Services.Idle
 
             var result = new UpkeepDto { FoodRequired = required };
 
-            if (required <= 0) return result;
+            if (required <= 0)
+            {
+                return result;
+            }
 
             // Cheapest food first, so a player's Ambrosia is not eaten while rations sit
             // in the bag.
@@ -216,7 +240,10 @@ namespace GeoSlayer.Domain.Services.Idle
 
             foreach (var row in food)
             {
-                if (remaining <= 0) break;
+                if (remaining <= 0)
+                {
+                    break;
+                }
 
                 var taken = (int)Math.Min(remaining, row.Quantity);
 
@@ -234,7 +261,10 @@ namespace GeoSlayer.Domain.Services.Idle
             result.FoodConsumed = required - remaining;
             result.Unfed = remaining > 0;
 
-            if (result.Consumed.Count > 0) await db.SaveChangesAsync(ct);
+            if (result.Consumed.Count > 0)
+            {
+                await db.SaveChangesAsync(ct);
+            }
 
             return result;
         }
@@ -252,7 +282,10 @@ namespace GeoSlayer.Domain.Services.Idle
                 .Where(s => s.PlayerId == playerId)
                 .ToDictionaryAsync(s => s.SkillType, s => s.Level, ct);
 
-            if (skillLevels.Count == 0) return [];
+            if (skillLevels.Count == 0)
+            {
+                return [];
+            }
 
             var candidates = await db.Materials
                 .Where(m => m.SkillType != null && !m.IsUnique)
@@ -262,7 +295,10 @@ namespace GeoSlayer.Domain.Services.Idle
 
             foreach (var (_, skill, accrual) in snapshots)
             {
-                if (!skillLevels.TryGetValue(skill, out var level)) continue;
+                if (!skillLevels.TryGetValue(skill, out var level))
+                {
+                    continue;
+                }
 
                 // Highest tier the player has unlocked in this skill — the same rule cells
                 // use, so idle and walking agree on what a player can obtain.
@@ -271,14 +307,20 @@ namespace GeoSlayer.Domain.Services.Idle
                     .OrderByDescending(m => m.Tier)
                     .FirstOrDefault();
 
-                if (best is null) continue;
+                if (best is null)
+                {
+                    continue;
+                }
 
                 // Higher-tier materials take longer per unit, so a worker producing them
                 // produces fewer of them (§4.1a) — this is what makes high-tier idle slow.
                 var units = (int)Math.Floor(
                     accrual.MaterialUnits * (3.0 / Math.Max(1, best.BaseGatherSeconds)));
 
-                if (units <= 0) continue;
+                if (units <= 0)
+                {
+                    continue;
+                }
 
                 totals[best.Id] = totals.GetValueOrDefault(best.Id) + units;
             }
@@ -362,7 +404,10 @@ namespace GeoSlayer.Domain.Services.Idle
             foreach (var (key, quantity) in ClaimCost)
             {
                 var material = rows.FirstOrDefault(m => m.Key == key);
-                if (material is null) continue;
+                if (material is null)
+                {
+                    continue;
+                }
 
                 cost.Add(new MaterialCostDto
                 {
@@ -383,7 +428,9 @@ namespace GeoSlayer.Domain.Services.Idle
             var eligibility = await CheckClaimEligibility(playerId, centreGridLat, centreGridLng, ct);
 
             if (!eligibility.IsEligible)
+            {
                 throw new BadRequestException(eligibility.Reason ?? "Cannot claim here.");
+            }
 
             // Deduct the cost. Claims are permanent (§5.1), so this is charged once.
             foreach (var line in eligibility.Cost)
@@ -402,7 +449,9 @@ namespace GeoSlayer.Domain.Services.Idle
             for (var lat = centreGridLat - half; lat <= centreGridLat + half; lat++)
             {
                 for (var lng = centreGridLng - half; lng <= centreGridLng + half; lng++)
+                {
                     terrain |= await materials.GetOrClassifyTerrain(lat, lng, ct);
+                }
             }
 
             var claim = new Claim
@@ -473,7 +522,10 @@ namespace GeoSlayer.Domain.Services.Idle
 
         private static List<string> TerrainNames(TerrainType terrain)
         {
-            if (terrain == TerrainType.Open) return ["Open"];
+            if (terrain == TerrainType.Open)
+            {
+                return ["Open"];
+            }
 
             return Enum.GetValues<TerrainType>()
                 .Where(t => t != TerrainType.Open && (terrain & t) == t)
@@ -549,7 +601,10 @@ namespace GeoSlayer.Domain.Services.Idle
             {
                 var owns = await db.Claims.AnyAsync(c => c.Id == claimId && c.PlayerId == playerId, ct);
 
-                if (!owns) throw new BadRequestException("That Claim is not yours.");
+                if (!owns)
+                {
+                    throw new BadRequestException("That Claim is not yours.");
+                }
             }
 
             if (skill is not null)
@@ -561,13 +616,17 @@ namespace GeoSlayer.Domain.Services.Idle
                     .AnyAsync(s => s.PlayerId == playerId && s.SkillType == skill, ct);
 
                 if (!unlocked)
+                {
                     throw new BadRequestException($"{skill} is not unlocked yet.");
+                }
             }
 
             // Reassigning banks whatever accrued first, so a switch never silently discards
             // hours the player already earned.
             if (worker.ClaimId is not null && worker.AssignedSkill is not null)
+            {
                 await CollectOfflineAccrual(playerId, ct);
+            }
 
             worker.ClaimId = claimId;
             worker.AssignedSkill = skill;
@@ -594,8 +653,10 @@ namespace GeoSlayer.Domain.Services.Idle
             var capacity = 1 + (int)bonus;
 
             if (held >= capacity)
+            {
                 throw new BadRequestException(
                     $"All {capacity} worker slot{(capacity == 1 ? "" : "s")} are full — buy another with Bonus Points.");
+            }
 
             var now = DateTime.UtcNow;
 

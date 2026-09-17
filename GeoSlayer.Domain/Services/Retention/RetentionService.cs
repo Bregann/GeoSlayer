@@ -3,12 +3,12 @@ using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.DTOs.Retention.Responses;
 using GeoSlayer.Domain.Enums;
 using GeoSlayer.Domain.Exceptions;
-using GeoSlayer.Domain.Services.Fog;
-using GeoSlayer.Domain.Services.Idle;
-using Microsoft.EntityFrameworkCore;
 using GeoSlayer.Domain.Interfaces.Api.Materials;
 using GeoSlayer.Domain.Interfaces.Api.Progression;
 using GeoSlayer.Domain.Interfaces.Api.Retention;
+using GeoSlayer.Domain.Services.Fog;
+using GeoSlayer.Domain.Services.Idle;
+using Microsoft.EntityFrameworkCore;
 
 namespace GeoSlayer.Domain.Services.Retention
 {
@@ -28,7 +28,10 @@ namespace GeoSlayer.Domain.Services.Retention
             var weight = TransitGrading.TransitWeight(speedMetresPerSecond);
 
             // At walking pace nothing banks — the cells simply revealed.
-            if (weight <= 0 || cells.Count == 0) return 0;
+            if (weight <= 0 || cells.Count == 0)
+            {
+                return 0;
+            }
 
             var since = DateTime.UtcNow.Date;
 
@@ -37,7 +40,10 @@ namespace GeoSlayer.Domain.Services.Retention
 
             // Capped per day so a long-haul flight does not bank a continent (§7.1).
             var room = TransitGrading.DailyTransitCap - bankedToday;
-            if (room <= 0) return 0;
+            if (room <= 0)
+            {
+                return 0;
+            }
 
             var existing = (await db.BankedTransits
                     .Where(t => t.PlayerId == playerId && !t.Redeemed)
@@ -59,12 +65,22 @@ namespace GeoSlayer.Domain.Services.Retention
 
             foreach (var cell in cells)
             {
-                if (banked >= room) break;
+                if (banked >= room)
+                {
+                    break;
+                }
 
                 var key = (cell.GridLat, cell.GridLng);
 
-                if (revealed.Contains(key)) continue;
-                if (!existing.Add(key)) continue;
+                if (revealed.Contains(key))
+                {
+                    continue;
+                }
+
+                if (!existing.Add(key))
+                {
+                    continue;
+                }
 
                 db.BankedTransits.Add(new BankedTransit
                 {
@@ -78,7 +94,10 @@ namespace GeoSlayer.Domain.Services.Retention
                 banked++;
             }
 
-            if (banked > 0) await db.SaveChangesAsync(ct);
+            if (banked > 0)
+            {
+                await db.SaveChangesAsync(ct);
+            }
 
             return banked;
         }
@@ -88,7 +107,10 @@ namespace GeoSlayer.Domain.Services.Retention
         {
             var result = new TransitRedemptionDto();
 
-            if (walkedCells.Count == 0) return result;
+            if (walkedCells.Count == 0)
+            {
+                return result;
+            }
 
             var cutoff = DateTime.UtcNow - TransitGrading.DecayWindow;
 
@@ -111,7 +133,11 @@ namespace GeoSlayer.Domain.Services.Retention
 
             if (banked.Count == 0)
             {
-                if (expired.Count > 0) await db.SaveChangesAsync(ct);
+                if (expired.Count > 0)
+                {
+                    await db.SaveChangesAsync(ct);
+                }
+
                 return result;
             }
 
@@ -128,13 +154,19 @@ namespace GeoSlayer.Domain.Services.Retention
 
             foreach (var transit in banked.OrderBy(t => t.BankedUtc))
             {
-                if (redeemed.Count >= budget) break;
+                if (redeemed.Count >= budget)
+                {
+                    break;
+                }
 
                 var near = walked.Any(w =>
                     Math.Abs(w.GridLat - transit.GridLat) <= radiusCells
                     && Math.Abs(w.GridLng - transit.GridLng) <= radiusCells);
 
-                if (near) redeemed.Add(transit);
+                if (near)
+                {
+                    redeemed.Add(transit);
+                }
             }
 
             var now = DateTime.UtcNow;
@@ -150,7 +182,10 @@ namespace GeoSlayer.Domain.Services.Retention
             {
                 transit.Redeemed = true;
 
-                if (!alreadyRevealed.Add((transit.GridLat, transit.GridLng))) continue;
+                if (!alreadyRevealed.Add((transit.GridLat, transit.GridLng)))
+                {
+                    continue;
+                }
 
                 db.RevealedCells.Add(new RevealedCell
                 {
@@ -220,7 +255,10 @@ namespace GeoSlayer.Domain.Services.Retention
             var active = await db.WorkerExpeditions
                 .AnyAsync(e => e.WorkerId == workerId && !e.Collected, ct);
 
-            if (active) throw new BadRequestException("That worker is already away.");
+            if (active)
+            {
+                throw new BadRequestException("That worker is already away.");
+            }
 
             var player = await db.Players.FirstAsync(p => p.Id == playerId, ct);
 
@@ -279,7 +317,10 @@ namespace GeoSlayer.Domain.Services.Retention
             int playerId, CancellationToken ct)
         {
             var player = await db.Players.FirstOrDefaultAsync(p => p.Id == playerId, ct);
-            if (player is null) return [];
+            if (player is null)
+            {
+                return [];
+            }
 
             // The Stage 04 visit log *is* the destination list. Nothing else is needed, which
             // is why §5.4 calls this "nearly free to implement".
@@ -288,7 +329,10 @@ namespace GeoSlayer.Domain.Services.Retention
                 .Where(v => v.PlayerId == playerId)
                 .ToListAsync(ct);
 
-            if (visits.Count == 0) return [];
+            if (visits.Count == 0)
+            {
+                return [];
+            }
 
             var busyPoiIds = (await db.WorkerExpeditions
                     .Where(e => e.PlayerId == playerId && !e.Collected)
@@ -341,7 +385,10 @@ namespace GeoSlayer.Domain.Services.Retention
 
             var result = new ExpeditionCollectionDto();
 
-            if (returned.Count == 0) return result;
+            if (returned.Count == 0)
+            {
+                return result;
+            }
 
             var totals = new Dictionary<int, int>();
 
@@ -351,7 +398,10 @@ namespace GeoSlayer.Domain.Services.Retention
                 result.Returned.Add(expedition.PoiName);
 
                 var poi = await db.PointsOfInterest.FirstOrDefaultAsync(p => p.Id == expedition.PoiId, ct);
-                if (poi is null) continue;
+                if (poi is null)
+                {
+                    continue;
+                }
 
                 var tier = expedition.Worker?.Tier ?? 1;
 
@@ -386,7 +436,9 @@ namespace GeoSlayer.Domain.Services.Retention
             await db.SaveChangesAsync(ct);
 
             if (totals.Count > 0)
+            {
                 result.Materials = await materials.GrantMaterials(playerId, totals, ct);
+            }
 
             result.HasCollection = true;
 
@@ -399,7 +451,9 @@ namespace GeoSlayer.Domain.Services.Retention
             int playerId, string name, IReadOnlyList<(double Lat, double Lng)> waypoints, CancellationToken ct)
         {
             if (waypoints.Count < 2)
+            {
                 throw new BadRequestException("A patrol needs at least two waypoints.");
+            }
 
             var route = new PatrolRoute
             {
@@ -453,14 +507,20 @@ namespace GeoSlayer.Domain.Services.Retention
         public async Task<List<PatrolCompletionDto>> CheckPatrolCompletion(
             int playerId, IReadOnlyList<(double Lat, double Lng)> path, CancellationToken ct)
         {
-            if (path.Count == 0) return [];
+            if (path.Count == 0)
+            {
+                return [];
+            }
 
             var routes = await db.PatrolRoutes
                 .Include(r => r.Waypoints)
                 .Where(r => r.PlayerId == playerId)
                 .ToListAsync(ct);
 
-            if (routes.Count == 0) return [];
+            if (routes.Count == 0)
+            {
+                return [];
+            }
 
             var fixes = path.Select(p => new PatrolMatching.Fix(p.Lat, p.Lng)).ToList();
 
@@ -472,14 +532,19 @@ namespace GeoSlayer.Domain.Services.Retention
                 // One completion per day, so a loop walked twice does not pay twice — the
                 // reward is maintenance, not a grind target.
                 if (route.LastCompletedUtc is not null && (now - route.LastCompletedUtc.Value).TotalHours < 20)
+                {
                     continue;
+                }
 
                 var waypoints = route.Waypoints
                     .OrderBy(w => w.Sequence)
                     .Select(w => new PatrolMatching.Fix(w.Latitude, w.Longitude))
                     .ToList();
 
-                if (!PatrolMatching.CompletesCircuit(fixes, waypoints)) continue;
+                if (!PatrolMatching.CompletesCircuit(fixes, waypoints))
+                {
+                    continue;
+                }
 
                 route.CompletionCount += 1;
                 route.LastCompletedUtc = now;
@@ -505,7 +570,10 @@ namespace GeoSlayer.Domain.Services.Retention
                 });
             }
 
-            if (completions.Count > 0) await db.SaveChangesAsync(ct);
+            if (completions.Count > 0)
+            {
+                await db.SaveChangesAsync(ct);
+            }
 
             return completions;
         }
@@ -593,7 +661,10 @@ namespace GeoSlayer.Domain.Services.Retention
                 .AnyAsync(s => s.CellLat == cellLat && s.CellLng == cellLng
                             && s.StartsUtc <= now && s.EndsUtc > now, ct);
 
-            if (active) return null;
+            if (active)
+            {
+                return null;
+            }
 
             // Generated server-side against existing regions — cheap to run, and deterministic
             // on the cell and day so two players in the same place see the same surge.

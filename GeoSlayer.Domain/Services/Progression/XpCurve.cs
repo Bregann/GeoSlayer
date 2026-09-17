@@ -46,14 +46,23 @@ namespace GeoSlayer.Domain.Services.Progression
         /// </summary>
         public static long XpForLevel(int level)
         {
-            if (level <= 1) return 0;
-            if (level <= TableMaxLevel) return Cumulative[level];
+            if (level <= 1)
+            {
+                return 0;
+            }
+
+            if (level <= TableMaxLevel)
+            {
+                return Cumulative[level];
+            }
 
             // Past the table, continue the same sum.  Deliberately not cached: reaching
             // level 200 is not a thing that happens on a hot path.
             double points = 0;
             for (var n = 1; n < level; n++)
+            {
                 points += Math.Floor(n + 300 * Math.Pow(2, n / 7.0));
+            }
 
             return (long)Math.Floor(points / 4);
         }
@@ -63,7 +72,10 @@ namespace GeoSlayer.Domain.Services.Progression
         /// </summary>
         public static int LevelForXp(long totalXp)
         {
-            if (totalXp <= 0) return 1;
+            if (totalXp <= 0)
+            {
+                return 1;
+            }
 
             // Binary search the table — the common case.
             if (totalXp < Cumulative[TableMaxLevel])
@@ -76,9 +88,13 @@ namespace GeoSlayer.Domain.Services.Progression
                     var mid = (low + high + 1) / 2;
 
                     if (Cumulative[mid] <= totalXp)
+                    {
                         low = mid;
+                    }
                     else
+                    {
                         high = mid - 1;
+                    }
                 }
 
                 return low;
@@ -87,7 +103,9 @@ namespace GeoSlayer.Domain.Services.Progression
             // Past the table, walk forward.  A player here has earned it.
             var level = TableMaxLevel;
             while (XpForLevel(level + 1) <= totalXp)
+            {
                 level++;
+            }
 
             return level;
         }

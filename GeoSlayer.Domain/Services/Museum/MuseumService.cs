@@ -3,8 +3,8 @@ using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.DTOs.Museum.Responses;
 using GeoSlayer.Domain.Enums;
 using GeoSlayer.Domain.Exceptions;
-using Microsoft.EntityFrameworkCore;
 using GeoSlayer.Domain.Interfaces.Api.Museum;
+using Microsoft.EntityFrameworkCore;
 
 namespace GeoSlayer.Domain.Services.Museum
 {
@@ -127,7 +127,10 @@ namespace GeoSlayer.Domain.Services.Museum
         public async Task<MuseumAcquisitionDto?> RecordFind(
             int playerId, string entryKey, int quantity, int? poiId, string? placeName, CancellationToken ct)
         {
-            if (quantity <= 0) return null;
+            if (quantity <= 0)
+            {
+                return null;
+            }
 
             var definition = await db.MuseumEntryDefinitions
                 .FirstOrDefaultAsync(d => d.Key == entryKey, ct);
@@ -135,7 +138,10 @@ namespace GeoSlayer.Domain.Services.Museum
             // A find with no plinth is not an error — Cartography entries are created on
             // discovery, and a material added before its definition is seeded should not
             // throw on a hot path.
-            if (definition is null) return null;
+            if (definition is null)
+            {
+                return null;
+            }
 
             var existing = await db.PlayerMuseumEntries
                 .FirstOrDefaultAsync(e => e.PlayerId == playerId && e.EntryKey == entryKey, ct);
@@ -199,7 +205,10 @@ namespace GeoSlayer.Domain.Services.Museum
                 var resolved = await regions.Resolve(latitude, longitude, ct);
 
                 // Unresolvable is fine — no plinth beats an invented place name.
-                if (resolved is null) return null;
+                if (resolved is null)
+                {
+                    return null;
+                }
 
                 cached = new GeoRegion
                 {
@@ -225,7 +234,10 @@ namespace GeoSlayer.Domain.Services.Museum
                     cached = await db.GeoRegions
                         .FirstOrDefaultAsync(r => r.CellLat == cellLat && r.CellLng == cellLng, ct);
 
-                    if (cached is null) return null;
+                    if (cached is null)
+                    {
+                        return null;
+                    }
                 }
             }
 
@@ -275,7 +287,10 @@ namespace GeoSlayer.Domain.Services.Museum
                 var found = await RecordFind(
                     playerId, MuseumSeedData.TerrainKey(terrain), 1, null, null, ct);
 
-                if (found is not null) acquisitions.Add(found);
+                if (found is not null)
+                {
+                    acquisitions.Add(found);
+                }
             }
 
             foreach (var key in materialKeys.Distinct())
@@ -283,7 +298,10 @@ namespace GeoSlayer.Domain.Services.Museum
                 var found = await RecordFind(
                     playerId, MuseumSeedData.MaterialKey(key), 1, null, null, ct);
 
-                if (found is not null) acquisitions.Add(found);
+                if (found is not null)
+                {
+                    acquisitions.Add(found);
+                }
             }
 
             return acquisitions;
@@ -292,7 +310,10 @@ namespace GeoSlayer.Domain.Services.Museum
         public async Task<List<MuseumAcquisitionDto>> CheckFeats(int playerId, CancellationToken ct)
         {
             var player = await db.Players.FirstOrDefaultAsync(p => p.Id == playerId, ct);
-            if (player is null) return [];
+            if (player is null)
+            {
+                return [];
+            }
 
             // Every counter a Feat can test, read once. Derived from existing tables — no
             // Feat needs a column of its own (§5A.2).
@@ -321,12 +342,26 @@ namespace GeoSlayer.Domain.Services.Museum
             {
                 var key = MuseumSeedData.FeatKey(feat.Key);
 
-                if (already.Contains(key)) continue;
-                if (!counters.TryGetValue(feat.Condition, out var value)) continue;
-                if (value < feat.Threshold) continue;
+                if (already.Contains(key))
+                {
+                    continue;
+                }
+
+                if (!counters.TryGetValue(feat.Condition, out var value))
+                {
+                    continue;
+                }
+
+                if (value < feat.Threshold)
+                {
+                    continue;
+                }
 
                 var found = await RecordFind(playerId, key, 1, null, null, ct);
-                if (found is not null) acquisitions.Add(found);
+                if (found is not null)
+                {
+                    acquisitions.Add(found);
+                }
             }
 
             return acquisitions;
@@ -335,7 +370,10 @@ namespace GeoSlayer.Domain.Services.Museum
         public async Task<DonationResultDto> DonateDuplicates(
             int playerId, string entryKey, int quantity, CancellationToken ct)
         {
-            if (quantity <= 0) throw new BadRequestException("Nothing to donate.");
+            if (quantity <= 0)
+            {
+                throw new BadRequestException("Nothing to donate.");
+            }
 
             var entry = await db.PlayerMuseumEntries
                 .FirstOrDefaultAsync(e => e.PlayerId == playerId && e.EntryKey == entryKey, ct)
@@ -350,8 +388,10 @@ namespace GeoSlayer.Domain.Services.Museum
             var available = entry.Quantity - entry.DonatedQuantity - 1;
 
             if (available < quantity)
+            {
                 throw new BadRequestException(
                     $"Only {Math.Max(0, available)} spare{(available == 1 ? "" : "s")} to donate.");
+            }
 
             var player = await db.Players.FirstAsync(p => p.Id == playerId, ct);
 

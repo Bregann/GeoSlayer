@@ -66,12 +66,14 @@ namespace GeoSlayer.Tests.Services.Fog
             // The property that actually matters for fog: the revealed cells form one
             // orthogonally-connected blob, so a walk leaves no pinhole you can see through.
             for (var lat = -6; lat <= 6; lat++)
-            for (var lng = -6; lng <= 6; lng++)
             {
-                var cells = PathSweep.SupercoverLine(new GridCell(0, 0), new GridCell(lat, lng));
+                for (var lng = -6; lng <= 6; lng++)
+                {
+                    var cells = PathSweep.SupercoverLine(new GridCell(0, 0), new GridCell(lat, lng));
 
-                Assert.That(IsFourConnected(cells), Is.True,
-                    $"line to ({lat},{lng}) left a gap");
+                    Assert.That(IsFourConnected(cells), Is.True,
+                        $"line to ({lat},{lng}) left a gap");
+                }
             }
         }
 
@@ -97,7 +99,9 @@ namespace GeoSlayer.Tests.Services.Fog
                 })
                 {
                     if (remaining.Remove(neighbour))
+                    {
                         queue.Enqueue(neighbour);
+                    }
                 }
             }
 
@@ -110,13 +114,15 @@ namespace GeoSlayer.Tests.Services.Fog
             // Walking a street east-to-west must reveal exactly what walking it
             // west-to-east does.  Naive Bresenham fails this at corner crossings.
             for (var lat = -6; lat <= 6; lat++)
-            for (var lng = -6; lng <= 6; lng++)
             {
-                var forward = PathSweep.SupercoverLine(new GridCell(0, 0), new GridCell(lat, lng));
-                var backward = PathSweep.SupercoverLine(new GridCell(lat, lng), new GridCell(0, 0));
+                for (var lng = -6; lng <= 6; lng++)
+                {
+                    var forward = PathSweep.SupercoverLine(new GridCell(0, 0), new GridCell(lat, lng));
+                    var backward = PathSweep.SupercoverLine(new GridCell(lat, lng), new GridCell(0, 0));
 
-                Assert.That(forward.ToHashSet(), Is.EquivalentTo(backward.ToHashSet()),
-                    $"line to ({lat},{lng}) is direction-dependent");
+                    Assert.That(forward.ToHashSet(), Is.EquivalentTo(backward.ToHashSet()),
+                        $"line to ({lat},{lng}) is direction-dependent");
+                }
             }
         }
 

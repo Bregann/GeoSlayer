@@ -57,8 +57,15 @@ namespace GeoSlayer.Tests.Services.Materials
             foreach (var (terrain, key, weight, min, max) in
                      MaterialSeedData.DropEntries().Concat(SkillSeedData.DropEntries()))
             {
-                if (!byKey.TryGetValue(key, out var material)) continue;
-                if (!seen.Add((terrain, material.Id))) continue;
+                if (!byKey.TryGetValue(key, out var material))
+                {
+                    continue;
+                }
+
+                if (!seen.Add((terrain, material.Id)))
+                {
+                    continue;
+                }
 
                 entries.Add(new DropTableEntry
                 {
@@ -112,7 +119,6 @@ namespace GeoSlayer.Tests.Services.Materials
             var gathered = MaterialSeedData.Materials
                 .Where(m => m.Category != MaterialCategory.Dust)
                 .ToList();
-
 
             Assert.That(gathered, Is.Not.Empty);
 
@@ -249,7 +255,9 @@ namespace GeoSlayer.Tests.Services.Materials
                     TerrainType.Rocky, entries, levels);
 
                 foreach (var drop in drops)
+                {
                     counts[drop.MaterialId] = counts.GetValueOrDefault(drop.MaterialId) + 1;
+                }
             }
 
             var iron = counts.GetValueOrDefault(byKey["ore_iron"].Id);
@@ -356,7 +364,9 @@ namespace GeoSlayer.Tests.Services.Materials
             // Random's constructor rejects int.MinValue, so negative coordinates must not
             // produce one.
             foreach (var (player, lat, lng) in new[] { (1, -1, -1), (int.MaxValue, -9999, -9999), (7, 0, 0) })
+            {
                 Assert.That(DropRoller.SeedFor(player, lat, lng), Is.GreaterThanOrEqualTo(0));
+            }
         }
     }
 }

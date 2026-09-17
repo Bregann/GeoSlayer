@@ -51,8 +51,10 @@ namespace GeoSlayer.Tests.Services.Progression
         public void XpForLevel_IsStrictlyIncreasing()
         {
             for (var level = 2; level <= XpCurve.TableMaxLevel; level++)
+            {
                 Assert.That(XpCurve.XpForLevel(level), Is.GreaterThan(XpCurve.XpForLevel(level - 1)),
                     $"level {level} is not above level {level - 1}");
+            }
         }
 
         // ── Uncapped ────────────────────────────────────────────────────
@@ -76,7 +78,9 @@ namespace GeoSlayer.Tests.Services.Progression
 
             double points = 0;
             for (var n = 1; n < XpCurve.TableMaxLevel; n++)
+            {
                 points += Math.Floor(n + 300 * Math.Pow(2, n / 7.0));
+            }
 
             Assert.That(fromTable, Is.EqualTo((long)Math.Floor(points / 4)));
         }

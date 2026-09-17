@@ -466,7 +466,6 @@ namespace GeoSlayer.Domain.Services.Skills
                 ("meteoric_gear",     "Meteoric Gear"),
             ]);
 
-
         /// <summary>Farming's ladder (Stage 15).</summary>
         public static IReadOnlyList<Material> FarmingMaterials { get; } = BuildLadder(
             SkillType.Farming, MaterialCategory.Grown,
@@ -589,7 +588,10 @@ namespace GeoSlayer.Domain.Services.Skills
             {
                 // Production materials are crafted, never found. Excluding them here is what
                 // keeps a cooked pie from dropping out of a hedge.
-                if (group.Key is not null && ProductionSkills.Contains(group.Key.Value)) continue;
+                if (group.Key is not null && ProductionSkills.Contains(group.Key.Value))
+                {
+                    continue;
+                }
 
                 var terrains = TerrainMappings
                     .Where(m => m.SkillType == group.Key)
@@ -599,17 +601,17 @@ namespace GeoSlayer.Domain.Services.Skills
 
                 foreach (var terrain in terrains)
                 {
-                foreach (var material in group)
-                {
-                    // Lower tiers are commoner within a terrain. Tier selection in DropRoller
-                    // still prefers the highest unlocked band, so this only shapes the
-                    // fallback mix rather than capping what is reachable.
-                    var weight = Math.Max(1, 10 - (material.Tier - 1) * 2);
+                    foreach (var material in group)
+                    {
+                        // Lower tiers are commoner within a terrain. Tier selection in DropRoller
+                        // still prefers the highest unlocked band, so this only shapes the
+                        // fallback mix rather than capping what is reachable.
+                        var weight = Math.Max(1, 10 - (material.Tier - 1) * 2);
 
-                    var max = material.Tier <= 2 ? 3 : material.Tier <= 4 ? 2 : 1;
+                        var max = material.Tier <= 2 ? 3 : material.Tier <= 4 ? 2 : 1;
 
-                    yield return (terrain, material.Key, weight, 1, max);
-                }
+                        yield return (terrain, material.Key, weight, 1, max);
+                    }
                 }
             }
         }

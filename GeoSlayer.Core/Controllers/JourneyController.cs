@@ -1,11 +1,11 @@
 using GeoSlayer.Domain.DTOs.Journey.Requests;
 using GeoSlayer.Domain.DTOs.Journey.Responses;
 using GeoSlayer.Domain.DTOs.Skills.Responses;
+using GeoSlayer.Domain.Interfaces.Api.Journey;
 using GeoSlayer.Domain.Services;
+using GeoSlayer.Domain.Services.Fog;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using GeoSlayer.Domain.Interfaces.Api.Journey;
-using GeoSlayer.Domain.Services.Fog;
 
 namespace GeoSlayer.Core.Controllers
 {

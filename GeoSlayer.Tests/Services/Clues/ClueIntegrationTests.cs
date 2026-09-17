@@ -1,8 +1,8 @@
 using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.Enums;
 using GeoSlayer.Domain.Exceptions;
-using GeoSlayer.Domain.Services.Clues;
 using GeoSlayer.Domain.Services;
+using GeoSlayer.Domain.Services.Clues;
 using GeoSlayer.Domain.Services.Fog;
 using GeoSlayer.Domain.Services.Progression;
 using GeoSlayer.Tests.Infrastructure;
@@ -62,7 +62,10 @@ namespace GeoSlayer.Tests.Services.Clues
             for (var i = 0; i < count; i++)
             {
                 var cell = (baseLat + i, baseLng);
-                if (!existing.Add(cell)) continue;
+                if (!existing.Add(cell))
+                {
+                    continue;
+                }
 
                 DbContext.RevealedCells.Add(new RevealedCell
                 {
@@ -452,7 +455,9 @@ namespace GeoSlayer.Tests.Services.Clues
                 .ToListAsync();
 
             foreach (var (_, key, _) in ClueService.AllRelics())
+            {
                 Assert.That(definitions, Contains.Item(key), $"{key} has no Museum plinth");
+            }
         }
 
         [Test]
