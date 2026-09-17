@@ -64,6 +64,22 @@ namespace GeoSlayer.Domain.Interfaces.Api.Admin
         /// <summary>Delete a recipe, and the inputs belonging to it.</summary>
         Task DeleteRecipe(string adminUserId, int recipeId, CancellationToken ct);
 
+        /// <summary>Every encounter definition, with any set-level warnings.</summary>
+        Task<List<AdminEncounterDto>> GetEncounters(CancellationToken ct);
+
+        /// <summary>
+        /// Create or update an encounter definition.
+        ///
+        /// <para>Refused when the <i>resulting set</i> would leave a Combat tier reachable
+        /// only on historic ground — §5C.2's rule that a castle is a boost, never the only
+        /// venue.</para>
+        /// </summary>
+        Task<AdminEncounterDto> SaveEncounter(
+            string adminUserId, SaveEncounterRequest request, CancellationToken ct);
+
+        /// <summary>Delete an encounter definition, if the set survives without it.</summary>
+        Task DeleteEncounter(string adminUserId, int encounterId, CancellationToken ct);
+
         /// <summary>The audit trail, newest first.</summary>
         Task<List<AdminAuditDto>> GetAuditTrail(int limit, CancellationToken ct);
     }
