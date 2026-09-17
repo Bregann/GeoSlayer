@@ -1,3 +1,6 @@
+using GeoSlayer.Domain.Interfaces.Api.Admin;
+using GeoSlayer.Domain.Services.Admin;
+
 namespace GeoSlayer.Domain.Services.Economy
 {
     /// <summary>
@@ -25,6 +28,16 @@ namespace GeoSlayer.Domain.Services.Economy
         /// deliberately, with the reasoning above in view.</para>
         /// </summary>
         public const double RatePerHour = 0.001;
+
+        /// <summary>
+        /// The live settings table, when one is wired up. See <c>CoinPricing.Settings</c>
+        /// for why this is a static hook rather than an injected dependency.
+        /// </summary>
+        public static IGameSettings? Settings { get; set; }
+
+        /// <summary>The live rate, from the settings table or <see cref="RatePerHour"/>.</summary>
+        private static double CurrentRate =>
+            Settings?.Get(GameSettingKeys.BankingInterestRate, RatePerHour) ?? RatePerHour;
 
         /// <summary>
         /// Hours of interest a single absence can earn, before upgrades.
@@ -61,7 +74,7 @@ namespace GeoSlayer.Domain.Services.Economy
 
             // Floor, so interest can never round a balance upward for free on a short sync.
             // A player syncing every ten seconds must not out-earn one syncing hourly.
-            return (long)Math.Floor(deposited * RatePerHour * hours);
+            return (long)Math.Floor(deposited * CurrentRate * hours);
         }
 
         /// <summary>

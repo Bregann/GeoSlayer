@@ -100,6 +100,10 @@ builder.Services.AddScoped<IEncounterService, EncounterService>();
 builder.Services.AddScoped<IEconomyService, EconomyService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 
+// Singleton: the tuning table is a few dozen rows read on hot paths, so it is loaded once
+// and held rather than queried per material per request.
+builder.Services.AddSingleton<IGameSettings, GameSettings>();
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -215,6 +219,15 @@ using (var scope = app.Services.CreateScope())
 
 var environmentalSettingHelper = app.Services.GetService<IEnvironmentalSettingHelper>()!;
 await environmentalSettingHelper.LoadEnvironmentalSettings();
+
+// Tunable numbers (Stage 18). The static hooks let pure pricing and XP functions read the
+// table without every caller taking a dependency — see CoinPricing.Settings for why.
+var gameSettings = app.Services.GetRequiredService<IGameSettings>();
+await gameSettings.Reload();
+
+CoinPricing.Settings = gameSettings;
+BankingInterest.Settings = gameSettings;
+SkillSeedData.Settings = gameSettings;
 
 // Configure the HTTP request pipeline.
 app.UseExceptionHandler();

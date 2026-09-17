@@ -40,6 +40,7 @@ namespace GeoSlayer.Domain.Helpers
             await SeedMuseumEntries(context);
             await SeedDistricts(context);
             await SeedEncounters(context);
+            await SeedGameSettings(context);
             await context.SaveChangesAsync();
         }
 
@@ -400,6 +401,37 @@ namespace GeoSlayer.Domain.Helpers
                     RequiredTerrains = district.RequiredTerrains,
                     MinimumClaims = district.MinimumClaims,
                     OutputBonus = district.OutputBonus,
+                });
+            }
+        }
+
+        /// <summary>
+        /// Tunable numbers (Stage 18).
+        ///
+        /// <para>Only ever <b>adds</b> missing keys. An existing row is left alone, because
+        /// its value may have been deliberately retuned by an admin — re-seeding on every
+        /// boot would silently revert their work, which is the opposite of the point.</para>
+        /// </summary>
+        private static async Task SeedGameSettings(AppDbContext context)
+        {
+            var have = (await context.GameSettings.Select(g => g.Key).ToListAsync()).ToHashSet();
+
+            foreach (var setting in Services.Admin.GameSettingKeys.All)
+            {
+                if (!have.Add(setting.Key))
+                {
+                    continue;
+                }
+
+                context.GameSettings.Add(new GameSetting
+                {
+                    Key = setting.Key,
+                    Value = setting.Value,
+                    Default = setting.Default,
+                    Category = setting.Category,
+                    Description = setting.Description,
+                    MinValue = setting.MinValue,
+                    MaxValue = setting.MaxValue,
                 });
             }
         }

@@ -100,7 +100,7 @@ namespace GeoSlayer.Domain.Services.Skills
             // here — see SkillSeedData.DistanceSynergySkills for why.
             if (walkedMetres > 0)
             {
-                var distanceXp = walkedMetres / 1000.0 * SkillSeedData.DistanceSynergyXpPerKilometre;
+                var distanceXp = walkedMetres / 1000.0 * SkillSeedData.CurrentDistanceSynergyXpPerKilometre;
 
                 foreach (var skill in SkillSeedData.DistanceSynergySkills)
                 {

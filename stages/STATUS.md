@@ -51,19 +51,26 @@ rather than decided by an agent. **None of these should be settled without you.*
   POI; training grounds are fixed to historic ground and permanent. Both pay identically at
   the same tier — the advantage of historic ground is availability alone, which is what
   keeps a castle a boost rather than a requirement.
-- **Multiplayer.** Nothing in the build assumes other players exist. §9 lists it as open;
-  the Museum's shareable profile (§5A.1) is the only hook that points that way.
-- **Monetisation.** Untouched, deliberately. It shapes the whole design and is not an
-  agent's call.
+- ~~**Multiplayer.**~~ **DECIDED: single player.** GeoSlayer is a single-player game. The
+  Museum's shareable profile (§5A.1) remains the only hook pointing the other way, and it
+  stays a hook rather than a plan.
+- ~~**Monetisation.**~~ **DECIDED: none, for now.** No monetisation of any kind. This also
+  unblocks the coin sink, which §9.4 warned was downstream of it — there is no longer a
+  risk of coin and real money buying the same thing.
 - ~~**Trading's coin economy.**~~ **DECIDED and BUILT** (Stage 17, `DESIGN.md` §5D).
   Coin is earned by selling materials while standing at a Trading POI; prices derive from
   tier and category; Banking gained deposits and a deliberately tiny interest rate.
 
   Stack caps were removed as part of it, reversing §7.4 — recorded there with the reasoning.
 
-  **Still open: what coin buys.** Upkeep is paid in food alone and nothing else has a coin
-  price. Coin currently stores value and makes a full satchel worth something, which is a
-  real job, but the sink should be designed rather than accreted.
+  **Still open: what coin buys**, and deliberately so — the user is thinking about it.
+  Upkeep is paid in food alone and nothing else has a coin price. Coin currently stores
+  value and makes a full satchel worth something, which is a real job, but the sink should
+  be designed rather than accreted.
+
+  Now unblocked by the monetisation decision: with no real-money purchases planned, a
+  convenience sink (instant craft completion, respec, extra queue slots) no longer risks
+  colliding with something money would later buy.
 
 - ~~**Rarity**~~ **DECIDED: not building it** (Stage 18 task 5). Drop frequency is already
   `DropTableEntry.Weight`; a cosmetic tier mapping adds no decision; and POI scarcity is

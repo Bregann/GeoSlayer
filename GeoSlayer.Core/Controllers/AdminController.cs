@@ -211,6 +211,22 @@ namespace GeoSlayer.Core.Controllers
             return Ok();
         }
 
+        /// <summary>Every tunable number, grouped by category.</summary>
+        [HttpGet]
+        public async Task<ActionResult<List<AdminGameSettingDto>>> GetGameSettings(CancellationToken ct) =>
+            Ok(await admin.GetGameSettings(ct));
+
+        /// <summary>
+        /// Change one tunable number.
+        ///
+        /// <para>Validated against the setting's own bounds, then applied immediately — a
+        /// change needing a restart would be no better than the constant it replaced.</para>
+        /// </summary>
+        [HttpPost]
+        public async Task<ActionResult<AdminGameSettingDto>> SaveGameSetting(
+            [FromBody] SaveGameSettingRequest request, CancellationToken ct) =>
+            Ok(await admin.SaveGameSetting(CurrentUserId(), request, ct));
+
         /// <summary>The audit trail, newest first.</summary>
         [HttpGet]
         public async Task<ActionResult<List<AdminAuditDto>>> GetAuditTrail(

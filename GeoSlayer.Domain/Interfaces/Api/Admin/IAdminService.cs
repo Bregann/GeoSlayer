@@ -103,6 +103,19 @@ namespace GeoSlayer.Domain.Interfaces.Api.Admin
         /// <summary>Delete an unlock rung.</summary>
         Task DeleteUnlock(string adminUserId, int unlockId, CancellationToken ct);
 
+        /// <summary>Every tunable number, grouped by category.</summary>
+        Task<List<AdminGameSettingDto>> GetGameSettings(CancellationToken ct);
+
+        /// <summary>
+        /// Change one tunable number.
+        ///
+        /// <para>Validated against the setting's own bounds, then the cache is reloaded so
+        /// the change takes effect without a restart — which is the entire point of the
+        /// table.</para>
+        /// </summary>
+        Task<AdminGameSettingDto> SaveGameSetting(
+            string adminUserId, SaveGameSettingRequest request, CancellationToken ct);
+
         /// <summary>The audit trail, newest first.</summary>
         Task<List<AdminAuditDto>> GetAuditTrail(int limit, CancellationToken ct);
     }

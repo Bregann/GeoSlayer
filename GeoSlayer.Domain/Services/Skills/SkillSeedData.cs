@@ -1,5 +1,7 @@
 using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.Enums;
+using GeoSlayer.Domain.Interfaces.Api.Admin;
+using GeoSlayer.Domain.Services.Admin;
 
 namespace GeoSlayer.Domain.Services.Skills
 {
@@ -61,6 +63,17 @@ namespace GeoSlayer.Domain.Services.Skills
         public const double DistanceSynergyXpPerKilometre = 12.0;
 
         /// <summary>
+        /// The live settings table, when one is wired up. See <c>CoinPricing.Settings</c>
+        /// for why this is a static hook rather than an injected dependency.
+        /// </summary>
+        public static IGameSettings? Settings { get; set; }
+
+        /// <summary>The live XP per kilometre, tunable without a deploy.</summary>
+        public static double CurrentDistanceSynergyXpPerKilometre =>
+            Settings?.Get(GameSettingKeys.DistanceSynergyXpPerKm, DistanceSynergyXpPerKilometre)
+            ?? DistanceSynergyXpPerKilometre;
+
+        /// <summary>
         /// Skills whose <b>level</b> raises what materials sell for (§5.4).
         ///
         /// <para>Originally stack caps; repointed when caps were removed. Banking is about
@@ -82,6 +95,11 @@ namespace GeoSlayer.Domain.Services.Skills
         /// that relationship still holds, since the Storehouse was repointed too.</para>
         /// </summary>
         public const double SellPricePerSkillLevel = 0.005;
+
+        /// <summary>The live sell-price bonus per level, tunable without a deploy.</summary>
+        public static double CurrentSellPricePerSkillLevel =>
+            Settings?.Get(GameSettingKeys.SellPricePerSkillLevel, SellPricePerSkillLevel)
+            ?? SellPricePerSkillLevel;
 
         /// <summary>Skill metadata for the skills screen.</summary>
         public static IReadOnlyList<SkillDefinition> Definitions { get; } = new List<SkillDefinition>

@@ -21,7 +21,7 @@ namespace GeoSlayer.Domain.Services.Admin
     /// <para><b>Every mutation writes an audit entry.</b> See <see cref="AdminAuditEntry"/>
     /// for why.</para>
     /// </summary>
-    public class AdminService(AppDbContext db) : IAdminService
+    public class AdminService(AppDbContext db, IGameSettings gameSettings) : IAdminService
     {
         // ── Items (task 4) ──────────────────────────────────────────────
 
@@ -876,6 +876,69 @@ namespace GeoSlayer.Domain.Services.Admin
             await Audit(adminUserId, "Unlock", unlockId.ToString(), "Deleted",
                 $"{unlock.Payload} at Adventurer {unlock.AdventurerLevel}; " +
                 $"{alreadyHave} player{(alreadyHave == 1 ? "" : "s")} already had it", ct);
+        }
+
+        // ── Tunable numbers (Stage 18) ──────────────────────────────────
+
+        public async Task<List<AdminGameSettingDto>> GetGameSettings(CancellationToken ct)
+        {
+            var settings = await db.GameSettings
+                .OrderBy(g => g.Category)
+                .ThenBy(g => g.Key)
+                .ToListAsync(ct);
+
+            return [.. settings.Select(ToDto)];
+        }
+
+        private static AdminGameSettingDto ToDto(GameSetting setting) => new()
+        {
+            Id = setting.Id,
+            Key = setting.Key,
+            Value = setting.Value,
+            Default = setting.Default,
+            Category = setting.Category,
+            Description = setting.Description,
+            MinValue = setting.MinValue,
+            MaxValue = setting.MaxValue,
+
+            // Compared as text rather than parsed: "0.001" and "0.0010" are the same number
+            // but a different edit, and an admin who typed one should see it as changed.
+            IsChanged = !string.Equals(setting.Value, setting.Default, StringComparison.Ordinal),
+        };
+
+        public async Task<AdminGameSettingDto> SaveGameSetting(
+            string adminUserId, SaveGameSettingRequest request, CancellationToken ct)
+        {
+            var setting = await db.GameSettings.FirstOrDefaultAsync(g => g.Id == request.Id, ct)
+                ?? throw new NotFoundException($"Setting {request.Id} not found.");
+
+            if (!double.TryParse(request.Value, out var parsed))
+            {
+                throw new BadRequestException($"'{request.Value}' is not a number.");
+            }
+
+            // Bounds are part of the setting's definition, not advice. A tuning value with no
+            // ceiling is a way to break the game from a text box — an interest rate of 10 per
+            // hour, or a coin multiplier of zero that makes every material worthless.
+            if (parsed < setting.MinValue || parsed > setting.MaxValue)
+            {
+                throw new BadRequestException(
+                    $"{setting.Key} must be between {setting.MinValue} and {setting.MaxValue}.");
+            }
+
+            var previous = setting.Value;
+            setting.Value = request.Value;
+
+            await db.SaveChangesAsync(ct);
+
+            // Reloaded immediately: a setting that needed a restart to take effect would be
+            // no better than the constant it replaced.
+            await gameSettings.Reload();
+
+            await Audit(adminUserId, "GameSetting", setting.Key, "Updated",
+                $"{previous} → {request.Value} (shipped default {setting.Default})", ct);
+
+            return ToDto(setting);
         }
 
         // ── Audit (task 9) ──────────────────────────────────────────────

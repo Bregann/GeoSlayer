@@ -49,6 +49,7 @@ namespace GeoSlayer.Domain.Database.Context
         // ── Admin (Stage 18) ──
         public DbSet<ItemImage> ItemImages { get; set; } = null!;
         public DbSet<AdminAuditEntry> AdminAuditEntries { get; set; } = null!;
+        public DbSet<GameSetting> GameSettings { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -179,6 +180,12 @@ namespace GeoSlayer.Domain.Database.Context
                       .WithMany()
                       .HasForeignKey(e => e.ItemId)
                       .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<GameSetting>(entity =>
+            {
+                // One row per key — a duplicate would make which value wins arbitrary.
+                entity.HasIndex(e => e.Key).IsUnique();
             });
 
             modelBuilder.Entity<AdminAuditEntry>(entity =>

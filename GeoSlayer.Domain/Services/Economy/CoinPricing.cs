@@ -1,4 +1,6 @@
 using GeoSlayer.Domain.Enums;
+using GeoSlayer.Domain.Interfaces.Api.Admin;
+using GeoSlayer.Domain.Services.Admin;
 
 namespace GeoSlayer.Domain.Services.Economy
 {
@@ -16,6 +18,23 @@ namespace GeoSlayer.Domain.Services.Economy
     public static class CoinPricing
     {
         /// <summary>
+        /// The live settings table, when one has been wired up.
+        ///
+        /// <para>A static hook rather than an injected dependency, because these are pure
+        /// functions called from nine places — threading an interface through all of them
+        /// would turn a formula into a service for no gain. The <b>rule</b> stays here and
+        /// stays testable without a database; only the <b>numbers</b> come from outside.</para>
+        ///
+        /// <para>Null in tests and before the API has booted, in which case every value falls
+        /// back to the shipped default below — so the formula behaves identically whether or
+        /// not the table exists.</para>
+        /// </summary>
+        public static IGameSettings? Settings { get; set; }
+
+        private static double Tuned(string key, double fallback) =>
+            Settings?.Get(key, fallback) ?? fallback;
+
+        /// <summary>
         /// Coin for a tier-1 material of an ordinary category.
         ///
         /// <para>Deliberately 1: Dust is tier 1 and its whole job is that a walk across
@@ -23,6 +42,10 @@ namespace GeoSlayer.Domain.Services.Economy
         /// thin-geography player's haul literally worthless, which §4.1a forbids.</para>
         /// </summary>
         public const long BaseValue = 1;
+
+        /// <summary>The live base value, from the settings table or the default above.</summary>
+        private static long CurrentBaseValue =>
+            (long)Math.Max(1, Tuned(GameSettingKeys.CoinBaseValue, BaseValue));
 
         /// <summary>
         /// How steeply value rises per tier.
@@ -106,9 +129,19 @@ namespace GeoSlayer.Domain.Services.Economy
         /// <summary>Whether a category was priced deliberately, rather than falling back.</summary>
         public static bool IsPriced(MaterialCategory category) => Multipliers.ContainsKey(category);
 
-        /// <summary>The multiplier for a category, in percent.</summary>
-        public static int MultiplierFor(MaterialCategory category) =>
-            Multipliers.GetValueOrDefault(category, DefaultMultiplier);
+        /// <summary>
+        /// The multiplier for a category, in percent.
+        ///
+        /// <para>Reads the settings table when one is wired up, falling back to the shipped
+        /// table below. <see cref="IsPriced"/> still reports whether a category was priced
+        /// <i>deliberately</i>, which is what the parity test checks.</para>
+        /// </summary>
+        public static int MultiplierFor(MaterialCategory category)
+        {
+            var shipped = Multipliers.GetValueOrDefault(category, DefaultMultiplier);
+
+            return (int)Math.Max(1, Tuned(GameSettingKeys.CoinCategoryMultiplier(category), shipped));
+        }
 
         /// <summary>
         /// What one unit sells for, before any player bonuses.
@@ -118,7 +151,7 @@ namespace GeoSlayer.Domain.Services.Economy
         /// </summary>
         public static long UnitPrice(int tier, MaterialCategory category)
         {
-            var raw = BaseValue * TierValue(tier) * MultiplierFor(category) / 100;
+            var raw = CurrentBaseValue * TierValue(tier) * MultiplierFor(category) / 100;
 
             return Math.Max(1, raw);
         }
@@ -161,6 +194,7 @@ namespace GeoSlayer.Domain.Services.Economy
         /// bulk-selling one by accident is exactly the annoyance this guard exists for.</para>
         /// </summary>
         public static bool IsJunk(int tier, MaterialCategory category) =>
-            category != MaterialCategory.Relic && tier <= JunkTierThreshold;
+            category != MaterialCategory.Relic
+            && tier <= (int)Tuned(GameSettingKeys.JunkTierThreshold, JunkTierThreshold);
     }
 }

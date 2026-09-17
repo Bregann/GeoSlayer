@@ -16,6 +16,7 @@ namespace GeoSlayer.Tests.Services.Admin
     public class AdminIntegrationTests : DatabaseIntegrationTestBase
     {
         private AdminService _sut = null!;
+        private StubGameSettings _settings = null!;
         private User _admin = null!;
 
         private static CancellationToken Ct => CancellationToken.None;
@@ -38,7 +39,8 @@ namespace GeoSlayer.Tests.Services.Admin
             await TestDatabaseSeedHelper.SeedEncounterDefinitions(DbContext);
             await TestDatabaseSeedHelper.SeedProgressionDefinitions(DbContext);
 
-            _sut = new AdminService(DbContext);
+            _settings = new StubGameSettings();
+            _sut = new AdminService(DbContext, _settings);
         }
 
         private static SaveItemRequest NewItem(string key = "test_charm") => new()
@@ -922,6 +924,126 @@ namespace GeoSlayer.Tests.Services.Admin
                 .ToList();
 
             Assert.That(actions, Does.Contain("Created").And.Contains("Deleted"));
+        }
+
+        // ── Tunable numbers (Stage 18) ──────────────────────────────────
+
+        private async Task SeedGameSettings()
+        {
+            foreach (var setting in GameSettingKeys.All)
+            {
+                DbContext.GameSettings.Add(new GameSetting
+                {
+                    Key = setting.Key,
+                    Value = setting.Value,
+                    Default = setting.Default,
+                    Category = setting.Category,
+                    Description = setting.Description,
+                    MinValue = setting.MinValue,
+                    MaxValue = setting.MaxValue,
+                });
+            }
+
+            await DbContext.SaveChangesAsync();
+        }
+
+        [Test]
+        public async Task SettingsLoad_AndStartUnchanged()
+        {
+            await SeedGameSettings();
+
+            var settings = await _sut.GetGameSettings(Ct);
+
+            Assert.That(settings, Is.Not.Empty);
+            Assert.That(settings.All(s => !s.IsChanged), Is.True,
+                "a freshly seeded table has not been tuned by anyone");
+        }
+
+        [Test]
+        public async Task ChangingASetting_MarksItAsChangedAndReloadsTheCache()
+        {
+            // The reload is the point: a setting that needed a restart to take effect would
+            // be no better than the constant it replaced.
+            await SeedGameSettings();
+
+            var target = (await _sut.GetGameSettings(Ct))
+                .First(s => s.Key == GameSettingKeys.DistanceSynergyXpPerKm);
+
+            var before = _settings.ReloadCount;
+
+            var saved = await _sut.SaveGameSetting(_admin.Id, new SaveGameSettingRequest
+            {
+                Id = target.Id,
+                Value = "20",
+            }, Ct);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(saved.Value, Is.EqualTo("20"));
+                Assert.That(saved.IsChanged, Is.True);
+                Assert.That(saved.Default, Is.EqualTo("12"), "the shipped value is still recorded");
+                Assert.That(_settings.ReloadCount, Is.EqualTo(before + 1));
+            });
+        }
+
+        [Test]
+        public async Task ASettingOutsideItsBounds_IsRejected()
+        {
+            // Bounds are part of the definition, not advice — an interest rate of 10 per
+            // hour is a way to break the game from a text box.
+            await SeedGameSettings();
+
+            var rate = (await _sut.GetGameSettings(Ct))
+                .First(s => s.Key == GameSettingKeys.BankingInterestRate);
+
+            Assert.That(
+                async () => await _sut.SaveGameSetting(_admin.Id, new SaveGameSettingRequest
+                {
+                    Id = rate.Id,
+                    Value = "10",
+                }, Ct),
+                Throws.TypeOf<BadRequestException>());
+        }
+
+        [Test]
+        public async Task ANonNumericSetting_IsRejected()
+        {
+            await SeedGameSettings();
+
+            var any = (await _sut.GetGameSettings(Ct)).First();
+
+            Assert.That(
+                async () => await _sut.SaveGameSetting(_admin.Id, new SaveGameSettingRequest
+                {
+                    Id = any.Id,
+                    Value = "lots",
+                }, Ct),
+                Throws.TypeOf<BadRequestException>());
+        }
+
+        [Test]
+        public async Task ASettingChange_RecordsBothValuesInTheAudit()
+        {
+            // "What was it before" is the question actually asked of an audit trail after a
+            // balance change goes wrong.
+            await SeedGameSettings();
+
+            var target = (await _sut.GetGameSettings(Ct))
+                .First(s => s.Key == GameSettingKeys.DistanceSynergyXpPerKm);
+
+            await _sut.SaveGameSetting(_admin.Id, new SaveGameSettingRequest
+            {
+                Id = target.Id,
+                Value = "30",
+            }, Ct);
+
+            var entry = (await _sut.GetAuditTrail(1, Ct)).Single();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(entry.EntityType, Is.EqualTo("GameSetting"));
+                Assert.That(entry.Detail, Does.Contain("12").And.Contains("30"));
+            });
         }
 
         // ── Audit trail (task 9) ────────────────────────────────────────

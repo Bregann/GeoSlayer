@@ -209,7 +209,7 @@ namespace GeoSlayer.Domain.Services.Materials
                 .Where(s => s.PlayerId == playerId && sellPriceSkills.Contains(s.SkillType))
                 .SumAsync(s => s.Level, ct);
 
-            var fromSkills = skillLevels * Services.Skills.SkillSeedData.SellPricePerSkillLevel;
+            var fromSkills = skillLevels * Services.Skills.SkillSeedData.CurrentSellPricePerSkillLevel;
 
             return fromItems
                  + fromSkills
