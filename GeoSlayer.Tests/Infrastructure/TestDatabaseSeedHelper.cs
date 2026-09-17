@@ -2,7 +2,6 @@ using GeoSlayer.Domain.Database.Context;
 using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.Enums;
 using GeoSlayer.Domain.Interfaces.Helpers;
-using GeoSlayer.Domain.Interfaces.Api;
 using GeoSlayer.Domain.Services.Crafting;
 using GeoSlayer.Domain.Services.Materials;
 using GeoSlayer.Domain.Services.Museum;
@@ -12,6 +11,8 @@ using GeoSlayer.Domain.Services.Skills;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Moq;
+using GeoSlayer.Domain.Interfaces.Api.Materials;
+using GeoSlayer.Domain.Interfaces.Api.Museum;
 
 namespace GeoSlayer.Tests.Infrastructure
 {

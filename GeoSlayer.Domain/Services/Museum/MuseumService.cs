@@ -3,8 +3,8 @@ using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.DTOs.Museum.Responses;
 using GeoSlayer.Domain.Enums;
 using GeoSlayer.Domain.Exceptions;
-using GeoSlayer.Domain.Interfaces.Api;
 using Microsoft.EntityFrameworkCore;
+using GeoSlayer.Domain.Interfaces.Api.Museum;
 
 namespace GeoSlayer.Domain.Services.Museum
 {

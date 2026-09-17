@@ -3,10 +3,12 @@ using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.DTOs.Retention.Responses;
 using GeoSlayer.Domain.Enums;
 using GeoSlayer.Domain.Exceptions;
-using GeoSlayer.Domain.Interfaces.Api;
 using GeoSlayer.Domain.Services.Fog;
 using GeoSlayer.Domain.Services.Idle;
 using Microsoft.EntityFrameworkCore;
+using GeoSlayer.Domain.Interfaces.Api.Materials;
+using GeoSlayer.Domain.Interfaces.Api.Progression;
+using GeoSlayer.Domain.Interfaces.Api.Retention;
 
 namespace GeoSlayer.Domain.Services.Retention
 {

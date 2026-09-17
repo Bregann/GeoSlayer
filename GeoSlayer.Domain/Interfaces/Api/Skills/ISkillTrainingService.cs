@@ -1,7 +1,7 @@
 using GeoSlayer.Domain.DTOs.Skills.Responses;
 using GeoSlayer.Domain.Services.Fog;
 
-namespace GeoSlayer.Domain.Interfaces.Api
+namespace GeoSlayer.Domain.Interfaces.Api.Skills
 {
     /// <summary>
     /// Generic skill training (Stage 04 task 1).

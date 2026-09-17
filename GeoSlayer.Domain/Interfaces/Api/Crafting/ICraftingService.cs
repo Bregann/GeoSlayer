@@ -1,7 +1,7 @@
 using GeoSlayer.Domain.DTOs.Crafting.Responses;
 using GeoSlayer.Domain.Enums;
 
-namespace GeoSlayer.Domain.Interfaces.Api
+namespace GeoSlayer.Domain.Interfaces.Api.Crafting
 {
     /// <summary>
     /// Crafting, gear and buildings (Stage 06, DESIGN.md §4.2–4.3).

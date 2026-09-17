@@ -2,7 +2,7 @@ using GeoSlayer.Domain.DTOs.Materials.Responses;
 using GeoSlayer.Domain.Enums;
 using GeoSlayer.Domain.Services.Fog;
 
-namespace GeoSlayer.Domain.Interfaces.Api
+namespace GeoSlayer.Domain.Interfaces.Api.Materials
 {
     /// <summary>
     /// Materials, stack caps and cell drops (Stage 03).

@@ -2,11 +2,11 @@ using GeoSlayer.Domain.Database.Context;
 using GeoSlayer.Domain.DTOs.Idle.Responses;
 using GeoSlayer.Domain.Enums;
 using GeoSlayer.Domain.Exceptions;
-using GeoSlayer.Domain.Interfaces.Api;
 using GeoSlayer.Domain.Interfaces.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using GeoSlayer.Domain.Interfaces.Api.Idle;
 
 namespace GeoSlayer.Core.Controllers
 {

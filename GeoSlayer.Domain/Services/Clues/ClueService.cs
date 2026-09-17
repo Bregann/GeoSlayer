@@ -3,10 +3,12 @@ using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.DTOs.Clues.Responses;
 using GeoSlayer.Domain.Enums;
 using GeoSlayer.Domain.Exceptions;
-using GeoSlayer.Domain.Interfaces.Api;
 using GeoSlayer.Domain.Services.Fog;
 using GeoSlayer.Domain.Services.Museum;
 using Microsoft.EntityFrameworkCore;
+using GeoSlayer.Domain.Interfaces.Api.Clues;
+using GeoSlayer.Domain.Interfaces.Api.Materials;
+using GeoSlayer.Domain.Interfaces.Api.Museum;
 
 namespace GeoSlayer.Domain.Services.Clues
 {

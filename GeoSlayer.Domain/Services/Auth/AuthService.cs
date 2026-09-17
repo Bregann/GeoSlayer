@@ -3,7 +3,6 @@ using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.DTOs.Auth.Requests;
 using GeoSlayer.Domain.DTOs.Auth.Responses;
 using GeoSlayer.Domain.Exceptions;
-using GeoSlayer.Domain.Interfaces.Api;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -13,8 +12,11 @@ using System.Security.Claims;
 using SecurityClaim = System.Security.Claims.Claim;
 using System.Security.Cryptography;
 using System.Text;
+using GeoSlayer.Domain.Interfaces.Api.Auth;
+using GeoSlayer.Domain.Interfaces.Api.Idle;
+using GeoSlayer.Domain.Interfaces.Api.Progression;
 
-namespace GeoSlayer.Domain.Services
+namespace GeoSlayer.Domain.Services.Auth
 {
     public class AuthService(
         AppDbContext dbContext,

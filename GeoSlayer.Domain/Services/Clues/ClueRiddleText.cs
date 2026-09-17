@@ -1,4 +1,5 @@
 using GeoSlayer.Domain.Enums;
+using GeoSlayer.Domain.Services.Journey;
 
 namespace GeoSlayer.Domain.Services.Clues
 {

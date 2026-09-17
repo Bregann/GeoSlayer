@@ -8,7 +8,6 @@ using System.Text;
 using GeoSlayer.Domain.Interfaces.Helpers;
 using GeoSlayer.Domain.Helpers;
 using GeoSlayer.Core;
-using GeoSlayer.Domain.Interfaces.Api;
 using GeoSlayer.Domain.Services;
 using GeoSlayer.Domain.Services.Materials;
 using GeoSlayer.Domain.Services.Progression;
@@ -20,6 +19,20 @@ using GeoSlayer.Domain.Services.Retention;
 using GeoSlayer.Domain.Services.Skills;
 using GeoSlayer.Domain.Database.Context;
 using GeoSlayer.Domain.Enums;
+using GeoSlayer.Domain.Interfaces.Api.Auth;
+using GeoSlayer.Domain.Interfaces.Api.Clues;
+using GeoSlayer.Domain.Interfaces.Api.Crafting;
+using GeoSlayer.Domain.Interfaces.Api.Fog;
+using GeoSlayer.Domain.Interfaces.Api.Idle;
+using GeoSlayer.Domain.Interfaces.Api.Journey;
+using GeoSlayer.Domain.Interfaces.Api.Materials;
+using GeoSlayer.Domain.Interfaces.Api.Museum;
+using GeoSlayer.Domain.Interfaces.Api.Progression;
+using GeoSlayer.Domain.Interfaces.Api.Retention;
+using GeoSlayer.Domain.Interfaces.Api.Skills;
+using GeoSlayer.Domain.Services.Auth;
+using GeoSlayer.Domain.Services.Fog;
+using GeoSlayer.Domain.Services.Journey;
 
 #if DEBUG
 using Hangfire.MemoryStorage;

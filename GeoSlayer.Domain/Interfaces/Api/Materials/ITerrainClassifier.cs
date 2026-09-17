@@ -1,6 +1,6 @@
 using GeoSlayer.Domain.Enums;
 
-namespace GeoSlayer.Domain.Interfaces.Api
+namespace GeoSlayer.Domain.Interfaces.Api.Materials
 {
     /// <summary>
     /// Decides what terrain a grid cell is (Stage 03 task 3).

@@ -3,9 +3,14 @@ using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.DTOs.Skills.Responses;
 using GeoSlayer.Domain.Enums;
 using GeoSlayer.Domain.Exceptions;
-using GeoSlayer.Domain.Interfaces.Api;
 using GeoSlayer.Domain.Services.Fog;
 using Microsoft.EntityFrameworkCore;
+using GeoSlayer.Domain.Interfaces.Api.Crafting;
+using GeoSlayer.Domain.Interfaces.Api.Materials;
+using GeoSlayer.Domain.Interfaces.Api.Museum;
+using GeoSlayer.Domain.Interfaces.Api.Progression;
+using GeoSlayer.Domain.Interfaces.Api.Skills;
+using GeoSlayer.Domain.Services.Journey;
 
 namespace GeoSlayer.Domain.Services.Skills
 {

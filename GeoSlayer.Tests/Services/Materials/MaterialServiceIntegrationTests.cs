@@ -1,12 +1,12 @@
 using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.Enums;
-using GeoSlayer.Domain.Interfaces.Api;
 using GeoSlayer.Domain.Services.Fog;
 using GeoSlayer.Domain.Services.Materials;
 using GeoSlayer.Domain.Services.Progression;
 using GeoSlayer.Tests.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Moq;
+using GeoSlayer.Domain.Interfaces.Api.Materials;
 
 namespace GeoSlayer.Tests.Services.Materials
 {

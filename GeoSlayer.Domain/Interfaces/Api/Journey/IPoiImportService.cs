@@ -1,4 +1,4 @@
-namespace GeoSlayer.Domain.Interfaces.Api
+namespace GeoSlayer.Domain.Interfaces.Api.Journey
 {
     public interface IPoiImportService
     {

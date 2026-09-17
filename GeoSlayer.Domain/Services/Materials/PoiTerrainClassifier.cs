@@ -1,8 +1,10 @@
 using GeoSlayer.Domain.Database.Context;
 using GeoSlayer.Domain.Enums;
-using GeoSlayer.Domain.Interfaces.Api;
 using GeoSlayer.Domain.Services;
 using Microsoft.EntityFrameworkCore;
+using GeoSlayer.Domain.Interfaces.Api.Materials;
+using GeoSlayer.Domain.Services.Fog;
+using GeoSlayer.Domain.Services.Journey;
 
 namespace GeoSlayer.Domain.Services.Materials
 {

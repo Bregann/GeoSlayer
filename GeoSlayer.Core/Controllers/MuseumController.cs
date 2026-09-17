@@ -1,11 +1,11 @@
 using GeoSlayer.Domain.Database.Context;
 using GeoSlayer.Domain.DTOs.Museum.Responses;
 using GeoSlayer.Domain.Exceptions;
-using GeoSlayer.Domain.Interfaces.Api;
 using GeoSlayer.Domain.Interfaces.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using GeoSlayer.Domain.Interfaces.Api.Museum;
 
 namespace GeoSlayer.Core.Controllers
 {

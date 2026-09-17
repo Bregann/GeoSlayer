@@ -1,7 +1,7 @@
 using GeoSlayer.Domain.DTOs.Clues.Responses;
 using GeoSlayer.Domain.Enums;
 
-namespace GeoSlayer.Domain.Interfaces.Api
+namespace GeoSlayer.Domain.Interfaces.Api.Clues
 {
     /// <summary>
     /// Clue scrolls (Stage 13, DESIGN.md §5B) — the directed-travel system.

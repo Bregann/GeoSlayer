@@ -5,13 +5,19 @@ using GeoSlayer.Domain.DTOs.Journey.Responses;
 using GeoSlayer.Domain.DTOs.Idle.Responses;
 using GeoSlayer.Domain.DTOs.Skills.Responses;
 using GeoSlayer.Domain.Exceptions;
-using GeoSlayer.Domain.Interfaces.Api;
 using GeoSlayer.Domain.Interfaces.Helpers;
 using GeoSlayer.Domain.Services;
 using Microsoft.EntityFrameworkCore;
 using NetTopologySuite.Geometries;
+using GeoSlayer.Domain.Interfaces.Api.Crafting;
+using GeoSlayer.Domain.Interfaces.Api.Fog;
+using GeoSlayer.Domain.Interfaces.Api.Idle;
+using GeoSlayer.Domain.Interfaces.Api.Journey;
+using GeoSlayer.Domain.Interfaces.Api.Retention;
+using GeoSlayer.Domain.Interfaces.Api.Skills;
+using GeoSlayer.Domain.Services.Fog;
 
-namespace GeoSlayer.Domain.Services
+namespace GeoSlayer.Domain.Services.Journey
 {
     public class JourneyService(
         AppDbContext db,

@@ -1,13 +1,13 @@
 using GeoSlayer.Domain.Database.Context;
 using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.Enums;
-using GeoSlayer.Domain.Interfaces.Api;
 using Microsoft.EntityFrameworkCore;
 using NetTopologySuite.Geometries;
 using Newtonsoft.Json.Linq;
 using Serilog;
+using GeoSlayer.Domain.Interfaces.Api.Journey;
 
-namespace GeoSlayer.Domain.Services
+namespace GeoSlayer.Domain.Services.Journey
 {
     /// <summary>
     /// Imports Points of Interest from OpenStreetMap via the Overpass API

@@ -1,7 +1,7 @@
 using GeoSlayer.Domain.DTOs.Idle.Responses;
 using GeoSlayer.Domain.Enums;
 
-namespace GeoSlayer.Domain.Interfaces.Api
+namespace GeoSlayer.Domain.Interfaces.Api.Idle
 {
     /// <summary>
     /// Claims, workers and offline accrual (Stage 05, DESIGN.md §5.1–5.3).

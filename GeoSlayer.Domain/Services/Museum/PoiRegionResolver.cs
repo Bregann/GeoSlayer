@@ -1,7 +1,7 @@
 using GeoSlayer.Domain.Database.Context;
-using GeoSlayer.Domain.Interfaces.Api;
 using GeoSlayer.Domain.Services;
 using Microsoft.EntityFrameworkCore;
+using GeoSlayer.Domain.Interfaces.Api.Museum;
 
 namespace GeoSlayer.Domain.Services.Museum
 {

@@ -1,7 +1,8 @@
 using GeoSlayer.Domain.DTOs.Journey.Requests;
 using GeoSlayer.Domain.Services;
+using GeoSlayer.Domain.Services.Fog;
 
-namespace GeoSlayer.Domain.Interfaces.Api
+namespace GeoSlayer.Domain.Interfaces.Api.Fog
 {
     public interface IFogService
     {

@@ -1,7 +1,7 @@
 using GeoSlayer.Domain.DTOs.Museum.Responses;
 using GeoSlayer.Domain.Enums;
 
-namespace GeoSlayer.Domain.Interfaces.Api
+namespace GeoSlayer.Domain.Interfaces.Api.Museum
 {
     /// <summary>
     /// The Museum (Stage 12, DESIGN.md §5A).

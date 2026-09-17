@@ -1,7 +1,7 @@
 using GeoSlayer.Domain.DTOs.Retention.Responses;
 using GeoSlayer.Domain.Services.Fog;
 
-namespace GeoSlayer.Domain.Interfaces.Api
+namespace GeoSlayer.Domain.Interfaces.Api.Retention
 {
     /// <summary>
     /// The retention systems (Stage 14, DESIGN.md §5.4–5.7, §7.1).

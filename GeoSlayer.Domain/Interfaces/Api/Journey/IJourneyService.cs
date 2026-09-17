@@ -2,8 +2,9 @@ using GeoSlayer.Domain.DTOs.Journey.Requests;
 using GeoSlayer.Domain.DTOs.Journey.Responses;
 using GeoSlayer.Domain.DTOs.Skills.Responses;
 using GeoSlayer.Domain.Services;
+using GeoSlayer.Domain.Services.Fog;
 
-namespace GeoSlayer.Domain.Interfaces.Api
+namespace GeoSlayer.Domain.Interfaces.Api.Journey
 {
     public interface IJourneyService
     {

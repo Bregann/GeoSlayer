@@ -5,12 +5,18 @@ using GeoSlayer.Domain.DTOs.Materials.Responses;
 using GeoSlayer.Domain.DTOs.Skills.Responses;
 using GeoSlayer.Domain.DTOs.Progression.Responses;
 using GeoSlayer.Domain.Enums;
-using GeoSlayer.Domain.Interfaces.Api;
 using GeoSlayer.Domain.Services.Fog;
 using GeoSlayer.Domain.Services.Progression;
 using Microsoft.EntityFrameworkCore;
+using GeoSlayer.Domain.Interfaces.Api.Crafting;
+using GeoSlayer.Domain.Interfaces.Api.Fog;
+using GeoSlayer.Domain.Interfaces.Api.Materials;
+using GeoSlayer.Domain.Interfaces.Api.Museum;
+using GeoSlayer.Domain.Interfaces.Api.Progression;
+using GeoSlayer.Domain.Interfaces.Api.Retention;
+using GeoSlayer.Domain.Interfaces.Api.Skills;
 
-namespace GeoSlayer.Domain.Services
+namespace GeoSlayer.Domain.Services.Fog
 {
     public class FogService(
         AppDbContext db,

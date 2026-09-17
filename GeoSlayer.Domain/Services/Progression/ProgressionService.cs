@@ -3,9 +3,10 @@ using GeoSlayer.Domain.Database.Models;
 using GeoSlayer.Domain.DTOs.Progression.Responses;
 using GeoSlayer.Domain.Enums;
 using GeoSlayer.Domain.Exceptions;
-using GeoSlayer.Domain.Interfaces.Api;
 using GeoSlayer.Domain.Interfaces.Helpers;
 using Microsoft.EntityFrameworkCore;
+using GeoSlayer.Domain.Interfaces.Api.Crafting;
+using GeoSlayer.Domain.Interfaces.Api.Progression;
 
 namespace GeoSlayer.Domain.Services.Progression
 {

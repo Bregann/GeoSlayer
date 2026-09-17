@@ -1,7 +1,7 @@
 ﻿using GeoSlayer.Domain.DTOs.Auth.Requests;
 using GeoSlayer.Domain.DTOs.Auth.Responses;
 
-namespace GeoSlayer.Domain.Interfaces.Api
+namespace GeoSlayer.Domain.Interfaces.Api.Auth
 {
     public interface IAuthService
     {

@@ -1,7 +1,7 @@
 using GeoSlayer.Domain.DTOs.Progression.Responses;
 using GeoSlayer.Domain.Enums;
 
-namespace GeoSlayer.Domain.Interfaces.Api
+namespace GeoSlayer.Domain.Interfaces.Api.Progression
 {
     /// <summary>
     /// The single path by which XP enters the game (DESIGN.md §3.0b, Stage 02 task 1).

@@ -10,6 +10,7 @@ using GeoSlayer.Domain.Services.Progression;
 using GeoSlayer.Domain.Services.Skills;
 using GeoSlayer.Tests.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using GeoSlayer.Domain.Services.Fog;
 
 namespace GeoSlayer.Tests.Services.Fog
 {

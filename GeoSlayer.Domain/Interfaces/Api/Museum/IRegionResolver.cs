@@ -1,4 +1,6 @@
-namespace GeoSlayer.Domain.Interfaces.Api
+using GeoSlayer.Domain.Interfaces.Api.Materials;
+
+namespace GeoSlayer.Domain.Interfaces.Api.Museum
 {
     /// <summary>
     /// Names the region containing a coordinate (Stage 12 Cartography).
