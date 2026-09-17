@@ -363,10 +363,36 @@ namespace GeoSlayer.Domain.Services.Crafting
                 .ThenBy(pi => pi.Item.Tier)
                 .ToListAsync(ct);
 
-            return items.Select(ToDto).ToList();
+            var withImages = await ItemsWithImages(items, ct);
+
+            return items.Select(item => ToDto(item, withImages)).ToList();
         }
 
-        private static PlayerItemDto ToDto(PlayerItem playerItem) => new()
+        /// <summary>
+        /// Which of these items have an image, as one query.
+        ///
+        /// <para>Ids only — the blobs live in their own table precisely so a list of items
+        /// never drags them along (Stage 18 task 3).</para>
+        /// </summary>
+        private async Task<HashSet<int>> ItemsWithImages(
+            List<PlayerItem> items, CancellationToken ct)
+        {
+            if (items.Count == 0)
+            {
+                return [];
+            }
+
+            var itemIds = items.Select(pi => pi.ItemId).Distinct().ToList();
+
+            var found = await db.ItemImages
+                .Where(i => itemIds.Contains(i.ItemId))
+                .Select(i => i.ItemId)
+                .ToListAsync(ct);
+
+            return [.. found];
+        }
+
+        private static PlayerItemDto ToDto(PlayerItem playerItem, HashSet<int> withImages) => new()
         {
             Id = playerItem.Id,
             ItemId = playerItem.ItemId,
@@ -385,6 +411,7 @@ namespace GeoSlayer.Domain.Services.Crafting
             IsEquipped = playerItem.IsEquipped,
             ClaimId = playerItem.ClaimId,
             ClaimName = playerItem.Claim?.Name,
+            HasImage = withImages.Contains(playerItem.ItemId),
         };
 
         /// <summary>

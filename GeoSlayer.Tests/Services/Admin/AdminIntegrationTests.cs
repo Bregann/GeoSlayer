@@ -258,6 +258,39 @@ namespace GeoSlayer.Tests.Services.Admin
             Assert.That(await DbContext.ItemImages.AnyAsync(i => i.ItemId == item.Id), Is.False);
         }
 
+        [Test]
+        public async Task ThePlayerApp_LearnsWhichItemsHaveArtwork()
+        {
+            // Closes the loop for task 3. Without HasImage on the player's own item list,
+            // the app's only way to find out is to request an image and handle the 404 —
+            // a failed request per imageless item, on every render.
+            var withArt = await _sut.SaveItem(_admin.Id, NewItem("with_art"), Ct);
+            var withoutArt = await _sut.SaveItem(_admin.Id, NewItem("without_art"), Ct);
+
+            await _sut.UploadItemImage(_admin.Id, withArt.Id, Png(), "image/png", "i.png", Ct);
+
+            var player = await DbContext.Players.FirstAsync();
+
+            DbContext.PlayerItems.AddRange(
+                new PlayerItem { PlayerId = player.Id, ItemId = withArt.Id, Quantity = 1 },
+                new PlayerItem { PlayerId = player.Id, ItemId = withoutArt.Id, Quantity = 1 });
+
+            await DbContext.SaveChangesAsync();
+
+            var crafting = TestDatabaseSeedHelper.CreateCraftingService(
+                DbContext,
+                TestDatabaseSeedHelper.CreateProgressionService(DbContext),
+                TestDatabaseSeedHelper.CreateMaterialService(DbContext, TerrainType.Urban));
+
+            var held = await crafting.GetItems(player.Id, Ct);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(held.First(i => i.Key == "with_art").HasImage, Is.True);
+                Assert.That(held.First(i => i.Key == "without_art").HasImage, Is.False);
+            });
+        }
+
         // ── Materials (task 6) ──────────────────────────────────────────
 
         /// <summary>

@@ -8,8 +8,9 @@
 ## Status
 
 - **State:** IN PROGRESS
-- **Completed:** tasks 1, 2, 3, 4 and 9 — the spine, plus the audit trail.
-- **Remaining:** tasks 5 (rarity), 6 (materials), 7 (recipes), 8 (encounters and the rest).
+- **Completed:** tasks 1, 2, 3, 4, 6 and the audit trail half of 9. Task 5 dropped.
+- **Remaining:** tasks 7 (recipes), 8 (encounters and the rest), 9 (player admin).
+  Task 5 (rarity) was **dropped deliberately** — see below.
 - **Blockers:** _(none)_
 
 ### What was built
@@ -221,8 +222,10 @@ This is new ground; nothing in the project stores a binary today.
 - [x] Serving endpoint with the stored content type and a day's caching.
 - [x] **Validated**: allow-list of types, size limit, and magic-byte checks so the declared
       type is never trusted. Filenames stripped of paths.
-- [ ] App: render the image when present, fall back to the existing emoji when not.
-      **Not done** — the admin side is complete, but `geoslayer.app` still renders emoji.
+- [x] App: renders the image when present, falls back to emoji when not. `PlayerItemDto`
+      carries `HasImage` so the app never has to probe for a 404, and `ItemIcon` degrades to
+      the emoji on a failed load — artwork is decoration, and nothing about an item is
+      unusable without it.
 
 ### 4. Item management
 
@@ -233,14 +236,28 @@ This is new ground; nothing in the project stores a binary today.
 - [x] **Show what reads each modifier** — `ModifierReaders`, surfaced as an inline
       explanation while choosing and a banner for any item that is inert.
 
-### 5. Rarity
+### 5. ~~Rarity~~ — DROPPED, deliberately
 
-- [ ] **Rarity does not exist yet.** `Material.IsUnique` is the closest thing, and tiers
-      carry most of what rarity would mean. Decide whether rarity is a new axis or a
-      presentation of tier before building it — a second axis that duplicates tier is the
-      same mistake §4.3 warns about for gear versus Bonus Points.
-- [ ] If it is new: a `Rarity` enum, seeded, with drop weights reading it.
-- [ ] Manage rarity per item and per material.
+**Decided: not building it.** The task was a design question wearing a task's clothes, and
+the answer turned out to be that rarity has no job here.
+
+Three shapes were considered:
+
+- **Drop frequency, decoupled from tier.** Ruled out on inspection —
+  `DropTableEntry.Weight` already *is* per-terrain drop frequency, read by
+  `DropRoller.PickWeighted`. A `Rarity` field controlling the same thing would be a second
+  knob on one dial.
+- **A presentation of tier** (Common → Legendary derived from 1–7). Safe and cheap, but it
+  adds no decision — a skin on something that already exists.
+- **POI scarcity**, formalising what `IsUnique` gestures at in §7.4. The most faithful
+  option, and still not one anything was asking for.
+
+`Material.IsUnique` and the tier ladder already cover the ground. Adding an axis without a
+clear job is the mistake §4.3 names for gear versus Bonus Points, and the same reasoning
+that kept the coin economy unbuilt until §9.5 was answered.
+
+Worth revisiting **only** if something concrete needs it — a Museum wing that sorts by
+rarity, or a drop rule tier cannot express.
 
 ### 6. Materials, ladders and drop tables
 

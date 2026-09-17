@@ -110,3 +110,18 @@ export function needsClaim(item: PlayerItem): boolean {
   const kind = typeof item.kind === 'number' ? item.kind : item.kind === 'Building' ? 2 : 0;
   return kind === 2 && item.claimId === null;
 }
+
+/**
+ * The emoji an item falls back to when it has no uploaded artwork.
+ *
+ * By kind rather than per item: there are only three kinds, and a per-item emoji table
+ * would be exactly the content debt that uploading real artwork exists to replace.
+ */
+export function itemFallbackIcon(item: { kind: string | number }): string {
+  const kind = typeof item.kind === 'number' ? item.kind : ['Gear', 'Tool', 'Building'].indexOf(item.kind);
+
+  if (kind === 1) return '🔧';
+  if (kind === 2) return '🏠';
+
+  return '🎽';
+}

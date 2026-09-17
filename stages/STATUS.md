@@ -65,10 +65,10 @@ rather than decided by an agent. **None of these should be settled without you.*
   price. Coin currently stores value and makes a full satchel worth something, which is a
   real job, but the sink should be designed rather than accreted.
 
-- **Rarity** (Stage 18 task 5). `Material.IsUnique` is the closest thing today and tiers
-  carry most of what rarity would mean. Whether it is a new axis or a presentation of tier
-  is a design question, not a build task — a second axis duplicating tier is the mistake
-  §4.3 warns about for gear versus Bonus Points.
+- ~~**Rarity**~~ **DECIDED: not building it** (Stage 18 task 5). Drop frequency is already
+  `DropTableEntry.Weight`; a cosmetic tier mapping adds no decision; and POI scarcity is
+  what `IsUnique` already means. An axis with no job is the §4.3 mistake — revisit only if
+  something concrete needs it.
 
 ## Running the tests
 
