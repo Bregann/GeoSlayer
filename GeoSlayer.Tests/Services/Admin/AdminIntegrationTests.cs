@@ -38,6 +38,7 @@ namespace GeoSlayer.Tests.Services.Admin
             await TestDatabaseSeedHelper.SeedSkillDefinitions(DbContext);
             await TestDatabaseSeedHelper.SeedEncounterDefinitions(DbContext);
             await TestDatabaseSeedHelper.SeedProgressionDefinitions(DbContext);
+            await TestDatabaseSeedHelper.SeedMuseumDefinitions(DbContext);
 
             _settings = new StubGameSettings();
             _sut = new AdminService(DbContext, _settings);
@@ -1263,6 +1264,19 @@ namespace GeoSlayer.Tests.Services.Admin
                 _admin.Id, SpriteOwner.Material, material.Id, Png(), "image/png", "ore.png", Ct);
 
             var listed = (await _sut.GetMaterials(Ct)).First(m => m.Id == material.Id);
+
+            Assert.That(listed.HasSprite, Is.True);
+        }
+
+        [Test]
+        public async Task MuseumEntriesReportWhetherTheyHaveArtwork()
+        {
+            var entry = await DbContext.MuseumEntryDefinitions.FirstAsync();
+
+            await _sut.UploadSprite(
+                _admin.Id, SpriteOwner.MuseumEntry, entry.Id, Png(), "image/png", "relic.png", Ct);
+
+            var listed = (await _sut.GetMuseumEntries(Ct)).First(e => e.Id == entry.Id);
 
             Assert.That(listed.HasSprite, Is.True);
         }

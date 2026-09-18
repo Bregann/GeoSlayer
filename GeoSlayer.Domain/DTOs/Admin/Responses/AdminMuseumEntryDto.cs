@@ -21,6 +21,9 @@ namespace GeoSlayer.Domain.DTOs.Admin.Responses
         /// <summary>How many players have found it, for judging whether it is too rare.</summary>
         public int FoundBy { get; set; }
 
+        /// <summary>True when artwork has been uploaded for this entry.</summary>
+        public bool HasSprite { get; set; }
+
         /// <summary>Warnings about the set as a whole, repeated on every row.</summary>
         public List<string> SetWarnings { get; set; } = [];
     }

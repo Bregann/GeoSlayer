@@ -1,8 +1,12 @@
 'use client'
 
 import {
+  ActionIcon,
   Alert,
   Badge,
+  Button,
+  Group,
+  Image,
   Loader,
   Stack,
   Table,
@@ -11,15 +15,27 @@ import {
   Title,
   Tooltip,
 } from '@mantine/core'
-import { IconAlertTriangle, IconSearch } from '@tabler/icons-react'
+import { useDisclosure } from '@mantine/hooks'
+import {
+  IconAlertTriangle,
+  IconPencil,
+  IconPhoto,
+  IconPlus,
+  IconSearch,
+  IconTrash,
+} from '@tabler/icons-react'
 import { useQuery } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 
+import { DeleteConfirmationModal } from '@/components/common/DeleteConfirmationModal'
+import { SpriteModal } from '@/components/common/SpriteModal'
+import { EditMuseumEntryModal } from '@/components/museum/EditMuseumEntryModal'
 import { doQueryGet } from '@/helpers/apiClient'
-import { messageFrom } from '@/helpers/notificationHelper'
+import { useMutationDelete } from '@/helpers/mutations/useMutationDelete'
+import { messageFrom, notifyError, notifySuccess } from '@/helpers/notificationHelper'
 import { QueryKeys } from '@/helpers/QueryKeys'
 import type { AdminMuseumEntry } from '@/interfaces/api/admin/AdminMuseumEntry'
-import { MuseumRarities, MuseumWings } from '@/interfaces/api/admin/ItemEnums'
+import { MuseumRarities, MuseumWings, spriteOwner } from '@/interfaces/api/admin/ItemEnums'
 
 const RARITY_COLOURS = ['gray', 'teal', 'blue', 'grape']
 
@@ -33,6 +49,25 @@ const RARITY_COLOURS = ['gray', 'teal', 'blue', 'grape']
  */
 export default function MuseumComponent() {
   const [search, setSearch] = useState('')
+  const [editing, setEditing] = useState<AdminMuseumEntry | null>(null)
+  const [deleting, setDeleting] = useState<AdminMuseumEntry | null>(null)
+  const [spriting, setSpriting] = useState<AdminMuseumEntry | null>(null)
+
+  const [editOpen, { open: openEdit, close: closeEdit }] = useDisclosure(false)
+  const [deleteOpen, { open: openDelete, close: closeDelete }] = useDisclosure(false)
+  const [spriteOpen, { open: openSprite, close: closeSprite }] = useDisclosure(false)
+
+  const remove = useMutationDelete<number>({
+    url: (id) => `/api/Admin/DeleteMuseumEntry?entryId=${id}`,
+    queryKey: [QueryKeys.MuseumEntries],
+    alsoInvalidate: [[QueryKeys.AuditTrail]],
+    onSuccess: () => {
+      notifySuccess('Entry deleted.')
+      closeDelete()
+    },
+    // The API refuses when players have found it, and says how many.
+    onError: (error) => notifyError(messageFrom(error)),
+  })
 
   const entries = useQuery<AdminMuseumEntry[]>({
     queryKey: [QueryKeys.MuseumEntries],
@@ -58,7 +93,19 @@ export default function MuseumComponent() {
 
   return (
     <Stack>
-      <Title order={2}>Museum</Title>
+      <Group justify="space-between">
+        <Title order={2}>Museum</Title>
+
+        <Button
+          leftSection={<IconPlus size={16} />}
+          onClick={() => {
+            setEditing(null)
+            openEdit()
+          }}
+        >
+          New entry
+        </Button>
+      </Group>
 
       <Text c="dimmed" size="sm">
         Entries, wings and what players have actually found. An entry nobody has ever found
@@ -103,18 +150,36 @@ export default function MuseumComponent() {
         <Table striped highlightOnHover withTableBorder>
           <Table.Thead>
             <Table.Tr>
+              <Table.Th w={60}>Art</Table.Th>
               <Table.Th>Name</Table.Th>
               <Table.Th>Key</Table.Th>
               <Table.Th w={130}>Wing</Table.Th>
               <Table.Th w={120}>Rarity</Table.Th>
               <Table.Th>How it is found</Table.Th>
               <Table.Th w={100}>Found by</Table.Th>
+              <Table.Th w={130}></Table.Th>
             </Table.Tr>
           </Table.Thead>
 
           <Table.Tbody>
             {filtered.map((entry) => (
               <Table.Tr key={entry.id}>
+                <Table.Td>
+                  {entry.hasSprite ? (
+                    <Image
+                      src={`/api/Admin/GetSprite?ownerType=${spriteOwner('MuseumEntry')}&ownerId=${entry.id}`}
+                      alt={entry.name}
+                      w={28}
+                      h={28}
+                      fit="contain"
+                    />
+                  ) : (
+                    <Text c="dimmed" size="xs">
+                      —
+                    </Text>
+                  )}
+                </Table.Td>
+
                 <Table.Td>{entry.name}</Table.Td>
 
                 <Table.Td>
@@ -146,6 +211,47 @@ export default function MuseumComponent() {
                     <Text size="sm">{entry.foundBy}</Text>
                   )}
                 </Table.Td>
+
+                <Table.Td>
+                  <Group gap={4} justify="flex-end" wrap="nowrap">
+                    <Tooltip label="Sprite">
+                      <ActionIcon
+                        variant="subtle"
+                        onClick={() => {
+                          setSpriting(entry)
+                          openSprite()
+                        }}
+                      >
+                        <IconPhoto size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+
+                    <Tooltip label="Edit">
+                      <ActionIcon
+                        variant="subtle"
+                        onClick={() => {
+                          setEditing(entry)
+                          openEdit()
+                        }}
+                      >
+                        <IconPencil size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+
+                    <Tooltip label="Delete">
+                      <ActionIcon
+                        variant="subtle"
+                        color="red"
+                        onClick={() => {
+                          setDeleting(entry)
+                          openDelete()
+                        }}
+                      >
+                        <IconTrash size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+                  </Group>
+                </Table.Td>
               </Table.Tr>
             ))}
           </Table.Tbody>
@@ -155,6 +261,33 @@ export default function MuseumComponent() {
       {filtered.length === 0 && entries.data && (
         <Text c="dimmed">No entries match that filter.</Text>
       )}
+
+      <EditMuseumEntryModal opened={editOpen} onClose={closeEdit} entry={editing} />
+
+      {spriting && (
+        <SpriteModal
+          opened={spriteOpen}
+          onClose={closeSprite}
+          ownerType={spriteOwner('MuseumEntry')}
+          ownerId={spriting.id}
+          ownerName={spriting.name}
+          hasSprite={spriting.hasSprite}
+          invalidate={[[QueryKeys.MuseumEntries], [QueryKeys.AuditTrail]]}
+        />
+      )}
+
+      <DeleteConfirmationModal
+        opened={deleteOpen}
+        onClose={closeDelete}
+        title="Delete Museum entry"
+        body={
+          deleting
+            ? `Delete "${deleting.name}"? This is refused if any player has already found it — it would take it off their shelf.`
+            : ''
+        }
+        loading={remove.isPending}
+        onConfirm={() => deleting && remove.mutate(deleting.id)}
+      />
     </Stack>
   )
 }

@@ -7,11 +7,10 @@
 
 ## Status
 
-- **State:** DONE, bar two edit UIs
+- **State:** DONE
 - **Completed:** tasks 1, 2, 3, 4, 6, 7, 8, 9 and the `GameSetting` table. Task 5 dropped.
-- **Remaining:** edit UIs for progression and Museum. Both have full endpoints and
-  validation; only the screens are read-only, which is a presentation gap rather than a
-  missing capability.
+- **Remaining:** nothing. Every entity the game reads from the database is manageable
+  through the interface, with sprites, validation and an audit trail.
 - **Blockers:** _(none)_
 
 ### What was built

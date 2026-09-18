@@ -1,30 +1,86 @@
 'use client'
 
-import { Alert, Badge, Loader, Stack, Table, Text, Title, Tooltip } from '@mantine/core'
-import { IconAlertTriangle } from '@tabler/icons-react'
+import {
+  ActionIcon,
+  Alert,
+  Badge,
+  Button,
+  Group,
+  Loader,
+  Stack,
+  Table,
+  Text,
+  Title,
+  Tooltip,
+} from '@mantine/core'
+import { useDisclosure } from '@mantine/hooks'
+import { IconAlertTriangle, IconPencil, IconPlus, IconTrash } from '@tabler/icons-react'
 import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 
+import { DeleteConfirmationModal } from '@/components/common/DeleteConfirmationModal'
+import { EditUnlockModal } from '@/components/progression/EditUnlockModal'
+import { EditUpgradeModal } from '@/components/progression/EditUpgradeModal'
 import { doQueryGet } from '@/helpers/apiClient'
-import { messageFrom } from '@/helpers/notificationHelper'
+import { useMutationDelete } from '@/helpers/mutations/useMutationDelete'
+import { messageFrom, notifyError, notifySuccess } from '@/helpers/notificationHelper'
 import { QueryKeys } from '@/helpers/QueryKeys'
-import type { AdminProgression } from '@/interfaces/api/admin/AdminProgression'
+import type {
+  AdminProgression,
+  AdminUnlock,
+  AdminUpgrade,
+} from '@/interfaces/api/admin/AdminProgression'
 import { UnlockTypes } from '@/interfaces/api/admin/ItemEnums'
 
 /**
  * The unlock ladder and upgrade tree (Stage 18 task 8).
  *
- * Read-only for now. Both halves have save endpoints, but the editing UI is worth less than
- * the visibility: the ladder's failure modes are things you spot by *looking* at it — a
- * payload unlocking twice, a rung at the wrong level, a curve whose total nobody had added
- * up.
+ * Visibility first, editing second — the ladder's failure modes are things you spot by
+ * *looking* at it: a payload unlocking twice, a rung at the wrong level, a curve whose
+ * total nobody had added up.
  *
  * Total cost is computed server-side and shown because it is the number a comma-separated
  * curve makes hard to eyeball, and the one that decides whether an upgrade is worth buying.
  */
 export default function ProgressionComponent() {
+  const [editingUpgrade, setEditingUpgrade] = useState<AdminUpgrade | null>(null)
+  const [editingUnlock, setEditingUnlock] = useState<AdminUnlock | null>(null)
+  const [deletingUpgrade, setDeletingUpgrade] = useState<AdminUpgrade | null>(null)
+  const [deletingUnlock, setDeletingUnlock] = useState<AdminUnlock | null>(null)
+
+  const [upgradeOpen, { open: openUpgrade, close: closeUpgrade }] = useDisclosure(false)
+  const [unlockOpen, { open: openUnlock, close: closeUnlock }] = useDisclosure(false)
+  const [deleteUpgradeOpen, { open: openDeleteUpgrade, close: closeDeleteUpgrade }] =
+    useDisclosure(false)
+  const [deleteUnlockOpen, { open: openDeleteUnlock, close: closeDeleteUnlock }] =
+    useDisclosure(false)
+
   const progression = useQuery<AdminProgression>({
     queryKey: [QueryKeys.Progression],
     queryFn: async () => await doQueryGet<AdminProgression>('/api/Admin/GetProgression'),
+  })
+
+  const removeUpgrade = useMutationDelete<number>({
+    url: (id) => `/api/Admin/DeleteUpgrade?upgradeId=${id}`,
+    queryKey: [QueryKeys.Progression],
+    alsoInvalidate: [[QueryKeys.AuditTrail]],
+    onSuccess: () => {
+      notifySuccess('Upgrade deleted.')
+      closeDeleteUpgrade()
+    },
+    // The API refuses when players have bought ranks, and says how many.
+    onError: (error) => notifyError(messageFrom(error)),
+  })
+
+  const removeUnlock = useMutationDelete<number>({
+    url: (id) => `/api/Admin/DeleteUnlock?unlockId=${id}`,
+    queryKey: [QueryKeys.Progression],
+    alsoInvalidate: [[QueryKeys.AuditTrail]],
+    onSuccess: () => {
+      notifySuccess('Rung deleted.')
+      closeDeleteUnlock()
+    },
+    onError: (error) => notifyError(messageFrom(error)),
   })
 
   const data = progression.data
@@ -59,7 +115,21 @@ export default function ProgressionComponent() {
 
       {data && (
         <>
-          <Title order={4}>Unlock ladder</Title>
+          <Group justify="space-between">
+            <Title order={4}>Unlock ladder</Title>
+
+            <Button
+              size="compact-sm"
+              variant="light"
+              leftSection={<IconPlus size={14} />}
+              onClick={() => {
+                setEditingUnlock(null)
+                openUnlock()
+              }}
+            >
+              New rung
+            </Button>
+          </Group>
 
           <Table striped withTableBorder>
             <Table.Thead>
@@ -68,6 +138,7 @@ export default function ProgressionComponent() {
                 <Table.Th w={110}>Type</Table.Th>
                 <Table.Th>Payload</Table.Th>
                 <Table.Th>Shown as</Table.Th>
+                <Table.Th w={90}></Table.Th>
               </Table.Tr>
             </Table.Thead>
 
@@ -86,12 +157,54 @@ export default function ProgressionComponent() {
                     </Text>
                   </Table.Td>
                   <Table.Td>{unlock.displayName}</Table.Td>
+                  <Table.Td>
+                    <Group gap={4} justify="flex-end" wrap="nowrap">
+                      <Tooltip label="Edit">
+                        <ActionIcon
+                          variant="subtle"
+                          onClick={() => {
+                            setEditingUnlock(unlock)
+                            openUnlock()
+                          }}
+                        >
+                          <IconPencil size={16} />
+                        </ActionIcon>
+                      </Tooltip>
+
+                      <Tooltip label="Delete">
+                        <ActionIcon
+                          variant="subtle"
+                          color="red"
+                          onClick={() => {
+                            setDeletingUnlock(unlock)
+                            openDeleteUnlock()
+                          }}
+                        >
+                          <IconTrash size={16} />
+                        </ActionIcon>
+                      </Tooltip>
+                    </Group>
+                  </Table.Td>
                 </Table.Tr>
               ))}
             </Table.Tbody>
           </Table>
 
-          <Title order={4}>Bonus Point upgrades</Title>
+          <Group justify="space-between">
+            <Title order={4}>Bonus Point upgrades</Title>
+
+            <Button
+              size="compact-sm"
+              variant="light"
+              leftSection={<IconPlus size={14} />}
+              onClick={() => {
+                setEditingUpgrade(null)
+                openUpgrade()
+              }}
+            >
+              New upgrade
+            </Button>
+          </Group>
 
           <Table striped withTableBorder>
             <Table.Thead>
@@ -103,6 +216,7 @@ export default function ProgressionComponent() {
                 <Table.Th w={90}>Total</Table.Th>
                 <Table.Th w={110}>Per rank</Table.Th>
                 <Table.Th w={110}>From level</Table.Th>
+                <Table.Th w={90}></Table.Th>
               </Table.Tr>
             </Table.Thead>
 
@@ -130,12 +244,75 @@ export default function ProgressionComponent() {
                   </Table.Td>
                   <Table.Td>{upgrade.effectPerRank}</Table.Td>
                   <Table.Td>{upgrade.minAdventurerLevel}</Table.Td>
+                  <Table.Td>
+                    <Group gap={4} justify="flex-end" wrap="nowrap">
+                      <Tooltip label="Edit">
+                        <ActionIcon
+                          variant="subtle"
+                          onClick={() => {
+                            setEditingUpgrade(upgrade)
+                            openUpgrade()
+                          }}
+                        >
+                          <IconPencil size={16} />
+                        </ActionIcon>
+                      </Tooltip>
+
+                      <Tooltip label="Delete">
+                        <ActionIcon
+                          variant="subtle"
+                          color="red"
+                          onClick={() => {
+                            setDeletingUpgrade(upgrade)
+                            openDeleteUpgrade()
+                          }}
+                        >
+                          <IconTrash size={16} />
+                        </ActionIcon>
+                      </Tooltip>
+                    </Group>
+                  </Table.Td>
                 </Table.Tr>
               ))}
             </Table.Tbody>
           </Table>
         </>
       )}
+
+      <EditUpgradeModal opened={upgradeOpen} onClose={closeUpgrade} upgrade={editingUpgrade} />
+
+      <EditUnlockModal
+        opened={unlockOpen}
+        onClose={closeUnlock}
+        unlock={editingUnlock}
+        existing={data?.unlocks ?? []}
+      />
+
+      <DeleteConfirmationModal
+        opened={deleteUpgradeOpen}
+        onClose={closeDeleteUpgrade}
+        title="Delete upgrade"
+        body={
+          deletingUpgrade
+            ? `Delete "${deletingUpgrade.name}"? This is refused if any player has bought ranks in it.`
+            : ''
+        }
+        loading={removeUpgrade.isPending}
+        onConfirm={() => deletingUpgrade && removeUpgrade.mutate(deletingUpgrade.id)}
+      />
+
+      <DeleteConfirmationModal
+        opened={deleteUnlockOpen}
+        onClose={closeDeleteUnlock}
+        title="Delete rung"
+        body={
+          deletingUnlock
+            ? `Delete the level ${deletingUnlock.adventurerLevel} unlock for "${deletingUnlock.payload}"? Players who already have it keep it; only future players are affected.`
+            : ''
+        }
+        loading={removeUnlock.isPending}
+        onConfirm={() => deletingUnlock && removeUnlock.mutate(deletingUnlock.id)}
+      />
     </Stack>
   )
 }

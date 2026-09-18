@@ -16,5 +16,8 @@ export interface AdminMuseumEntry {
   /** How many players have found it, for judging whether it is too rare. */
   foundBy: number
 
+  /** True when artwork has been uploaded for this entry. */
+  hasSprite: boolean
+
   setWarnings: string[]
 }

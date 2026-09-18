@@ -8,10 +8,10 @@ Museum, progression, sprites, a read-only player view, the audit trail, and a `G
 table that makes the last hard-coded balance constants editable without a deploy. The
 client is `geoslayer.web`, Next.js/Mantine, mirroring `orbit.web`.
 
-**\*** All nine tasks are built (task 5, rarity, was dropped deliberately). What remains
-is edit UIs for progression and Museum — both have full endpoints and validation, only the
-screens are read-only. A presentation gap, not a missing capability. See
-`stages/STAGE-18-admin-web.md`.
+All nine tasks are built (task 5, rarity, was dropped deliberately). Items, materials,
+recipes, encounters, Museum entries, the progression ladder and the tuning table are all
+editable, with sprite upload, server-side validation of every game invariant, and an audit
+trail. See `stages/STAGE-18-admin-web.md`.
 
 Stage 16 (Combat encounters) was added after the scope question was decided — see
 `DESIGN.md` §5C. A follow-up pass closed the last three unmet criteria (Cryptic clues,
@@ -44,7 +44,7 @@ Single source of truth for where the build is. Update this when a stage complete
 | 15 | Remaining skills | DONE |
 | 16 | Combat encounters | DONE |
 | 17 | Coin economy | DONE |
-| 18 | Admin web interface | DONE* |
+| 18 | Admin web interface | DONE |
 
 States: `NOT STARTED` → `IN PROGRESS` → `DONE` (or `BLOCKED`, with a reason).
 

@@ -963,12 +963,18 @@ namespace GeoSlayer.Domain.Services.Admin
                 .ToDictionaryAsync(x => x.Key, x => x.Count, ct);
 
             var warnings = MuseumValidation.Warn(entries).ToList();
+            var withSprites = await GetSpriteOwners(SpriteOwner.MuseumEntry, ct);
 
-            return [.. entries.Select(e => ToDto(e, foundCounts.GetValueOrDefault(e.Key), warnings))];
+            return
+            [
+                .. entries.Select(e => ToDto(
+                    e, foundCounts.GetValueOrDefault(e.Key), warnings, withSprites.Contains(e.Id)))
+            ];
         }
 
         private static AdminMuseumEntryDto ToDto(
-            MuseumEntryDefinition entry, int foundBy, List<string> setWarnings) => new()
+            MuseumEntryDefinition entry, int foundBy, List<string> setWarnings,
+            bool hasSprite = false) => new()
             {
                 Id = entry.Id,
                 Key = entry.Key,
@@ -979,6 +985,7 @@ namespace GeoSlayer.Domain.Services.Admin
                 UnlockCondition = entry.UnlockCondition,
                 SortOrder = entry.SortOrder,
                 FoundBy = foundBy,
+                HasSprite = hasSprite,
                 SetWarnings = setWarnings,
             };
 
@@ -1033,8 +1040,10 @@ namespace GeoSlayer.Domain.Services.Admin
 
             var resulting = await db.MuseumEntryDefinitions.AsNoTracking().ToListAsync(ct);
             var foundBy = await db.PlayerMuseumEntries.CountAsync(e => e.EntryKey == entry.Key, ct);
+            var hasSprite = await db.Sprites
+                .AnyAsync(s => s.OwnerType == SpriteOwner.MuseumEntry && s.OwnerId == entry.Id, ct);
 
-            return ToDto(entry, foundBy, [.. MuseumValidation.Warn(resulting)]);
+            return ToDto(entry, foundBy, [.. MuseumValidation.Warn(resulting)], hasSprite);
         }
 
         public async Task DeleteMuseumEntry(string adminUserId, int entryId, CancellationToken ct)
