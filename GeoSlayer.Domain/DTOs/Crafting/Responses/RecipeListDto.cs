@@ -10,6 +10,12 @@ namespace GeoSlayer.Domain.DTOs.Crafting.Responses
         /// <summary>Crafts running now, against the queue limit.</summary>
         public int QueuedCount { get; set; }
         public int QueueLimit { get; set; }
+
+        /// <summary>Rented slots in hand, each good for one craft beyond the limit (§5D.4).</summary>
+        public int RentedCraftSlots { get; set; }
+
+        /// <summary>Coin to rent another.</summary>
+        public long SlotRentalCost { get; set; }
     }
 
     /// <summary>

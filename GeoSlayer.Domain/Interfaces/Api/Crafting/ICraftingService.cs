@@ -46,5 +46,14 @@ namespace GeoSlayer.Domain.Interfaces.Api.Crafting
         /// equipped item changing no behaviour is a bug.
         /// </summary>
         Task<double> GetModifierTotal(int playerId, ItemModifier modifier, CancellationToken ct);
+
+        /// <summary>
+        /// Rent one craft slot for coin (§5D.4).
+        ///
+        /// <para>Consumed by the next craft queued beyond the permanent limit, rather than
+        /// expiring on a timer — a rental ticking away while a player slept would punish the
+        /// offline half of the game (§7.4).</para>
+        /// </summary>
+        Task<RecipeListDto> RentCraftSlot(int playerId, CancellationToken ct);
     }
 }

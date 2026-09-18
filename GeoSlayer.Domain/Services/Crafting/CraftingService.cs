@@ -47,10 +47,17 @@ namespace GeoSlayer.Domain.Services.Crafting
             var queued = await db.PlayerCrafts
                 .CountAsync(c => c.PlayerId == playerId && !c.Collected, ct);
 
+            var rented = await db.Players
+                .Where(p => p.Id == playerId)
+                .Select(p => p.RentedCraftSlots)
+                .FirstOrDefaultAsync(ct);
+
             return new RecipeListDto
             {
                 QueuedCount = queued,
                 QueueLimit = await QueueLimit(playerId, ct),
+                RentedCraftSlots = rented,
+                SlotRentalCost = SlotRentalCost,
                 Recipes = recipes.Select(r => ToDto(r, skills, held)).ToList(),
             };
         }
@@ -128,12 +135,61 @@ namespace GeoSlayer.Domain.Services.Crafting
             return dto;
         }
 
+        /// <summary>
+        /// Permanent craft slots: the base one plus any bought with Bonus Points.
+        ///
+        /// <para>Rented slots are deliberately <b>not</b> counted here. They are consumed by
+        /// the craft they allow, so folding them into the limit would let one rental permit
+        /// every subsequent craft until something finished.</para>
+        /// </summary>
         private async Task<int> QueueLimit(int playerId, CancellationToken ct)
         {
             var bonus = await progression.GetUpgradeEffect(
                 playerId, ProgressionDefaults.UpgradeKeys.CraftSlot, ct);
 
             return BaseQueueLimit + (int)bonus;
+        }
+
+        /// <summary>
+        /// The live settings table, when one is wired up.
+        ///
+        /// <para>Same static hook as <c>CoinPricing.Settings</c>, and for the same reason —
+        /// null in tests and before boot, in which case the shipped default applies.</para>
+        /// </summary>
+        public static Interfaces.Api.Admin.IGameSettings? Settings { get; set; }
+
+        /// <summary>Shipped rental price, used when no settings table is wired up.</summary>
+        public const long DefaultSlotRentalCost = 750;
+
+        /// <summary>
+        /// Coin to rent one craft slot (§5D.4).
+        ///
+        /// <para>Read from the tuning table so it can be retuned without a deploy.</para>
+        /// </summary>
+        public static long SlotRentalCost =>
+            (long)(Settings?.Get(Admin.GameSettingKeys.CraftSlotRentalCost, DefaultSlotRentalCost)
+                   ?? DefaultSlotRentalCost);
+
+        public async Task<RecipeListDto> RentCraftSlot(int playerId, CancellationToken ct)
+        {
+            var player = await db.Players.FirstOrDefaultAsync(p => p.Id == playerId, ct)
+                ?? throw new NotFoundException($"Player {playerId} not found.");
+
+            var cost = SlotRentalCost;
+
+            if (player.Coin < cost)
+            {
+                throw new BadRequestException(
+                    $"Renting a craft slot costs {cost}c and you have {player.Coin}c. "
+                    + "Sell a haul at a shop.");
+            }
+
+            player.Coin -= cost;
+            player.RentedCraftSlots += 1;
+
+            await db.SaveChangesAsync(ct);
+
+            return await GetRecipes(playerId, ct);
         }
 
         // ── The queue (task 2) ──────────────────────────────────────────
@@ -164,10 +220,24 @@ namespace GeoSlayer.Domain.Services.Crafting
 
             var limit = await QueueLimit(playerId, ct);
 
+            // A rented slot is spent here rather than counted in the limit, so it buys
+            // exactly one craft and cannot be stockpiled into a permanent upgrade (§5D.4).
+            var player = await db.Players.FirstOrDefaultAsync(p => p.Id == playerId, ct)
+                ?? throw new NotFoundException($"Player {playerId} not found.");
+
+            var usingRental = false;
+
             if (running >= limit)
             {
-                throw new BadRequestException(
-                    $"All {limit} craft slot{(limit == 1 ? "" : "s")} are busy — buy another with Bonus Points.");
+                if (player.RentedCraftSlots <= 0)
+                {
+                    throw new BadRequestException(
+                        $"All {limit} craft slot{(limit == 1 ? "" : "s")} are busy — buy another "
+                        + $"with Bonus Points, or rent one for {SlotRentalCost}c.");
+                }
+
+                player.RentedCraftSlots -= 1;
+                usingRental = true;
             }
 
             // Inputs are consumed at queue time, not completion (task 2): otherwise a player
@@ -207,7 +277,10 @@ namespace GeoSlayer.Domain.Services.Crafting
             db.PlayerCrafts.Add(craft);
             await db.SaveChangesAsync(ct);
 
-            return ToDto(craft, recipe.Name, now);
+            var dto = ToDto(craft, recipe.Name, now);
+            dto.UsedRentedSlot = usingRental;
+
+            return dto;
         }
 
         public async Task CancelCraft(int playerId, int craftId, CancellationToken ct)

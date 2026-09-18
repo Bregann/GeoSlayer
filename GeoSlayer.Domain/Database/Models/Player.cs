@@ -78,6 +78,21 @@ namespace GeoSlayer.Domain.Database.Models
         /// </summary>
         public DateTime? InterestSettledUtc { get; set; }
 
+        /// <summary>
+        /// Craft slots rented with coin, waiting to be used (§5D.4).
+        ///
+        /// <para>Consumed by the next craft queued beyond the permanent limit, rather than
+        /// expiring on a timer. A rental that ticked away while you were asleep would punish
+        /// a player for the offline half of the game, and §7.4 forbids that. It also means a
+        /// rental cannot be stockpiled into a permanent upgrade — each one buys exactly one
+        /// craft.</para>
+        ///
+        /// <para>Deliberately worse value than the Craft Slot upgrade, which is permanent
+        /// and bought with Bonus Points. If renting were competitive, §4.3's rule that two
+        /// routes to the same bonus makes one redundant would bite.</para>
+        /// </summary>
+        public int RentedCraftSlots { get; set; }
+
         public virtual ICollection<PlayerSkill> Skills { get; set; } = new List<PlayerSkill>();
 
         public virtual ICollection<PlayerUpgrade> Upgrades { get; set; } = new List<PlayerUpgrade>();

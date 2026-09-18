@@ -1113,9 +1113,20 @@ mistake.
 > The intent was that a first correction should not be punishing, and a few hours' walking
 > is not — while a *casual* rebuild should still cost something real.
 
-**Still open, and worth considering:** renting a temporary craft queue slot, or instant
-craft completion. Both are *convenience*, never progress you could not otherwise reach,
-which is the line that keeps coin from becoming a second progression track.
+**Rented craft slots.** The small recurring sink. 750c buys one extra craft beyond the
+permanent limit, spent by the next thing queued rather than expiring on a timer — a rental
+ticking away while a player slept would punish the offline half of the game (§7.4).
+
+Deliberately poor value against the **Craft Slot** upgrade, which is permanent and bought
+with Bonus Points. §4.3's rule is that two routes to the same bonus makes one redundant, so
+renting has to stay the worse deal: it is for the player who wants one more thing cooking
+tonight, not a way to buy the upgrade with coin. A rental never raises the queue limit — it
+is held separately and consumed on use, so a stockpile cannot behave like a permanent slot.
+
+**Instant craft completion: rejected.** It is the obvious idle-game sink and it would
+undercut §4.2's whole framing. Crafting is time-gated precisely so you *queue it and walk
+away* — that is the bridge between the exploration and idle halves. Selling a way to skip
+the wait sells a way to opt out of the bridge.
 
 ---
 

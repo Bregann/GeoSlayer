@@ -80,8 +80,11 @@ rather than decided by an agent. **None of these should be settled without you.*
   **Respec is now the one-off sink** (§5D.4): 5,000c, doubling each time, every point
   refunded. It previously cost Bonus Points — the resource it refunds.
 
-  Still candidates, none built: renting a craft queue slot, instant craft completion. Both
-  convenience, never progress.
+  **Rented craft slots** are the small recurring sink: 750c for one extra craft, spent on
+  use, deliberately worse value than the permanent Bonus Point upgrade (§4.3).
+
+  **Instant craft completion was rejected** — it would undercut §4.2's "queue it and walk
+  away", which is the bridge between the exploration and idle halves.
 
 - ~~**Rarity**~~ **DECIDED: not building it** (Stage 18 task 5). Drop frequency is already
   `DropTableEntry.Weight`; a cosmetic tier mapping adds no decision; and POI scarcity is

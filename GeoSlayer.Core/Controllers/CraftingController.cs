@@ -34,6 +34,16 @@ namespace GeoSlayer.Core.Controllers
         public async Task<ActionResult<CraftDto>> QueueCraft([FromQuery] string key, CancellationToken ct) =>
             Ok(await crafting.QueueCraft(await CurrentPlayerId(ct), key, ct));
 
+        /// <summary>
+        /// Rent one craft slot for coin (§5D.4).
+        ///
+        /// <para>Spent by the next craft queued beyond the permanent limit, so it buys
+        /// exactly one craft and cannot be stockpiled into the Bonus Point upgrade.</para>
+        /// </summary>
+        [HttpPost]
+        public async Task<ActionResult<RecipeListDto>> RentCraftSlot(CancellationToken ct) =>
+            Ok(await crafting.RentCraftSlot(await CurrentPlayerId(ct), ct));
+
         [HttpDelete]
         public async Task<IActionResult> CancelCraft([FromQuery] int id, CancellationToken ct)
         {

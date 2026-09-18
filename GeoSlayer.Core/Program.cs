@@ -228,6 +228,7 @@ await gameSettings.Reload();
 CoinPricing.Settings = gameSettings;
 BankingInterest.Settings = gameSettings;
 SkillSeedData.Settings = gameSettings;
+CraftingService.Settings = gameSettings;
 
 // Configure the HTTP request pipeline.
 app.UseExceptionHandler();

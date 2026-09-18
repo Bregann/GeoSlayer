@@ -33,6 +33,9 @@ namespace GeoSlayer.Domain.Services.Admin
         /// <summary>Interest per hour on a deposited balance, as a fraction.</summary>
         public const string BankingInterestRate = "economy.banking.interest_per_hour";
 
+        /// <summary>Coin to rent one craft slot for a single craft.</summary>
+        public const string CraftSlotRentalCost = "economy.crafting.slot_rental";
+
         // ── Skills ──────────────────────────────────────────────────────
 
         /// <summary>XP per kilometre walked, for the distance-synergy skills.</summary>
@@ -74,6 +77,14 @@ namespace GeoSlayer.Domain.Services.Admin
                     + "still the efficient play. Bounded by the offline cap regardless, so a "
                     + "month away pays what one window pays.",
                     min: 0, max: 0.05),
+
+                Make(CraftSlotRentalCost, "750", "Economy",
+                    "Coin to rent one craft slot, consumed by the craft it allows. Deliberately "
+                    + "poor value next to the permanent Craft Slot upgrade — if renting were "
+                    + "competitive, one of the two routes would be redundant (§4.3). It exists "
+                    + "for the player who wants one more thing cooking tonight, not as a way "
+                    + "to buy the upgrade with coin.",
+                    min: 1, max: 100_000),
 
                 Make(DistanceSynergyXpPerKm, "12", "Skills",
                     "XP per kilometre walked, for Athletics. A brisk hour covers ~5km, so this "

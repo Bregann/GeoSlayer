@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 import { authApiClient } from '@/helpers/apiClient';
 import { useMutationDelete } from '@/helpers/mutations/useMutationDelete';
@@ -16,6 +16,10 @@ interface RecipeList {
   recipes: Recipe[];
   queuedCount: number;
   queueLimit: number;
+  /** Rented slots in hand, each good for one craft beyond the limit (§5D.4). */
+  rentedCraftSlots: number;
+  /** Coin to rent another. */
+  slotRentalCost: number;
 }
 
 /**
@@ -57,6 +61,17 @@ export default function CraftingScreen() {
     onError: (err) => setError(failureMessage(err)),
   });
 
+  // Renting returns the whole recipe list, so the slot counter and the button both update
+  // from one response.
+  const rentSlot = useMutationPost<null, RecipeList>({
+    url: '/api/Crafting/RentCraftSlot',
+    queryKey: [QueryKeys.Recipes],
+    invalidateQuery: true,
+    alsoInvalidate,
+    onSuccess: () => setError(null),
+    onError: (err) => setError(failureMessage(err)),
+  });
+
   const cancel = useMutationDelete<number, void>({
     url: (id) => `/api/Crafting/CancelCraft?id=${id}`,
     queryKey: [QueryKeys.Recipes],
@@ -89,7 +104,34 @@ export default function CraftingScreen() {
           <Text style={styles.xpText}>
             {recipes.data.queuedCount} / {recipes.data.queueLimit} craft slots busy · crafts
             finish while you are away
+            {recipes.data.rentedCraftSlots > 0 &&
+              ` · ${recipes.data.rentedCraftSlots} rented`}
           </Text>
+        )}
+
+        {/* Offered only when the permanent slots are full — a rent button on an idle queue
+            is an invitation to waste coin on nothing (§5D.4). */}
+        {recipes.data && recipes.data.queuedCount >= recipes.data.queueLimit && (
+          <TouchableOpacity
+            style={styles.backButton}
+            disabled={rentSlot.isPending}
+            onPress={() =>
+              Alert.alert(
+                'Rent a craft slot?',
+                `${recipes.data.slotRentalCost.toLocaleString()}c for one extra craft. ` +
+                  'It is spent by the next thing you queue, and does not expire.\n\n' +
+                  'The Craft Slot upgrade is permanent and much better value.',
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Rent', onPress: () => rentSlot.mutate(null) },
+                ],
+              )
+            }
+          >
+            <Text style={styles.backText}>
+              RENT A SLOT · {recipes.data.slotRentalCost.toLocaleString()}c
+            </Text>
+          </TouchableOpacity>
         )}
       </View>
 
