@@ -70,9 +70,44 @@ namespace GeoSlayer.Domain.Services.Admin
         }
 
         /// <summary>
+        /// Modifiers whose value is a <b>fraction</b>, and therefore subject to
+        /// <see cref="MaxSetBonus"/>.
+        ///
+        /// <para>Not every modifier is a percentage. <c>PoiRangeMetres</c> is metres and
+        /// <c>RevealRadius</c> is cells, so the Landmarks wing's "+10m POI range" is a value
+        /// of 10 — which a naive cap reads as 1,000% and refuses. The units differ, so the
+        /// ceiling has to know which it is looking at.</para>
+        ///
+        /// <para>Mirrors the filter <c>SetBonusesAreSmall</c> has always used. A
+        /// non-fractional bonus is still bounded, just not by this number — see
+        /// <see cref="MaxAbsoluteBonus"/>.</para>
+        /// </summary>
+        private static readonly HashSet<ItemModifier> FractionalModifiers =
+        [
+            ItemModifier.SkillXpPercent,
+            ItemModifier.SellPricePercent,
+            ItemModifier.WorkerRatePercent,
+            ItemModifier.GatherSpeedPercent,
+        ];
+
+        /// <summary>
+        /// Ceiling for a bonus measured in its own units rather than as a fraction.
+        ///
+        /// <para>Deliberately loose. The units are incomparable — 10 metres of POI range and
+        /// 10 cells of reveal radius are wildly different in impact — so this is a guard
+        /// against a typo'd order of magnitude rather than a balance rule. The judgement
+        /// about whether a given number is <i>right</i> stays with the person tuning it.</para>
+        /// </summary>
+        public const double MaxAbsoluteBonus = 100;
+
+        /// <summary>
         /// Why a wing's completion bonus is unacceptable, or null.
         /// </summary>
-        public static string? RejectSetBonus(MuseumWing wing, double value)
+        /// <param name="modifier">
+        /// Decides which ceiling applies — a fraction is capped at
+        /// <see cref="MaxSetBonus"/>, anything else at <see cref="MaxAbsoluteBonus"/>.
+        /// </param>
+        public static string? RejectSetBonus(MuseumWing wing, double value, ItemModifier modifier)
         {
             if (UncompletableWings.Contains(wing))
             {
@@ -86,11 +121,24 @@ namespace GeoSlayer.Domain.Services.Admin
                 return "A completion bonus of zero is a bonus that changes nothing (§4.3).";
             }
 
-            if (value > MaxSetBonus)
+            if (FractionalModifiers.Contains(modifier))
             {
-                return $"{value:P0} is more than a nudge. Stage 12 task 3 caps wing bonuses at "
-                     + $"{MaxSetBonus:P0} so the Museum stays something pursued for its own "
-                     + "sake rather than because it is mandatory (§5A).";
+                if (value > MaxSetBonus)
+                {
+                    return $"{value:P0} is more than a nudge. Stage 12 task 3 caps wing bonuses "
+                         + $"at {MaxSetBonus:P0} so the Museum stays something pursued for its "
+                         + "own sake rather than because it is mandatory (§5A).";
+                }
+
+                return null;
+            }
+
+            // Measured in its own units — metres, cells, tiers. Only an order-of-magnitude
+            // guard is possible here; see MaxAbsoluteBonus.
+            if (value > MaxAbsoluteBonus)
+            {
+                return $"{value} is implausibly large for {modifier}, which is measured in its "
+                     + "own units rather than as a percentage. Check the magnitude.";
             }
 
             return null;

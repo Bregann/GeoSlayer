@@ -494,12 +494,16 @@ namespace GeoSlayer.Tests.Services.Idle
             var after = await FoodHeld("dried_rations");
 
             // FoodRequired rounds up, and the elapsed window is a few microseconds over 3h
-            // because assignment stamps LastCollectedAtUtc before the test backdates it. So
-            // 4 is correct, not 3 — assert the rule rather than a figure that depends on
-            // sub-second timing.
+            // because assignment stamps LastCollectedAtUtc before the test backdates it.
+            //
+            // Derived from FoodPerHour rather than hard-coded: this test previously asserted
+            // a literal 4, and broke the moment the rate was halved for wages. The *rule* is
+            // "three hours and a bit, rounded up" — that is what should be pinned.
+            var expectedFood = OfflineAccrual.FoodRequired(TimeSpan.FromHours(3.001));
+
             Assert.Multiple(() =>
             {
-                Assert.That(result.UpkeepConsumed.FoodRequired, Is.EqualTo(4),
+                Assert.That(result.UpkeepConsumed.FoodRequired, Is.EqualTo(expectedFood),
                     "3h a fraction over, rounded up");
                 Assert.That(result.UpkeepConsumed.FoodConsumed, Is.EqualTo(result.UpkeepConsumed.FoodRequired));
                 Assert.That(after, Is.EqualTo(before - result.UpkeepConsumed.FoodConsumed));
@@ -650,10 +654,14 @@ namespace GeoSlayer.Tests.Services.Idle
             await BackdateCollection(worker.Id, TimeSpan.FromHours(2));
             await _sut.CollectOfflineAccrual(_player.Id, Ct);
 
-            // Rounded up to 3 for a window a fraction over 2h.
+            // Derived rather than hard-coded, so halving FoodPerHour for wages does not
+            // break a test that is really about *ordering*.
+            var eaten = OfflineAccrual.FoodRequired(TimeSpan.FromHours(2.001));
+
             Assert.Multiple(async () =>
             {
-                Assert.That(await FoodHeld("dried_rations"), Is.EqualTo(7), "tier 1 eaten first");
+                Assert.That(await FoodHeld("dried_rations"), Is.EqualTo(10 - eaten),
+                    "tier 1 eaten first");
                 Assert.That(await FoodHeld("hearty_pie"), Is.EqualTo(10), "tier 3 untouched");
             });
         }
@@ -661,7 +669,7 @@ namespace GeoSlayer.Tests.Services.Idle
         [Test]
         public async Task PartialFood_FeedsWhatItCanAndFlagsTheShortfall()
         {
-            var (_, worker) = await StationedWorker(200);
+            var (_, worker) = await StationedWorker(240);
             await GiveFood("dried_rations", 1);
             await BackdateCollection(worker.Id, TimeSpan.FromHours(4));
 
@@ -669,7 +677,9 @@ namespace GeoSlayer.Tests.Services.Idle
 
             Assert.Multiple(() =>
             {
-                Assert.That(result.UpkeepConsumed.FoodRequired, Is.GreaterThanOrEqualTo(4));
+                // More than the single unit held, whatever the rate happens to be — that is
+                // the condition this test needs, not a particular number.
+                Assert.That(result.UpkeepConsumed.FoodRequired, Is.GreaterThan(1));
                 Assert.That(result.UpkeepConsumed.FoodConsumed, Is.EqualTo(1), "only one unit was held");
                 Assert.That(result.WorkersWentUnfed, Is.True, "so the app can nudge the player to cook");
             });

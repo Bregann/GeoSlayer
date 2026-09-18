@@ -78,33 +78,65 @@ namespace GeoSlayer.Tests.Services.Admin
         [Test]
         public void ASmallBonus_IsAccepted()
         {
-            Assert.That(MuseumValidation.RejectSetBonus(MuseumWing.Naturalist, 0.05), Is.Null);
+            Assert.That(
+                MuseumValidation.RejectSetBonus(
+                    MuseumWing.Naturalist, 0.05, ItemModifier.SkillXpPercent),
+                Is.Null);
         }
 
         [Test]
         public void ABonusAtTheCap_IsAccepted()
         {
             Assert.That(
-                MuseumValidation.RejectSetBonus(MuseumWing.Naturalist, MuseumValidation.MaxSetBonus),
+                MuseumValidation.RejectSetBonus(
+                    MuseumWing.Naturalist, MuseumValidation.MaxSetBonus, ItemModifier.SkillXpPercent),
                 Is.Null);
         }
 
         [Test]
-        public void ALargeBonus_IsRejected()
+        public void ALargeFractionalBonus_IsRejected()
         {
             // The whole point. A wing is dozens of finds; a large bonus makes filling it
             // compulsory rather than a choice.
-            var rejection = MuseumValidation.RejectSetBonus(MuseumWing.Naturalist, 0.5);
+            var rejection = MuseumValidation.RejectSetBonus(
+                MuseumWing.Naturalist, 0.5, ItemModifier.SkillXpPercent);
 
             Assert.That(rejection, Is.Not.Null);
             Assert.That(rejection, Does.Contain("nudge"));
         }
 
         [Test]
+        public void ANonFractionalBonus_IsNotJudgedAsAPercentage()
+        {
+            // The bug this validator shipped with. PoiRangeMetres is *metres* — Landmarks
+            // grants "+10m POI range", a value of 10 — and a naive fractional cap reads that
+            // as 1,000% and refuses the shipped data.
+            Assert.That(
+                MuseumValidation.RejectSetBonus(
+                    MuseumWing.Landmarks, 10, ItemModifier.PoiRangeMetres),
+                Is.Null);
+        }
+
+        [Test]
+        public void AnImplausiblyLargeAbsoluteBonus_IsStillRejected()
+        {
+            // The units are incomparable, so only an order-of-magnitude guard is possible —
+            // but a typo'd zero should still not sail through.
+            var rejection = MuseumValidation.RejectSetBonus(
+                MuseumWing.Landmarks, 10_000, ItemModifier.PoiRangeMetres);
+
+            Assert.That(rejection, Is.Not.Null);
+            Assert.That(rejection, Does.Contain("magnitude"));
+        }
+
+        [Test]
         public void AZeroBonus_IsRejected()
         {
             // §4.3: a bonus that changes nothing is a bug, not restraint.
-            Assert.That(MuseumValidation.RejectSetBonus(MuseumWing.Naturalist, 0), Is.Not.Null);
+            Assert.That(
+                MuseumValidation.RejectSetBonus(
+                    MuseumWing.Naturalist, 0, ItemModifier.SkillXpPercent),
+                Is.Not.Null);
         }
 
         [Test]
@@ -112,7 +144,8 @@ namespace GeoSlayer.Tests.Services.Admin
         {
             // Its entries are created on discovery, so the wing has no fixed size and can
             // never be completed. A bonus would be a promise that cannot be kept.
-            var rejection = MuseumValidation.RejectSetBonus(MuseumWing.Cartography, 0.05);
+            var rejection = MuseumValidation.RejectSetBonus(
+                MuseumWing.Cartography, 0.05, ItemModifier.SkillXpPercent);
 
             Assert.That(rejection, Is.Not.Null);
             Assert.That(rejection, Does.Contain("never be completed"));
@@ -121,10 +154,13 @@ namespace GeoSlayer.Tests.Services.Admin
         [Test]
         public void TheShippedBonuses_AllPassTheirOwnValidator()
         {
-            // If what shipped cannot pass, one of the two is wrong.
+            // If what shipped cannot pass, one of the two is wrong — and the first time this
+            // ran, it was the validator.
             foreach (var (wing, bonus) in MuseumSetBonus.Bonuses)
             {
-                Assert.That(MuseumValidation.RejectSetBonus(wing, bonus.Value), Is.Null,
+                Assert.That(
+                    MuseumValidation.RejectSetBonus(wing, bonus.Value, bonus.Modifier),
+                    Is.Null,
                     $"{wing}'s shipped bonus is invalid");
             }
         }
