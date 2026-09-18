@@ -278,10 +278,20 @@ namespace GeoSlayer.Tests.Services.Progression
 
         // ── Criterion 8: respec ─────────────────────────────────────────
 
+        /// <summary>Enough coin to respec comfortably.</summary>
+        private async Task GiveCoin(long amount)
+        {
+            var player = await DbContext.Players.FirstAsync(p => p.Id == _player.Id);
+            player.Coin = amount;
+            await DbContext.SaveChangesAsync();
+        }
+
         [Test]
         public async Task Respec_RefundsEveryPointAndClearsRanks()
         {
             await GrantPoints(10);
+            await GiveCoin(100_000);
+
             await _sut.PurchaseUpgrade(_player.Id, ProgressionDefaults.UpgradeKeys.WorkerSlot, Ct);
             await _sut.PurchaseUpgrade(_player.Id, ProgressionDefaults.UpgradeKeys.WorkerSlot, Ct);
 
@@ -293,25 +303,76 @@ namespace GeoSlayer.Tests.Services.Progression
             {
                 Assert.That(ranks, Is.Zero, "respec should clear purchased ranks");
 
-                // 3 points were spent; the first respec costs 1, so 9 of 10 come back.
-                Assert.That(result.BonusPointsSpent, Is.EqualTo(1), "only the respec fee remains spent");
-                Assert.That(result.BonusPointsAvailable, Is.EqualTo(9));
+                // Every point comes back now that the fee is coin. §3.0a wants a mis-invested
+                // build to be recoverable, not merely survivable — a partial refund on top of
+                // the fee would be charging twice.
+                Assert.That(result.BonusPointsSpent, Is.Zero, "nothing stays spent");
+                Assert.That(result.BonusPointsAvailable, Is.EqualTo(10));
             });
         }
 
         [Test]
-        public async Task Respec_CostEscalatesWithEachUse()
+        public async Task Respec_ChargesCoinRatherThanPoints()
         {
+            // The whole reason it moved: the old fee spent the very resource it refunds.
+            await GrantPoints(10);
+            await GiveCoin(100_000);
+            await _sut.PurchaseUpgrade(_player.Id, ProgressionDefaults.UpgradeKeys.WorkerSlot, Ct);
+
+            await _sut.Respec(_player.Id, Ct);
+
+            var coin = (await DbContext.Players.AsNoTracking()
+                .FirstAsync(p => p.Id == _player.Id)).Coin;
+
+            Assert.That(coin, Is.EqualTo(100_000 - ProgressionDefaults.RespecBaseCost));
+        }
+
+        [Test]
+        public async Task Respec_WithoutEnoughCoin_IsRefusedAndChangesNothing()
+        {
+            // A respec the player cannot afford must not wipe their tree — the check runs
+            // before anything is cleared.
+            await GrantPoints(10);
+            await GiveCoin(10);
+            await _sut.PurchaseUpgrade(_player.Id, ProgressionDefaults.UpgradeKeys.WorkerSlot, Ct);
+
+            Assert.That(
+                async () => await _sut.Respec(_player.Id, Ct),
+                Throws.TypeOf<BadRequestException>());
+
+            DbContext.ChangeTracker.Clear();
+
+            var ranks = await DbContext.PlayerUpgrades.CountAsync(u => u.PlayerId == _player.Id);
+            var coin = (await DbContext.Players.AsNoTracking()
+                .FirstAsync(p => p.Id == _player.Id)).Coin;
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(ranks, Is.EqualTo(1), "the tree must survive a refused respec");
+                Assert.That(coin, Is.EqualTo(10), "and nothing may be taken");
+            });
+        }
+
+        [Test]
+        public async Task Respec_CostDoublesWithEachUse()
+        {
+            // §3.0a wants escalation. Doubling prices out a serial rebuilder while barely
+            // touching someone fixing one early mistake.
             await GrantPoints(20);
+            await GiveCoin(1_000_000);
             await _sut.PurchaseUpgrade(_player.Id, ProgressionDefaults.UpgradeKeys.WorkerSlot, Ct);
 
             var first = await _sut.Respec(_player.Id, Ct);
-            Assert.That(first.RespecCost, Is.EqualTo(2), "the second respec costs more than the first");
+
+            Assert.That(first.RespecCost,
+                Is.EqualTo(ProgressionDefaults.RespecBaseCost * 2),
+                "the second respec costs twice the first");
 
             await _sut.PurchaseUpgrade(_player.Id, ProgressionDefaults.UpgradeKeys.WorkerSlot, Ct);
             var second = await _sut.Respec(_player.Id, Ct);
 
-            Assert.That(second.RespecCost, Is.EqualTo(3));
+            Assert.That(second.RespecCost,
+                Is.EqualTo(ProgressionDefaults.RespecBaseCost * 4));
         }
 
         // ── Criterion 9: the roadmap ────────────────────────────────────

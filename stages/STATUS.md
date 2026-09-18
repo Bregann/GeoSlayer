@@ -77,9 +77,11 @@ rather than decided by an agent. **None of these should be settled without you.*
   them "the main thing a levelling player actually engages with" — a second route makes one
   of the two redundant, which is the §4.3 failure.
 
-  Still candidates, none built: respec (§3.0a asks for it at "a material or currency cost"
-  and it currently costs Bonus Points, which is odd), renting a craft queue slot, instant
-  craft completion. All convenience, never progress.
+  **Respec is now the one-off sink** (§5D.4): 5,000c, doubling each time, every point
+  refunded. It previously cost Bonus Points — the resource it refunds.
+
+  Still candidates, none built: renting a craft queue slot, instant craft completion. Both
+  convenience, never progress.
 
 - ~~**Rarity**~~ **DECIDED: not building it** (Stage 18 task 5). Drop frequency is already
   `DropTableEntry.Weight`; a cosmetic tier mapping adds no decision; and POI scarcity is

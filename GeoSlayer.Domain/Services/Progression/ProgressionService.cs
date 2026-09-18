@@ -411,17 +411,24 @@ namespace GeoSlayer.Domain.Services.Progression
 
             var cost = RespecCostFor(player, GetRespecBaseCost());
 
-            // The refund returns every spent point, then the fee is charged against the
-            // refunded total.  A respec the player cannot afford must not clear their tree.
-            if (cost > player.BonusPointsSpent && rows.Count > 0)
+            // Charged in coin rather than in the points it refunds (§5D.4). The old fee spent
+            // the very resource being reclaimed, which made the trade hard to read.
+            //
+            // Checked before anything is cleared: a respec the player cannot afford must not
+            // wipe their tree. Nothing here takes them negative either.
+            if (cost > player.Coin)
             {
                 throw new BadRequestException(
-                    $"Respec costs {cost} points and you have only {player.BonusPointsSpent} invested.");
+                    $"Respec costs {cost}c and you have {player.Coin}c. Sell a haul at a shop.");
             }
 
             db.PlayerUpgrades.RemoveRange(rows);
 
-            player.BonusPointsSpent = cost;
+            player.Coin -= cost;
+
+            // Every point comes back. The fee is the friction now, not a partial refund —
+            // §3.0a wants a mis-invested build to be recoverable, not merely survivable.
+            player.BonusPointsSpent = 0;
             player.RespecCount += 1;
 
             await db.SaveChangesAsync(ct);
@@ -449,7 +456,14 @@ namespace GeoSlayer.Domain.Services.Progression
         }
 
         /// <summary>§3.0a: cheap the first time, then escalating.</summary>
-        private static int RespecCostFor(Player player, int baseCost) => baseCost * (player.RespecCount + 1);
+        /// <summary>
+        /// The coin fee for this player's next respec (§3.0a, §5D.4).
+        ///
+        /// <para>Doubles each time. Prices out a serial rebuilder without punishing someone
+        /// fixing one early mistake: 5,000 then 10,000 then 20,000.</para>
+        /// </summary>
+        private static long RespecCostFor(Player player, long baseCost) =>
+            (long)(baseCost * Math.Pow(ProgressionDefaults.RespecCostMultiplier, player.RespecCount));
 
         private static void Populate(XpGrantResult result, Player player)
         {
@@ -465,8 +479,8 @@ namespace GeoSlayer.Domain.Services.Progression
         private double GetIdleMultiplier() =>
             ReadDouble(EnvironmentalSettingEnum.IdleXpRatioMultiplier, ProgressionDefaults.IdleXpRatioMultiplier);
 
-        private int GetRespecBaseCost() =>
-            (int)ReadDouble(EnvironmentalSettingEnum.RespecBaseCost, ProgressionDefaults.RespecBaseCost);
+        private long GetRespecBaseCost() =>
+            (long)ReadDouble(EnvironmentalSettingEnum.RespecBaseCost, ProgressionDefaults.RespecBaseCost);
 
         private long GetMilestoneXp(MilestoneType milestone)
         {

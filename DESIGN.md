@@ -159,6 +159,10 @@ Design rules for the tree:
 - **Respec should exist**, for a material or currency cost. Players will mis-invest early
   while learning the systems, and a permanently wrong build is a churn event. Make it
   cheap the first time, then escalating.
+
+  > **Built, in coin** (§5D.4). 5,000c, doubling each time, with every point refunded. The
+  > fee was originally charged in Bonus Points, which spent the resource being reclaimed —
+  > coin comes from something a player can go and earn instead.
 - **Seeded data, not code.** Same reasoning as everywhere else — this tree will be retuned
   constantly.
 
@@ -1094,11 +1098,24 @@ dearer and nobody uses it. That is exactly the failure §4.3 names for gear vers
 
 **Not clue skips.** Curation already buys those (§5B.3).
 
-**Still open, and worth considering:** respec, which §3.0a explicitly asks for at "a
-material or currency cost" and which currently costs Bonus Points — odd, since it spends
-the thing you are trying to reclaim. Also plausible: renting a temporary craft queue slot,
-or instant craft completion. All are *convenience*, never progress you could not otherwise
-reach, which is the line that keeps coin from becoming a second progression track.
+**Respec (§3.0a).** The one-off sink. §3.0a asks for respec at "a material or currency
+cost" and was written before a currency existed, so the fee was charged in Bonus Points —
+the very resource it refunds, which made the trade hard to read: spend 3 points to get 12
+back. It now costs **coin**, and every point comes back.
+
+Deliberately expensive: **5,000c, doubling each time**. A player at respec age — level 15
+to 25, gathering tier 1 to 3 — earns roughly 90c to 1,200c per walking hour, so the first
+one is a few hours' work. A real decision, never a wall. Doubling prices out someone
+treating respec as a free rebuild button while barely touching a player fixing one early
+mistake.
+
+> §3.0a's "cheap the first time" described a points economy where 1 point was nearly free.
+> The intent was that a first correction should not be punishing, and a few hours' walking
+> is not — while a *casual* rebuild should still cost something real.
+
+**Still open, and worth considering:** renting a temporary craft queue slot, or instant
+craft completion. Both are *convenience*, never progress you could not otherwise reach,
+which is the line that keeps coin from becoming a second progression track.
 
 ---
 

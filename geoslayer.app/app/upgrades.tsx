@@ -70,13 +70,15 @@ export default function UpgradesScreen() {
   const confirmRespec = () => {
     if (!data) return;
 
-    // Respec is destructive and costs points, so it asks first (§3.0a says players will
+    // Respec is destructive and expensive, so it asks first (§3.0a says players will
     // mis-invest; it should be recoverable, not accidental).
+    //
+    // The cost doubles each time, so it is stated plainly rather than buried — someone on
+    // their third respec is looking at 20,000c and should not find that out afterwards.
     Alert.alert(
       'Respec upgrades?',
-      `This refunds every spent point and clears all ranks, for ${data.respecCost} point${
-        data.respecCost === 1 ? '' : 's'
-      }.`,
+      `This clears every rank and refunds all your points, for ${data.respecCost.toLocaleString()}c.\n\n` +
+        'The next respec will cost twice as much.',
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Respec', style: 'destructive', onPress: () => respec.mutate() },
@@ -193,7 +195,7 @@ export default function UpgradesScreen() {
             onPress={confirmRespec}
           >
             <Text style={styles.respecText}>
-              RESPEC · {data.respecCost} pt{data.respecCost === 1 ? '' : 's'}
+              RESPEC · {data.respecCost.toLocaleString()}c
             </Text>
           </TouchableOpacity>
         </ScrollView>

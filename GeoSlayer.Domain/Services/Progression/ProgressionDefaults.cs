@@ -24,10 +24,30 @@ namespace GeoSlayer.Domain.Services.Progression
         public const double IdleXpRatioMultiplier = 0.25;
 
         /// <summary>
-        /// Bonus Points for the first respec. §3.0a: "make it cheap the first time, then
-        /// escalating" — the Nth respec costs N × this.
+        /// Coin for the first respec (§3.0a, §5D.4).
+        ///
+        /// <para><b>Was Bonus Points.</b> §3.0a asks for respec "for a material or currency
+        /// cost", and was written before a currency existed — so the fee was charged in the
+        /// very resource it refunds, which reads as odd: spend 3 points to get 12 back. Coin
+        /// makes the trade legible, and comes from something a player can go and earn rather
+        /// than from the thing they are trying to fix.</para>
+        ///
+        /// <para>5,000c is deliberately high. A player at respec age — level 15 to 25,
+        /// gathering tier 1 to 3 — earns roughly 90c to 1,200c per walking hour, so this is a
+        /// few hours' work: a real decision, never a wall. §3.0a's "cheap the first time"
+        /// referred to a points economy where 1 was nearly free; the intent was that the
+        /// first correction should not be punishing, and a few hours' walking is not.</para>
         /// </summary>
-        public const int RespecBaseCost = 1;
+        public const long RespecBaseCost = 5_000;
+
+        /// <summary>
+        /// How the respec fee escalates.
+        ///
+        /// <para>Doubling rather than the old linear step. §3.0a wants escalation, and
+        /// doubling prices out someone treating respec as a free rebuild button while barely
+        /// touching a player fixing one early mistake: 5,000 then 10,000 then 20,000.</para>
+        /// </summary>
+        public const double RespecCostMultiplier = 2.0;
 
         /// <summary>
         /// Adventurer XP per milestone (§3.0b).

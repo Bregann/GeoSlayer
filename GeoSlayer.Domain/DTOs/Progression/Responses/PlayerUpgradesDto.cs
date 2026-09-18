@@ -9,7 +9,13 @@ namespace GeoSlayer.Domain.DTOs.Progression.Responses
         public int BonusPointsAvailable { get; set; }
 
         /// <summary>What the next respec will cost (§3.0a: cheap first, then escalating).</summary>
-        public int RespecCost { get; set; }
+        /// <summary>
+        /// Coin for the next respec (§5D.4).
+        ///
+        /// <para>Was Bonus Points. Charging the fee in the resource being refunded made the
+        /// trade hard to read; coin comes from something a player can go and earn.</para>
+        /// </summary>
+        public long RespecCost { get; set; }
 
         public List<UpgradeDto> Upgrades { get; set; } = [];
     }
